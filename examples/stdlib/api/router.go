@@ -26,7 +26,7 @@ func NewRouter() http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(users)
+			_ = json.NewEncoder(w).Encode(users)
 		case http.MethodPost:
 			var u User
 			if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -36,7 +36,7 @@ func NewRouter() http.Handler {
 			u.ID = "3"
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(u)
+			_ = json.NewEncoder(w).Encode(u)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -47,7 +47,7 @@ func NewRouter() http.Handler {
 		for _, u := range users {
 			if u.ID == id {
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(u)
+				_ = json.NewEncoder(w).Encode(u)
 				return
 			}
 		}

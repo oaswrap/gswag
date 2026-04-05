@@ -178,7 +178,7 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 	if err != nil {
 		panic("gswag: HTTP request failed: " + err.Error())
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

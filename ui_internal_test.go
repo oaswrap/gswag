@@ -79,7 +79,9 @@ func TestServeUI_HappyPath(t *testing.T) {
 		t.Skipf("cannot get free port: %v", err)
 	}
 	addr := ln.Addr().String()
-	ln.Close() // free the port; ServeUI will re-bind
+	if err := ln.Close(); err != nil {
+		t.Fatalf("cannot close listener: %v", err)
+	}
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -100,7 +102,7 @@ func TestServeUI_HappyPath(t *testing.T) {
 		// Server may not have started yet; just verify no panic occurred.
 		t.Logf("HTTP request to %s: %v (server may not have started)", url, err)
 	} else {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// The server runs until the process exits; don't wait for errCh in tests.
