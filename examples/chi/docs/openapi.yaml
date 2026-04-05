@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Orders API (Chi)
+  version: 1.0.0
+paths:
+  /orders:
+    get:
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiOrder'
+                type: array
+          description: OK
+      security:
+      - apiKey: []
+      summary: List all orders
+      tags:
+      - orders
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateOrderRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOrder'
+          description: Created
+      security:
+      - apiKey: []
+      summary: Place an order
+      tags:
+      - orders
+  /orders/{id}:
+    delete:
+      deprecated: true
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - apiKey: []
+      summary: Cancel an order
+      tags:
+      - orders
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOrder'
+          description: OK
+      security:
+      - apiKey: []
+      summary: Get order by ID
+      tags:
+      - orders
+components:
+  schemas:
+    ApiCreateOrderRequest:
+      properties:
+        product:
+          type: string
+        quantity:
+          type: integer
+      type: object
+    ApiOrder:
+      properties:
+        id:
+          type: string
+        product:
+          type: string
+        quantity:
+          type: integer
+        total:
+          type: number
+      type: object
+  securitySchemes:
+    apiKey:
+      in: header
+      name: X-API-Key
+      type: apiKey

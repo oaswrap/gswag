@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Reviews API (Fiber)
+  version: 1.0.0
+paths:
+  /reviews:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiReview'
+                type: array
+          description: OK
+      security:
+      - bearerAuth: []
+      summary: List all reviews
+      tags:
+      - reviews
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateReviewRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiReview'
+          description: Created
+      security:
+      - bearerAuth: []
+      summary: Submit a review
+      tags:
+      - reviews
+  /reviews/{id}:
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiReview'
+          description: OK
+      security:
+      - bearerAuth: []
+      summary: Get review by ID
+      tags:
+      - reviews
+components:
+  schemas:
+    ApiCreateReviewRequest:
+      properties:
+        author:
+          type: string
+        comment:
+          type: string
+        rating:
+          type: integer
+      type: object
+    ApiReview:
+      properties:
+        author:
+          type: string
+        comment:
+          type: string
+        id:
+          type: integer
+        rating:
+          type: integer
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

@@ -1,0 +1,97 @@
+openapi: 3.0.3
+info:
+  title: Items API (Gin)
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: sort
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiItem'
+                type: array
+          description: OK
+      summary: List all items
+      tags:
+      - items
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateItemRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiItem'
+          description: Created
+      summary: Create an item
+      tags:
+      - items
+  /items/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an item
+      tags:
+      - items
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiItem'
+          description: OK
+      summary: Get item by ID
+      tags:
+      - items
+components:
+  schemas:
+    ApiCreateItemRequest:
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+      type: object
+    ApiItem:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+      type: object

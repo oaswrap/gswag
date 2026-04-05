@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Products API (Echo)
+  version: 1.0.0
+paths:
+  /products:
+    get:
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiProduct'
+                type: array
+          description: OK
+      summary: List all products
+      tags:
+      - products
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateProductRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiProduct'
+          description: Created
+      summary: Create a product
+      tags:
+      - products
+  /products/{id}:
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiProduct'
+          description: OK
+      summary: Get product by ID
+      tags:
+      - products
+components:
+  schemas:
+    ApiCreateProductRequest:
+      properties:
+        category:
+          type: string
+        price:
+          type: number
+        title:
+          type: string
+      type: object
+    ApiProduct:
+      properties:
+        category:
+          type: string
+        id:
+          type: integer
+        price:
+          type: number
+        title:
+          type: string
+      type: object
