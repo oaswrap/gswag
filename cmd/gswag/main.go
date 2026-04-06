@@ -44,6 +44,14 @@ func main() {
 // runInit scaffolds a minimal Ginkgo `suite_test.go` and a GitHub Actions workflow
 // for using gswag in CI. Usage: gswag init [--force] [path]
 func runInit(args []string) {
+	code := runInitNoExit(args)
+	if code != 0 {
+		os.Exit(code)
+	}
+}
+
+// runInitNoExit is like runInit but returns an exit code instead of calling os.Exit.
+func runInitNoExit(args []string) int {
 	force := false
 	target := "."
 	for _, a := range args {
@@ -58,7 +66,7 @@ func runInit(args []string) {
 	// Ensure target directory exists.
 	if err := os.MkdirAll(target, 0o755); err != nil {
 		fmt.Fprintf(os.Stderr, "error creating target directory: %v\n", err)
-		os.Exit(2)
+		return 2
 	}
 
 	// Files to create.
@@ -71,7 +79,7 @@ func runInit(args []string) {
 		dir := filepath.Dir(path)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			fmt.Fprintf(os.Stderr, "error creating dir %s: %v\n", dir, err)
-			os.Exit(2)
+			return 2
 		}
 		if _, err := os.Stat(path); err == nil && !force {
 			fmt.Fprintf(os.Stderr, "skipping existing file %s (use --force to overwrite)\n", path)
@@ -79,10 +87,11 @@ func runInit(args []string) {
 		}
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing %s: %v\n", path, err)
-			os.Exit(2)
+			return 2
 		}
 		fmt.Println("created", path)
 	}
+	return 0
 }
 
 const suiteTestTemplate = `package tests
@@ -153,9 +162,17 @@ jobs:
 `
 
 func runValidate(args []string) {
+	code := runValidateNoExit(args)
+	if code != 0 {
+		os.Exit(code)
+	}
+}
+
+// runValidateNoExit is like runValidate but returns an exit code instead of calling os.Exit.
+func runValidateNoExit(args []string) int {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "usage: gswag validate <spec-file>")
-		os.Exit(1)
+		return 1
 	}
 
 	path := args[len(args)-1]
@@ -164,12 +181,12 @@ func runValidate(args []string) {
 	issues, err := gswag.ValidateSpecFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(2)
+		return 2
 	}
 
 	if len(issues) == 0 {
 		fmt.Println("✓ spec is valid")
-		return
+		return 0
 	}
 
 	hasErrors := false
@@ -181,8 +198,9 @@ func runValidate(args []string) {
 	}
 
 	if hasErrors || (strict && len(issues) > 0) {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func hasFlag(args []string, flag string) bool {
