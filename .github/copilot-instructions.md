@@ -3,6 +3,12 @@
 ## Overview
 This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications from Ginkgo integration tests in Go. It works by intercepting HTTP requests/responses in tests and building a live OpenAPI spec, with no code annotations required.
 
+`gswag` uses an rswag-style nested DSL:
+- `Path(..., func() { ... })`
+- `Get/Post/Put/Patch/Delete(..., func() { ... })`
+- `Response(..., func() { ... })`
+- `RunTest(func(resp *http.Response) { ... })`
+
 ## Build & Test Commands
 - **Build CLI:** `make build` (outputs to `bin/gswag`)
 - **Install CLI:** `make install`
@@ -19,6 +25,7 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 - **No code annotations:** Specs are generated from test behavior, not code comments.
 - **Ginkgo/Gomega:** All tests use Ginkgo v2 and Gomega for assertions.
 - **Spec output:** By default, specs are written to `docs/openapi.yaml` in each example.
+- **Test server setup:** Use `SetTestServer(...)` in `BeforeSuite` after starting the test server.
 - **Parallel test support:** See README for merging partial specs.
 - **Framework-agnostic:** Works with any Go HTTP framework (see `examples/`).
 
@@ -32,10 +39,32 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 - See [README.md](../README.md) for usage, configuration, and advanced features.
 - Example test suites in `examples/*/suite_test.go`.
 
+## Current DSL Pattern
+Use this shape in examples and generated snippets:
+
+```go
+var _ = Path("/users/{id}", func() {
+	Get("Get user", func() {
+		Tag("users")
+		Parameter("id", PathParam, String)
+
+		Response(200, "ok", func() {
+			ResponseSchema(new(User))
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
+		})
+	})
+})
+```
+
 ## Common Pitfalls
 - **Go 1.24+ required**
 - **`golangci-lint` must be installed** for `make lint`
-- **Spec output path:** Ensure `Output` in config matches your desired location
+- **Config field names:** Use `OutputPath`/`OutputFormat` (not `Output`/`Format`).
+- **Server target:** If `SetTestServer` is not called, `RunTest` will fail.
+- **Matchers input type:** Matchers now expect `*http.Response` in `RunTest` callbacks.
 - **Parallel Ginkgo:** Use the documented pattern for merging specs
 
 ## Example Prompts
@@ -43,6 +72,8 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 - "Show me how to use the gswag DSL for a POST endpoint."
 - "How do I run all example suites and validate their specs?"
 - "What Makefile targets are available?"
+- "How do I set up `SetTestServer` in `BeforeSuite` for Chi/Echo/Gin/Fiber?"
+- "How do I model query/path params with `Parameter` and `QueryParamStruct`?"
 
 ## Link, Don't Embed
 For details on the DSL, configuration, and advanced usage, refer to [README.md](../README.md) and example projects in `examples/`.

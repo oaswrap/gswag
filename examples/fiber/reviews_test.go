@@ -3,55 +3,54 @@ package fiber_test
 import (
 	"net/http"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/fiber/api"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("/reviews", func() {
+var _ = Path("/reviews", func() {
+	Get("List all reviews", func() {
+		Tag("reviews")
+		BearerAuth()
 
-	Context("GET /reviews", func() {
-		It("returns a list of reviews", func() {
-			res := gswag.GET("/reviews").
-				WithTag("reviews").
-				WithSummary("List all reviews").
-				WithBearerAuth().
-				ExpectResponseBody(new([]api.Review)).
-				Do(testServer)
-
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.HaveNonEmptyBody())
+		Response(200, "list of reviews", func() {
+			ResponseSchema(new([]api.Review))
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
+			})
 		})
 	})
 
-	Context("POST /reviews", func() {
-		It("creates a review and returns 201", func() {
-			res := gswag.POST("/reviews").
-				WithTag("reviews").
-				WithSummary("Submit a review").
-				WithBearerAuth().
-				WithRequestBody(&api.CreateReviewRequest{Author: "Charlie", Rating: 5, Comment: "Perfect"}).
-				ExpectResponseBodyFor(http.StatusCreated, new(api.Review)).
-				Do(testServer)
+	Post("Create a review", func() {
+		Tag("reviews")
+		BearerAuth()
+		RequestBody(new(api.CreateReviewRequest))
 
-			Expect(res).To(gswag.HaveStatus(http.StatusCreated))
-			Expect(res).To(gswag.ContainJSONKey("id"))
+		Response(201, "review created", func() {
+			ResponseSchema(new(api.Review))
+			SetBody(&api.CreateReviewRequest{Author: "Test User", Rating: 5, Comment: "Excellent!"})
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
 		})
 	})
+})
 
-	Context("GET /reviews/{id}", func() {
-		It("returns a review by integer ID", func() {
-			res := gswag.GET("/reviews/{id}").
-				WithPathParam("id", "1").
-				WithTag("reviews").
-				WithSummary("Get review by ID").
-				WithBearerAuth().
-				ExpectResponseBody(new(api.Review)).
-				Do(testServer)
+var _ = Path("/reviews/{id}", func() {
+	Get("Get review by ID", func() {
+		Tag("reviews")
+		BearerAuth()
+		Parameter("id", PathParam, Integer)
 
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.MatchJSONSchema(&api.Review{}))
+		Response(200, "review found", func() {
+			ResponseSchema(new(api.Review))
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
 		})
 	})
 })

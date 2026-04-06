@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// RequestBuilder constructs an HTTP request and its OpenAPI operation metadata
-// using a fluent DSL.
-type RequestBuilder struct {
+// requestBuilder constructs an HTTP request and its OpenAPI operation metadata.
+// It is an internal type used by the DSL; users interact through the DSL functions.
+type requestBuilder struct {
 	method          string
 	path            string
 	pathParams      map[string]string
@@ -34,23 +34,8 @@ type RequestBuilder struct {
 	deprecated      bool
 }
 
-// GET creates a RequestBuilder for a GET request.
-func GET(path string) *RequestBuilder { return newBuilder(http.MethodGet, path) }
-
-// POST creates a RequestBuilder for a POST request.
-func POST(path string) *RequestBuilder { return newBuilder(http.MethodPost, path) }
-
-// PUT creates a RequestBuilder for a PUT request.
-func PUT(path string) *RequestBuilder { return newBuilder(http.MethodPut, path) }
-
-// PATCH creates a RequestBuilder for a PATCH request.
-func PATCH(path string) *RequestBuilder { return newBuilder(http.MethodPatch, path) }
-
-// DELETE creates a RequestBuilder for a DELETE request.
-func DELETE(path string) *RequestBuilder { return newBuilder(http.MethodDelete, path) }
-
-func newBuilder(method, path string) *RequestBuilder {
-	return &RequestBuilder{
+func newRequestBuilder(method, path string) *requestBuilder {
+	return &requestBuilder{
 		method:      method,
 		path:        path,
 		pathParams:  make(map[string]string),
@@ -61,127 +46,10 @@ func newBuilder(method, path string) *RequestBuilder {
 	}
 }
 
-// WithSummary sets the operation summary.
-func (b *RequestBuilder) WithSummary(s string) *RequestBuilder {
-	b.summary = s
-	return b
-}
-
-// WithDescription sets the operation description.
-func (b *RequestBuilder) WithDescription(s string) *RequestBuilder {
-	b.description = s
-	return b
-}
-
-// WithTag appends tags to the operation.
-func (b *RequestBuilder) WithTag(tags ...string) *RequestBuilder {
-	b.tags = append(b.tags, tags...)
-	return b
-}
-
-// WithOperationID sets the operationId.
-func (b *RequestBuilder) WithOperationID(id string) *RequestBuilder {
-	b.operationID = id
-	return b
-}
-
-// WithPathParam registers a path parameter. The path template must contain {key}.
-func (b *RequestBuilder) WithPathParam(key, value string) *RequestBuilder {
-	b.pathParams[key] = value
-	return b
-}
-
-// WithQueryParam adds a query parameter.
-func (b *RequestBuilder) WithQueryParam(key, value string) *RequestBuilder {
-	b.queryParams[key] = value
-	return b
-}
-
-// WithHeader adds a request header.
-func (b *RequestBuilder) WithHeader(key, value string) *RequestBuilder {
-	b.headers[key] = value
-	return b
-}
-
-// WithQueryParamStruct registers a typed struct whose fields carry `query` struct tags.
-// These fields are reflected into OpenAPI query parameter definitions.
-//
-// Example:
-//
-//	type ListQuery struct {
-//	    Page  int    `query:"page"`
-//	    Limit int    `query:"limit"`
-//	    Sort  string `query:"sort"`
-//	}
-//	gswag.GET("/items").WithQueryParamStruct(new(ListQuery)).Do(srv)
-func (b *RequestBuilder) WithQueryParamStruct(v interface{}) *RequestBuilder {
-	b.queryStruct = v
-	return b
-}
-
-// WithRequestBody sets a typed struct as the request body.
-// The struct is used for schema inference and as the actual JSON body.
-func (b *RequestBuilder) WithRequestBody(body interface{}) *RequestBuilder {
-	b.body = body
-	return b
-}
-
-// WithRawBody sets a raw byte slice as the request body.
-func (b *RequestBuilder) WithRawBody(body []byte, contentType string) *RequestBuilder {
-	b.bodyRaw = body
-	b.bodyContentType = contentType
-	return b
-}
-
-// ExpectResponseBody registers the typed struct for the default (200) response schema.
-func (b *RequestBuilder) ExpectResponseBody(model interface{}) *RequestBuilder {
-	b.respBodies[http.StatusOK] = model
-	return b
-}
-
-// ExpectResponseBodyFor registers a typed struct for a specific HTTP status response schema.
-func (b *RequestBuilder) ExpectResponseBodyFor(status int, model interface{}) *RequestBuilder {
-	b.respBodies[status] = model
-	return b
-}
-
-// ExpectResponseHeader registers a response header schema for the default (200) status.
-func (b *RequestBuilder) ExpectResponseHeader(name string, model interface{}) *RequestBuilder {
-	return b.ExpectResponseHeaderFor(http.StatusOK, name, model)
-}
-
-// ExpectResponseHeaderFor registers a response header schema for a specific HTTP status.
-func (b *RequestBuilder) ExpectResponseHeaderFor(status int, name string, model interface{}) *RequestBuilder {
-	if _, ok := b.respHeaders[status]; !ok {
-		b.respHeaders[status] = make(map[string]interface{})
-	}
-	b.respHeaders[status][name] = model
-	return b
-}
-
-// WithBearerAuth adds Bearer JWT authentication to the operation.
-// A "bearerAuth" HTTP Bearer scheme with BearerFormat: JWT is auto-registered
-// in the spec components if not already present.
-func (b *RequestBuilder) WithBearerAuth() *RequestBuilder {
-	b.security = append(b.security, map[string][]string{"bearerAuth": {}})
-	return b
-}
-
-// WithSecurity adds a named security requirement to the operation.
-func (b *RequestBuilder) WithSecurity(schemeName string, scopes ...string) *RequestBuilder {
-	b.security = append(b.security, map[string][]string{schemeName: scopes})
-	return b
-}
-
-// AsDeprecated marks the operation as deprecated.
-func (b *RequestBuilder) AsDeprecated() *RequestBuilder {
-	b.deprecated = true
-	return b
-}
-
-// Do executes the HTTP request against target (either *httptest.Server or a base URL string),
-// records the response, and registers the operation with the global SpecCollector.
-func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
+// do executes the HTTP request against target (*httptest.Server or base URL string)
+// and records the response. The caller decides whether to register the result with
+// the spec collector.
+func (b *requestBuilder) do(target interface{}) *recordedResponse {
 	baseURL := resolveBaseURL(target)
 	url := baseURL + b.resolvedPath()
 
@@ -203,7 +71,7 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 		panic("gswag: failed to read response body: " + err.Error())
 	}
 
-	recorded := &RecordedResponse{
+	recorded := &recordedResponse{
 		StatusCode:       resp.StatusCode,
 		Headers:          resp.Header,
 		BodyBytes:        body,
@@ -212,17 +80,15 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 		RequestBodyBytes: reqBodyBytes,
 	}
 
-	if globalCollector != nil {
-		// Optionally enforce response validation at test time.
+	if globalCollector != nil && (b.summary != "" || len(b.tags) > 0 || len(b.respBodies) > 0) {
 		if globalConfig != nil && globalConfig.EnforceResponseValidation {
-			issues, err := ValidateResponseAgainstOperation(b, recorded)
+			issues, verr := validateResponseAgainstOperation(b, recorded)
 			warnMode := strings.EqualFold(globalConfig.ValidationMode, "warn")
-
-			if err != nil {
+			if verr != nil {
 				if warnMode {
-					fmt.Fprintln(os.Stderr, "gswag: response validation error:", err)
+					fmt.Fprintln(os.Stderr, "gswag: response validation error:", verr)
 				} else {
-					panic("gswag: response validation error: " + err.Error())
+					panic("gswag: response validation error: " + verr.Error())
 				}
 			} else if len(issues) > 0 {
 				msg := "gswag: response does not match declared schema: " + strings.Join(issues, "; ")
@@ -233,7 +99,6 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 				}
 			}
 		}
-
 		globalCollector.Register(b, recorded)
 	}
 
@@ -241,7 +106,7 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 }
 
 // resolvedPath replaces path param templates with their concrete values.
-func (b *RequestBuilder) resolvedPath() string {
+func (b *requestBuilder) resolvedPath() string {
 	p := b.path
 	for k, v := range b.pathParams {
 		p = strings.ReplaceAll(p, "{"+k+"}", v)
@@ -249,7 +114,7 @@ func (b *RequestBuilder) resolvedPath() string {
 	return p
 }
 
-func (b *RequestBuilder) buildRequest(url string) (*http.Request, []byte, error) {
+func (b *requestBuilder) buildRequest(url string) (*http.Request, []byte, error) {
 	var bodyReader io.Reader
 	var data []byte
 
@@ -300,6 +165,6 @@ func resolveBaseURL(target interface{}) string {
 	case string:
 		return strings.TrimRight(t, "/")
 	default:
-		panic("gswag: Do() expects *httptest.Server or string as target")
+		panic("gswag: do() expects *httptest.Server or string as target")
 	}
 }

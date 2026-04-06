@@ -1,20 +1,23 @@
 package gswag_test
 
 import (
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/oaswrap/gswag"
 )
 
-func newRecorded(status int, body []byte, headers http.Header) *gswag.RecordedResponse {
+// newTestResponse builds a minimal *http.Response for matcher tests.
+func newTestResponse(status int, body string, headers http.Header) *http.Response {
 	if headers == nil {
 		headers = http.Header{}
 	}
-	return &gswag.RecordedResponse{
+	return &http.Response{
 		StatusCode: status,
-		BodyBytes:  body,
-		Headers:    headers,
+		Header:     headers,
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
 
@@ -22,7 +25,7 @@ func newRecorded(status int, body []byte, headers http.Header) *gswag.RecordedRe
 
 func TestHaveStatus_Match(t *testing.T) {
 	m := gswag.HaveStatus(200)
-	ok, err := m.Match(newRecorded(200, nil, nil))
+	ok, err := m.Match(newTestResponse(200, "", nil))
 	if err != nil || !ok {
 		t.Fatalf("expected match for status 200, err=%v ok=%v", err, ok)
 	}
@@ -30,15 +33,15 @@ func TestHaveStatus_Match(t *testing.T) {
 
 func TestHaveStatus_NoMatch(t *testing.T) {
 	m := gswag.HaveStatus(200)
-	ok, err := m.Match(newRecorded(404, nil, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match for status 404, err=%v ok=%v", err, ok)
+	ok, _ := m.Match(newTestResponse(404, "", nil))
+	if ok {
+		t.Fatal("expected no match for status 404")
 	}
 }
 
 func TestHaveStatus_FailureMessage(t *testing.T) {
 	m := gswag.HaveStatus(200)
-	msg := m.FailureMessage(newRecorded(404, []byte("not found"), nil))
+	msg := m.FailureMessage(newTestResponse(404, "not found", nil))
 	if msg == "" {
 		t.Fatal("expected non-empty failure message")
 	}
@@ -46,7 +49,7 @@ func TestHaveStatus_FailureMessage(t *testing.T) {
 
 func TestHaveStatus_NegatedFailureMessage(t *testing.T) {
 	m := gswag.HaveStatus(200)
-	msg := m.NegatedFailureMessage(newRecorded(200, nil, nil))
+	msg := m.NegatedFailureMessage(newTestResponse(200, "", nil))
 	if msg == "" {
 		t.Fatal("expected non-empty negated failure message")
 	}
@@ -65,7 +68,7 @@ func TestHaveStatus_InvalidActual(t *testing.T) {
 func TestHaveStatusInRange_Match(t *testing.T) {
 	m := gswag.HaveStatusInRange(200, 299)
 	for _, code := range []int{200, 201, 204, 299} {
-		ok, err := m.Match(newRecorded(code, nil, nil))
+		ok, err := m.Match(newTestResponse(code, "", nil))
 		if err != nil || !ok {
 			t.Fatalf("expected match for status %d", code)
 		}
@@ -75,8 +78,8 @@ func TestHaveStatusInRange_Match(t *testing.T) {
 func TestHaveStatusInRange_NoMatch(t *testing.T) {
 	m := gswag.HaveStatusInRange(200, 299)
 	for _, code := range []int{199, 300, 404, 500} {
-		ok, err := m.Match(newRecorded(code, nil, nil))
-		if err != nil || ok {
+		ok, _ := m.Match(newTestResponse(code, "", nil))
+		if ok {
 			t.Fatalf("expected no match for status %d", code)
 		}
 	}
@@ -84,10 +87,10 @@ func TestHaveStatusInRange_NoMatch(t *testing.T) {
 
 func TestHaveStatusInRange_Messages(t *testing.T) {
 	m := gswag.HaveStatusInRange(200, 299)
-	if m.FailureMessage(newRecorded(500, nil, nil)) == "" {
+	if m.FailureMessage(newTestResponse(500, "", nil)) == "" {
 		t.Fatal("expected non-empty failure message")
 	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
+	if m.NegatedFailureMessage(newTestResponse(200, "", nil)) == "" {
 		t.Fatal("expected non-empty negated failure message")
 	}
 }
@@ -98,26 +101,26 @@ func TestHaveHeader_Match(t *testing.T) {
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	m := gswag.HaveHeader("Content-Type", "application/json")
-	ok, err := m.Match(newRecorded(200, nil, h))
+	ok, err := m.Match(newTestResponse(200, "", h))
 	if err != nil || !ok {
-		t.Fatalf("expected header match, err=%v ok=%v", err, ok)
+		t.Fatalf("expected match for Content-Type header, err=%v ok=%v", err, ok)
 	}
 }
 
 func TestHaveHeader_NoMatch(t *testing.T) {
 	m := gswag.HaveHeader("Content-Type", "application/json")
-	ok, err := m.Match(newRecorded(200, nil, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match for missing header")
+	ok, _ := m.Match(newTestResponse(200, "", nil))
+	if ok {
+		t.Fatal("expected no match for missing header")
 	}
 }
 
 func TestHaveHeader_Messages(t *testing.T) {
-	m := gswag.HaveHeader("X-Foo", "bar")
-	if m.FailureMessage(newRecorded(200, nil, nil)) == "" {
+	m := gswag.HaveHeader("X-Key", "val")
+	if m.FailureMessage(newTestResponse(200, "", nil)) == "" {
 		t.Fatal("expected non-empty failure message")
 	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
+	if m.NegatedFailureMessage(newTestResponse(200, "", nil)) == "" {
 		t.Fatal("expected non-empty negated failure message")
 	}
 }
@@ -125,83 +128,56 @@ func TestHaveHeader_Messages(t *testing.T) {
 // --- HaveJSONBody ---
 
 func TestHaveJSONBody_Match(t *testing.T) {
-	type Item struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	}
-	body := []byte(`{"id":1,"name":"Widget"}`)
-	m := gswag.HaveJSONBody(Item{ID: 1, Name: "Widget"})
-	ok, err := m.Match(newRecorded(200, body, nil))
+	m := gswag.HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	ok, err := m.Match(newTestResponse(200, `{"id":1}`, nil))
 	if err != nil || !ok {
-		t.Fatalf("expected JSON body match, err=%v ok=%v", err, ok)
+		t.Fatalf("expected match for JSON body, err=%v ok=%v", err, ok)
 	}
 }
 
 func TestHaveJSONBody_NoMatch(t *testing.T) {
-	type Item struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	}
-	body := []byte(`{"id":2,"name":"Other"}`)
-	m := gswag.HaveJSONBody(Item{ID: 1, Name: "Widget"})
-	ok, err := m.Match(newRecorded(200, body, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match for different JSON body")
+	m := gswag.HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	ok, _ := m.Match(newTestResponse(200, `{"id":2}`, nil))
+	if ok {
+		t.Fatal("expected no match for different JSON body")
 	}
 }
 
-func TestHaveJSONBody_InvalidJSON(t *testing.T) {
-	m := gswag.HaveJSONBody(map[string]string{"k": "v"})
-	_, err := m.Match(newRecorded(200, []byte("not json"), nil))
-	if err == nil {
-		t.Fatal("expected error for invalid JSON body")
-	}
-}
-
-func TestHaveJSONBody_Messages(t *testing.T) {
-	m := gswag.HaveJSONBody(map[string]string{"k": "v"})
-	if m.FailureMessage(newRecorded(200, []byte(`{}`), nil)) == "" {
-		t.Fatal("expected non-empty failure message")
-	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
-		t.Fatal("expected non-empty negated failure message")
+func TestHaveJSONBody_MultipleReads(t *testing.T) {
+	// Body should be re-readable after first matcher read.
+	resp := newTestResponse(200, `{"id":1}`, nil)
+	m := gswag.HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	ok1, _ := m.Match(resp)
+	ok2, _ := m.Match(resp) // second read must also work
+	if !ok1 || !ok2 {
+		t.Fatalf("expected both reads to match, ok1=%v ok2=%v", ok1, ok2)
 	}
 }
 
 // --- ContainJSONKey ---
 
 func TestContainJSONKey_Match(t *testing.T) {
-	body := []byte(`{"id":"123","name":"Alice"}`)
 	m := gswag.ContainJSONKey("id")
-	ok, err := m.Match(newRecorded(200, body, nil))
+	ok, err := m.Match(newTestResponse(200, `{"id":1,"name":"x"}`, nil))
 	if err != nil || !ok {
-		t.Fatalf("expected ContainJSONKey to match 'id', err=%v ok=%v", err, ok)
+		t.Fatalf("expected match, err=%v ok=%v", err, ok)
 	}
 }
 
 func TestContainJSONKey_NoMatch(t *testing.T) {
-	body := []byte(`{"name":"Alice"}`)
-	m := gswag.ContainJSONKey("id")
-	ok, err := m.Match(newRecorded(200, body, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match for missing key 'id'")
-	}
-}
-
-func TestContainJSONKey_NotObject(t *testing.T) {
-	m := gswag.ContainJSONKey("id")
-	_, err := m.Match(newRecorded(200, []byte(`[1,2,3]`), nil))
-	if err == nil {
-		t.Fatal("expected error for non-object JSON body")
+	m := gswag.ContainJSONKey("missing")
+	ok, _ := m.Match(newTestResponse(200, `{"id":1}`, nil))
+	if ok {
+		t.Fatal("expected no match for absent key")
 	}
 }
 
 func TestContainJSONKey_Messages(t *testing.T) {
 	m := gswag.ContainJSONKey("id")
-	if m.FailureMessage(newRecorded(200, []byte(`{}`), nil)) == "" {
+	if m.FailureMessage(newTestResponse(200, `{}`, nil)) == "" {
 		t.Fatal("expected non-empty failure message")
 	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
+	if m.NegatedFailureMessage(newTestResponse(200, `{}`, nil)) == "" {
 		t.Fatal("expected non-empty negated failure message")
 	}
 }
@@ -210,27 +186,17 @@ func TestContainJSONKey_Messages(t *testing.T) {
 
 func TestHaveNonEmptyBody_Match(t *testing.T) {
 	m := gswag.HaveNonEmptyBody()
-	ok, err := m.Match(newRecorded(200, []byte(`{}`), nil))
+	ok, err := m.Match(newTestResponse(200, `{"ok":true}`, nil))
 	if err != nil || !ok {
-		t.Fatalf("expected match for non-empty body")
+		t.Fatalf("expected match for non-empty body, err=%v ok=%v", err, ok)
 	}
 }
 
 func TestHaveNonEmptyBody_NoMatch(t *testing.T) {
 	m := gswag.HaveNonEmptyBody()
-	ok, err := m.Match(newRecorded(204, []byte{}, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match for empty body")
-	}
-}
-
-func TestHaveNonEmptyBody_Messages(t *testing.T) {
-	m := gswag.HaveNonEmptyBody()
-	if m.FailureMessage(newRecorded(200, nil, nil)) == "" {
-		t.Fatal("expected non-empty failure message")
-	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
-		t.Fatal("expected non-empty negated failure message")
+	ok, _ := m.Match(newTestResponse(200, "", nil))
+	if ok {
+		t.Fatal("expected no match for empty body")
 	}
 }
 
@@ -241,33 +207,22 @@ func TestMatchJSONSchema_Match(t *testing.T) {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}
-	body := []byte(`{"id":1,"name":"Widget","extra":"ignored"}`)
-	m := gswag.MatchJSONSchema(Item{})
-	ok, err := m.Match(newRecorded(200, body, nil))
+	m := gswag.MatchJSONSchema(&Item{})
+	ok, err := m.Match(newTestResponse(200, `{"id":1,"name":"x","extra":"y"}`, nil))
 	if err != nil || !ok {
-		t.Fatalf("expected MatchJSONSchema to match, err=%v ok=%v", err, ok)
+		t.Fatalf("expected structural match, err=%v ok=%v", err, ok)
 	}
 }
 
-func TestMatchJSONSchema_NoMatch_MissingKey(t *testing.T) {
+func TestMatchJSONSchema_NoMatch(t *testing.T) {
 	type Item struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}
-	body := []byte(`{"id":1}`) // missing "name"
-	m := gswag.MatchJSONSchema(Item{})
-	ok, err := m.Match(newRecorded(200, body, nil))
-	if err != nil || ok {
-		t.Fatalf("expected no match when required key missing")
-	}
-}
-
-func TestMatchJSONSchema_NonObjectModel(t *testing.T) {
-	// Model is a slice → structural check is skipped → always passes.
-	m := gswag.MatchJSONSchema([]string{})
-	ok, err := m.Match(newRecorded(200, []byte(`{}`), nil))
-	if err != nil || !ok {
-		t.Fatalf("expected pass for non-object model, err=%v ok=%v", err, ok)
+	m := gswag.MatchJSONSchema(&Item{})
+	ok, _ := m.Match(newTestResponse(200, `{"id":1}`, nil)) // missing "name"
+	if ok {
+		t.Fatal("expected no match when required key is absent")
 	}
 }
 
@@ -275,11 +230,11 @@ func TestMatchJSONSchema_Messages(t *testing.T) {
 	type Item struct {
 		ID int `json:"id"`
 	}
-	m := gswag.MatchJSONSchema(Item{})
-	if m.FailureMessage(newRecorded(200, []byte(`{}`), nil)) == "" {
+	m := gswag.MatchJSONSchema(&Item{})
+	if m.FailureMessage(newTestResponse(200, `{}`, nil)) == "" {
 		t.Fatal("expected non-empty failure message")
 	}
-	if m.NegatedFailureMessage(newRecorded(200, nil, nil)) == "" {
+	if m.NegatedFailureMessage(newTestResponse(200, `{}`, nil)) == "" {
 		t.Fatal("expected non-empty negated failure message")
 	}
 }

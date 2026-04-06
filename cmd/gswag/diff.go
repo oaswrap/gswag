@@ -21,10 +21,7 @@ func runDiff(args []string) {
 	}
 
 	jsonOut := hasFlag(args, "--json") || hasFlag(args, "--format=json")
-	failOnBreaking := true
-	if hasFlag(args, "--no-fail") {
-		failOnBreaking = false
-	}
+	failOnBreaking := !hasFlag(args, "--no-fail")
 
 	base, err := loadSpec(args[0])
 	if err != nil {

@@ -1,17 +1,16 @@
 package fiber_test
 
 import (
-	"net/http/httptest"
+	"net"
 	"testing"
 
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/fiber/api"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var testServer *httptest.Server
+var fiberURL string
 
 func TestAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -19,18 +18,24 @@ func TestAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	gswag.Init(&gswag.Config{
+	Init(&Config{
 		Title:      "Reviews API (Fiber)",
 		Version:    "1.0.0",
 		OutputPath: "./docs/openapi.yaml",
-		SecuritySchemes: map[string]gswag.SecuritySchemeConfig{
-			"bearerAuth": gswag.BearerJWT(),
+		SecuritySchemes: map[string]SecuritySchemeConfig{
+			"bearerAuth": BearerJWT(),
 		},
 	})
-	testServer = httptest.NewServer(adaptor.FiberApp(api.NewRouter()))
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	Expect(err).NotTo(HaveOccurred())
+	fiberURL = "http://" + ln.Addr().String()
+	SetTestServer(fiberURL)
+
+	app := api.NewRouter()
+	go func() { _ = app.Listener(ln) }() //nolint:errcheck
 })
 
 var _ = AfterSuite(func() {
-	testServer.Close()
-	Expect(gswag.WriteSpec()).To(Succeed())
+	Expect(WriteSpec()).To(Succeed())
 })

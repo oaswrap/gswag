@@ -126,13 +126,13 @@ func WriteAndValidateSpec() error {
 	return nil
 }
 
-// ValidateResponseAgainstOperation validates an actual RecordedResponse against
-// the declared typed response model on the RequestBuilder (if present). It
+// validateResponseAgainstOperation validates an actual recordedResponse against
+// the declared typed response model on the requestBuilder (if present). It
 // attempts typed-model unmarshalling first, and falls back to full JSON Schema
 // validation generated from the collected spec using gojsonschema.
-func ValidateResponseAgainstOperation(b *RequestBuilder, res *RecordedResponse) ([]string, error) {
+func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) ([]string, error) {
 	if b == nil {
-		return nil, fmt.Errorf("nil RequestBuilder")
+		return nil, fmt.Errorf("nil requestBuilder")
 	}
 
 	// If the builder declared a typed response model for this status code,

@@ -3,72 +3,69 @@ package gin_test
 import (
 	"net/http"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/gin/api"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// ListQuery demonstrates typed query parameter schema generation.
 type ListQuery struct {
-	Page  int    `query:"page"`
-	Limit int    `query:"limit"`
-	Sort  string `query:"sort"`
+	Search string `query:"search"`
+	Page   int    `query:"page"`
 }
 
-var _ = Describe("/items", func() {
+var _ = Path("/items", func() {
+	Get("List all items", func() {
+		Tag("items")
+		QueryParamStruct(new(ListQuery))
 
-	Context("GET /items", func() {
-		It("returns a list of items", func() {
-			res := gswag.GET("/items").
-				WithTag("items").
-				WithSummary("List all items").
-				WithQueryParamStruct(new(ListQuery)).
-				ExpectResponseBody(new([]api.Item)).
-				Do(testServer)
-
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.HaveNonEmptyBody())
+		Response(200, "list of items", func() {
+			ResponseSchema(new([]api.Item))
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
+			})
 		})
 	})
 
-	Context("POST /items", func() {
-		It("creates an item and returns 201", func() {
-			res := gswag.POST("/items").
-				WithTag("items").
-				WithSummary("Create an item").
-				WithRequestBody(&api.CreateItemRequest{Name: "Doohickey", Price: 4.99}).
-				ExpectResponseBodyFor(http.StatusCreated, new(api.Item)).
-				Do(testServer)
+	Post("Create an item", func() {
+		Tag("items")
+		RequestBody(new(api.CreateItemRequest))
 
-			Expect(res).To(gswag.HaveStatus(http.StatusCreated))
-			Expect(res).To(gswag.ContainJSONKey("id"))
+		Response(201, "item created", func() {
+			ResponseSchema(new(api.Item))
+			SetBody(&api.CreateItemRequest{Name: "Wrench", Price: 9.99})
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+	})
+})
+
+var _ = Path("/items/{id}", func() {
+	Get("Get item by ID", func() {
+		Tag("items")
+		Parameter("id", PathParam, Integer)
+
+		Response(200, "item found", func() {
+			ResponseSchema(new(api.Item))
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
 		})
 	})
 
-	Context("GET /items/{id}", func() {
-		It("returns a single item by ID (integer path param)", func() {
-			res := gswag.GET("/items/{id}").
-				WithPathParam("id", "1").
-				WithTag("items").
-				WithSummary("Get item by ID").
-				ExpectResponseBody(new(api.Item)).
-				Do(testServer)
+	Delete("Delete an item", func() {
+		Tag("items")
+		Parameter("id", PathParam, Integer)
 
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.ContainJSONKey("id"))
-		})
-	})
-
-	Context("DELETE /items/{id}", func() {
-		It("deletes an item and returns 204 (JSON inference fallback)", func() {
-			res := gswag.DELETE("/items/{id}").
-				WithPathParam("id", "2").
-				WithTag("items").
-				WithSummary("Delete an item").
-				Do(testServer)
-
-			Expect(res).To(gswag.HaveStatus(http.StatusNoContent))
+		Response(204, "item deleted", func() {
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusNoContent))
+			})
 		})
 	})
 })

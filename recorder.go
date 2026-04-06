@@ -5,16 +5,13 @@ import (
 	"time"
 )
 
-// RecordedResponse captures the result of a Do() call and exposes
-// fields consumed by Gomega matchers.
-type RecordedResponse struct {
+// recordedResponse captures the result of a do() call.
+type recordedResponse struct {
 	StatusCode int
 	Headers    http.Header
 	BodyBytes  []byte
 	Duration   time.Duration
 
-	// retained so spec registration can access metadata
-	builder *RequestBuilder
-	// RequestBodyBytes stores the request body bytes used for the request (if any)
-	RequestBodyBytes []byte
+	builder          *requestBuilder // retained for spec registration
+	RequestBodyBytes []byte          // request body bytes used for the request (if any)
 }

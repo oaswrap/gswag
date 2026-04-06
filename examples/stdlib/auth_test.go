@@ -3,27 +3,25 @@ package stdlib_test
 import (
 	"net/http"
 
-	"github.com/oaswrap/gswag"
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/oaswrap/gswag"
+	"github.com/oaswrap/gswag/examples/stdlib/api"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("/api/users (auth)", func() {
+// Delete /api/users/{id} with Bearer JWT auth requirement — spec documentation.
+var _ = Path("/api/users/{id}", func() {
+	Delete("Delete user by ID", func() {
+		Tag("users")
+		OperationID("deleteUserById")
+		BearerAuth()
+		Parameter("id", PathParam, String)
 
-	Context("GET /api/users with bearer auth", func() {
-		It("returns 200 — operation is marked as requiring bearerAuth", func() {
-			res := gswag.GET("/api/users").
-				WithTag("users").
-				WithSummary("List users (authenticated)").
-				WithOperationID("listUsersAuth").
-				WithBearerAuth().
-				ExpectResponseBody(new([]struct {
-					ID    string `json:"id"`
-					Email string `json:"email"`
-				})).
-				Do(testServer)
-
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
+		Response(200, "user deleted", func() {
+			ResponseSchema(new(api.User))
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
 		})
 	})
 })

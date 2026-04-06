@@ -34,13 +34,33 @@ paths:
       tags:
       - users
   /api/users/{id}:
+    delete:
+      operationId: deleteUserById
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUser'
+          description: OK
+      security:
+      - bearerAuth: []
+      summary: Delete user by ID
+      tags:
+      - users
     get:
       parameters:
       - in: path
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       responses:
         "200":
           content:
@@ -49,6 +69,28 @@ paths:
                 $ref: '#/components/schemas/ApiUser'
           description: OK
       summary: Get user by ID
+      tags:
+      - users
+    patch:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUser'
+          description: OK
+      summary: Update user
       tags:
       - users
 components:
@@ -67,3 +109,7 @@ components:
       in: header
       name: X-API-Key
       type: apiKey
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

@@ -7,17 +7,13 @@ paths:
     get:
       parameters:
       - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
         name: page
         schema:
           type: integer
-      - in: query
-        name: limit
-        schema:
-          type: integer
-      - in: query
-        name: sort
-        schema:
-          type: string
       responses:
         "200":
           content:

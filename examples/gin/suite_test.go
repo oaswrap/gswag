@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/gin/api"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,15 +18,16 @@ func TestAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	gswag.Init(&gswag.Config{
+	Init(&Config{
 		Title:      "Items API (Gin)",
 		Version:    "1.0.0",
 		OutputPath: "./docs/openapi.yaml",
 	})
 	testServer = httptest.NewServer(api.NewRouter())
+	SetTestServer(testServer)
 })
 
 var _ = AfterSuite(func() {
 	testServer.Close()
-	Expect(gswag.WriteSpec()).To(Succeed())
+	Expect(WriteSpec()).To(Succeed())
 })

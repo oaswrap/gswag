@@ -3,59 +3,57 @@ package echo_test
 import (
 	"net/http"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/echo/api"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// ProductQuery demonstrates typed query parameter schema generation.
 type ProductQuery struct {
 	Category string  `query:"category"`
 	MaxPrice float64 `query:"max_price"`
 }
 
-var _ = Describe("/products", func() {
+var _ = Path("/products", func() {
+	Get("List all products", func() {
+		Tag("products")
+		QueryParamStruct(new(ProductQuery))
 
-	Context("GET /products", func() {
-		It("returns a list of products", func() {
-			res := gswag.GET("/products").
-				WithTag("products").
-				WithSummary("List all products").
-				WithQueryParamStruct(new(ProductQuery)).
-				ExpectResponseBody(new([]api.Product)).
-				Do(testServer)
-
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.HaveNonEmptyBody())
+		Response(200, "list of products", func() {
+			ResponseSchema(new([]api.Product))
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
+			})
 		})
 	})
 
-	Context("POST /products", func() {
-		It("creates a product and returns 201", func() {
-			res := gswag.POST("/products").
-				WithTag("products").
-				WithSummary("Create a product").
-				WithRequestBody(&api.CreateProductRequest{Title: "Headphones", Category: "Electronics", Price: 79.99}).
-				ExpectResponseBodyFor(http.StatusCreated, new(api.Product)).
-				Do(testServer)
+	Post("Create a product", func() {
+		Tag("products")
+		RequestBody(new(api.CreateProductRequest))
 
-			Expect(res).To(gswag.HaveStatus(http.StatusCreated))
-			Expect(res).To(gswag.ContainJSONKey("id"))
+		Response(201, "product created", func() {
+			ResponseSchema(new(api.Product))
+			SetBody(&api.CreateProductRequest{Title: "Headphones", Category: "Electronics", Price: 79.99})
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
 		})
 	})
+})
 
-	Context("GET /products/{id}", func() {
-		It("returns a single product by ID (integer path param)", func() {
-			res := gswag.GET("/products/{id}").
-				WithPathParam("id", "1").
-				WithTag("products").
-				WithSummary("Get product by ID").
-				ExpectResponseBody(new(api.Product)).
-				Do(testServer)
+var _ = Path("/products/{id}", func() {
+	Get("Get product by ID", func() {
+		Tag("products")
+		Parameter("id", PathParam, Integer)
 
-			Expect(res).To(gswag.HaveStatus(http.StatusOK))
-			Expect(res).To(gswag.MatchJSONSchema(&api.Product{}))
+		Response(200, "product found", func() {
+			ResponseSchema(new(api.Product))
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(MatchJSONSchema(&api.Product{}))
+			})
 		})
 	})
 })

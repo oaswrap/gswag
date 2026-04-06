@@ -57,9 +57,9 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 	return sc
 }
 
-// Register adds an operation to the spec based on the RequestBuilder metadata
-// and the actual RecordedResponse. Safe to call concurrently.
-func (sc *SpecCollector) Register(b *RequestBuilder, res *RecordedResponse) {
+// Register adds an operation to the spec based on the requestBuilder metadata
+// and the actual recordedResponse. Safe to call concurrently.
+func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
 
@@ -151,7 +151,7 @@ func (sc *SpecCollector) Register(b *RequestBuilder, res *RecordedResponse) {
 
 // injectInferredSchema parses the response body and attaches a best-effort
 // OpenAPI schema to the already-registered response.
-func (sc *SpecCollector) injectInferredSchema(b *RequestBuilder, res *RecordedResponse) {
+func (sc *SpecCollector) injectInferredSchema(b *requestBuilder, res *recordedResponse) {
 	inferred := schemautil.InferSchema(res.BodyBytes)
 	if inferred == nil {
 		return
@@ -204,7 +204,7 @@ func (sc *SpecCollector) injectInferredSchema(b *RequestBuilder, res *RecordedRe
 
 // appendParams manually adds individual query and header parameters (set via
 // WithQueryParam / WithHeader) to the already-registered operation.
-func (sc *SpecCollector) appendParams(b *RequestBuilder) {
+func (sc *SpecCollector) appendParams(b *requestBuilder) {
 	if len(b.queryParams) == 0 && len(b.headers) == 0 {
 		return
 	}
@@ -240,8 +240,8 @@ func (sc *SpecCollector) appendParams(b *RequestBuilder) {
 }
 
 // appendResponseHeaders attaches any response header schemas declared via the
-// RequestBuilder to the corresponding response objects in the registered spec.
-func (sc *SpecCollector) appendResponseHeaders(b *RequestBuilder) {
+// requestBuilder to the corresponding response objects in the registered spec.
+func (sc *SpecCollector) appendResponseHeaders(b *requestBuilder) {
 	if len(b.respHeaders) == 0 {
 		return
 	}
@@ -338,7 +338,7 @@ func stringParam(name string, loc openapi3.ParameterLocation) openapi3.Parameter
 
 // appendExamples attaches captured request/response examples to the spec
 // if the global config enables example capture.
-func (sc *SpecCollector) appendExamples(b *RequestBuilder, res *RecordedResponse) {
+func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse) {
 	if globalConfig == nil || !globalConfig.CaptureExamples {
 		return
 	}
@@ -505,4 +505,330 @@ func buildSecuritySchemeOrRef(cfg SecuritySchemeConfig) openapi3.SecuritySchemeO
 
 	sor.WithSecurityScheme(scheme)
 	return sor
+}
+
+// RegisterDSLOperation registers an operation declared via the rswag-style DSL.
+// It is called from a Ginkgo BeforeAll node so that spec registration happens
+// once per operation, before any RunTest It blocks execute.
+func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	opCtx, err := sc.reflector.NewOperationContext(op.method, op.path)
+	if err != nil {
+		fmt.Printf("gswag DSL: NewOperationContext error for %s %s: %v\n", op.method, op.path, err)
+		return
+	}
+
+	if len(op.tags) > 0 {
+		opCtx.SetTags(op.tags...)
+	}
+	if op.summary != "" {
+		opCtx.SetSummary(op.summary)
+	}
+	if op.description != "" {
+		opCtx.SetDescription(op.description)
+	}
+	if op.operationID != "" {
+		opCtx.SetID(op.operationID)
+	}
+	if op.deprecated {
+		opCtx.SetIsDeprecated(true)
+	}
+	for _, sec := range op.security {
+		for name, scopes := range sec {
+			opCtx.AddSecurity(name, scopes...)
+		}
+	}
+
+	// Path parameters from declared Parameter() calls.
+	if pathStruct := buildPathParamsStructFromDSL(op.path, op.params); pathStruct != nil {
+		opCtx.AddReqStructure(pathStruct)
+	}
+
+	// Typed query param struct.
+	if op.queryStruct != nil {
+		opCtx.AddReqStructure(op.queryStruct)
+	}
+
+	// Request body schema.
+	if op.reqBodyModel != nil {
+		opCtx.AddReqStructure(op.reqBodyModel)
+	}
+
+	// Response schemas — one entry per declared Response() block.
+	if len(op.responses) > 0 {
+		for status, resp := range op.responses {
+			s := status
+			var model interface{}
+			if resp != nil {
+				model = resp.bodyModel
+			}
+			opCtx.AddRespStructure(model, func(cu *openapi.ContentUnit) {
+				cu.HTTPStatus = s
+			})
+		}
+	} else {
+		opCtx.AddRespStructure(nil, func(cu *openapi.ContentUnit) {
+			cu.HTTPStatus = 200
+		})
+	}
+
+	// Ensure all referenced security schemes are declared in components.
+	for _, sec := range op.security {
+		for name := range sec {
+			sc.ensureSecurityScheme(name)
+		}
+	}
+
+	if err := sc.reflector.AddOperation(opCtx); err != nil {
+		fmt.Printf("gswag DSL: AddOperation error for %s %s: %v\n", op.method, op.path, err)
+		return
+	}
+
+	// Append individual query/header parameters (param location != path).
+	sc.appendDSLParams(op)
+
+	// Append declared response header schemas.
+	sc.appendDSLResponseHeaders(op)
+}
+
+// injectRecordedResponseSchema injects an inferred schema from the actual response body
+// into an existing operation response slot that has no explicit schema declared.
+// Called from RunTest after the HTTP request fires.
+func (sc *SpecCollector) injectRecordedResponseSchema(method, path string, res *recordedResponse) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[path]
+	if !ok {
+		return
+	}
+	if pathItem.MapOfOperationValues == nil {
+		return
+	}
+	methodKey := strings.ToLower(method)
+	op, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	statusKey := strconv.Itoa(res.StatusCode)
+	if op.Responses.MapOfResponseOrRefValues == nil {
+		return
+	}
+	ror, ok := op.Responses.MapOfResponseOrRefValues[statusKey]
+	if !ok || ror.Response == nil {
+		return
+	}
+
+	// Skip if a schema is already present.
+	resp := ror.Response
+	ct := "application/json"
+	if resp.Content != nil {
+		if mt, found := resp.Content[ct]; found && mt.Schema != nil {
+			return
+		}
+	}
+
+	// Infer from the actual body bytes.
+	inferred := schemautil.InferSchema(res.BodyBytes)
+	if inferred == nil {
+		return
+	}
+
+	if resp.Content == nil {
+		resp.Content = map[string]openapi3.MediaType{
+			ct: {Schema: inferred},
+		}
+	} else {
+		mt := resp.Content[ct]
+		if mt.Schema == nil {
+			mt.Schema = inferred
+			resp.Content[ct] = mt
+		}
+	}
+
+	ror.Response = resp
+	op.Responses.MapOfResponseOrRefValues[statusKey] = ror
+	pathItem.MapOfOperationValues[methodKey] = op
+	sc.reflector.Spec.Paths.MapOfPathItemValues[path] = pathItem
+}
+
+// appendDSLParams adds query- and header-typed parameters (from Parameter() DSL calls)
+// to an already-registered operation in the spec.
+func (sc *SpecCollector) appendDSLParams(op *dslOp) {
+	var queryParams []dslParam
+	var headerParams []dslParam
+	for _, p := range op.params {
+		switch p.location {
+		case InQuery:
+			queryParams = append(queryParams, p)
+		case InHeader:
+			headerParams = append(headerParams, p)
+		}
+	}
+	if len(queryParams) == 0 && len(headerParams) == 0 {
+		return
+	}
+
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[op.path]
+	if !ok {
+		return
+	}
+	if pathItem.MapOfOperationValues == nil {
+		return
+	}
+	methodKey := strings.ToLower(op.method)
+	operation, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	for _, p := range queryParams {
+		operation.Parameters = append(operation.Parameters, dslSchemaParam(p.name, p.typ, openapi3.ParameterLocation{
+			QueryParameter: &openapi3.QueryParameter{},
+		}))
+	}
+	for _, p := range headerParams {
+		operation.Parameters = append(operation.Parameters, dslSchemaParam(p.name, p.typ, openapi3.ParameterLocation{
+			HeaderParameter: &openapi3.HeaderParameter{},
+		}))
+	}
+
+	pathItem.MapOfOperationValues[methodKey] = operation
+	sc.reflector.Spec.Paths.MapOfPathItemValues[op.path] = pathItem
+}
+
+// appendDSLResponseHeaders attaches response header schemas declared via ResponseHeader()
+// to the corresponding response objects for the operation.
+func (sc *SpecCollector) appendDSLResponseHeaders(op *dslOp) {
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[op.path]
+	if !ok {
+		return
+	}
+	if pathItem.MapOfOperationValues == nil {
+		return
+	}
+	methodKey := strings.ToLower(op.method)
+	operation, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	for status, resp := range op.responses {
+		if resp == nil || len(resp.headers) == 0 {
+			continue
+		}
+		statusKey := strconv.Itoa(status)
+		respOrRef, found := operation.Responses.MapOfResponseOrRefValues[statusKey]
+		if !found || respOrRef.Response == nil {
+			continue
+		}
+		r := respOrRef.Response
+		if r.Headers == nil {
+			r.Headers = make(map[string]openapi3.HeaderOrRef)
+		}
+		for name, model := range resp.headers {
+			var sor *openapi3.SchemaOrRef
+			if model == nil {
+				s := openapi3.Schema{}
+				s.WithType(openapi3.SchemaTypeString)
+				so := openapi3.SchemaOrRef{}
+				so.WithSchema(s)
+				sor = &so
+			} else {
+				bts, err := json.Marshal(model)
+				if err == nil {
+					sor = schemautil.InferSchema(bts)
+				}
+				if sor == nil {
+					s := openapi3.Schema{}
+					s.WithType(openapi3.SchemaTypeString)
+					so := openapi3.SchemaOrRef{}
+					so.WithSchema(s)
+					sor = &so
+				}
+			}
+			h := openapi3.Header{}
+			h.WithSchema(*sor)
+			har := openapi3.HeaderOrRef{}
+			har.WithHeader(h)
+			r.Headers[name] = har
+		}
+		respOrRef.Response = r
+		operation.Responses.MapOfResponseOrRefValues[statusKey] = respOrRef
+	}
+
+	pathItem.MapOfOperationValues[methodKey] = operation
+	sc.reflector.Spec.Paths.MapOfPathItemValues[op.path] = pathItem
+}
+
+// buildPathParamsStructFromDSL creates a dynamic struct for the path parameters
+// declared via Parameter(name, InPath, schemaType). Falls back to string for any
+// path placeholder not explicitly declared.
+func buildPathParamsStructFromDSL(pathTemplate string, params []dslParam) interface{} {
+	matches := pathParamRe.FindAllStringSubmatch(pathTemplate, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+
+	// Build a lookup from param name → declared schema type.
+	declaredTypes := make(map[string]SchemaType, len(params))
+	for _, p := range params {
+		if p.location == InPath {
+			declaredTypes[p.name] = p.typ
+		}
+	}
+
+	fields := make([]reflect.StructField, 0, len(matches))
+	for _, m := range matches {
+		name := m[1]
+		fieldType := dslSchemaTypeToReflect(declaredTypes[name]) // defaults to string when not declared
+
+		runes := []rune(name)
+		runes[0] = unicode.ToUpper(runes[0])
+		fieldName := "P" + string(runes)
+
+		fields = append(fields, reflect.StructField{
+			Name: fieldName,
+			Type: fieldType,
+			Tag:  reflect.StructTag(`path:"` + name + `"`),
+		})
+	}
+
+	t := reflect.StructOf(fields)
+	return reflect.New(t).Interface()
+}
+
+// dslSchemaTypeToReflect maps a SchemaType to a Go reflect.Type for struct-field generation.
+func dslSchemaTypeToReflect(typ SchemaType) reflect.Type {
+	switch typ {
+	case Integer:
+		return reflect.TypeOf(int64(0))
+	case Number:
+		return reflect.TypeOf(float64(0))
+	case Boolean:
+		return reflect.TypeOf(false)
+	default:
+		return reflect.TypeOf("")
+	}
+}
+
+// dslSchemaParam builds an OpenAPI ParameterOrRef with the given name, schema type, and location.
+func dslSchemaParam(name string, typ SchemaType, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
+	schemaTypeVal := openapi3.SchemaType(string(typ))
+	s := openapi3.Schema{}
+	s.WithType(schemaTypeVal)
+	sor := openapi3.SchemaOrRef{}
+	sor.WithSchema(s)
+
+	param := openapi3.Parameter{}
+	param.WithName(name)
+	param.WithLocation(loc)
+	param.WithSchema(sor)
+
+	por := openapi3.ParameterOrRef{}
+	por.WithParameter(param)
+	return por
 }

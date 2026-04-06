@@ -6,8 +6,11 @@
 // # Quick start
 //
 //  1. Call [Init] in your Ginkgo BeforeSuite with a [Config].
-//  2. Build requests with the fluent DSL ([GET], [POST], [PUT], [PATCH], [DELETE]).
-//  3. Call [WriteSpec] in AfterSuite to emit the spec file.
+//  2. Call [SetTestServer] in BeforeSuite after starting your httptest.Server.
+//  3. Describe endpoints with the DSL: [Path], [Get], [Post], [Put], [Patch], [Delete].
+//  4. Declare parameters with [Parameter], [RequestBody] and response schemas with [ResponseSchema].
+//  5. Execute requests and assert with [RunTest].
+//  6. Call [WriteSpec] in AfterSuite to emit the spec file.
 //
 // Example:
 //
@@ -18,6 +21,7 @@
 //	        OutputPath: "./docs/openapi.yaml",
 //	    })
 //	    testServer = httptest.NewServer(myRouter)
+//	    gswag.SetTestServer(testServer)
 //	})
 //
 //	var _ = AfterSuite(func() {
@@ -25,15 +29,18 @@
 //	    Expect(gswag.WriteSpec()).To(Succeed())
 //	})
 //
-//	var _ = Describe("/api/users", func() {
-//	    It("lists users", func() {
-//	        res := gswag.GET("/api/users").
-//	            WithTag("users").
-//	            WithSummary("List all users").
-//	            ExpectResponseBody(new([]User)).
-//	            Do(testServer)
+//	var _ = Path("/api/users/{id}", func() {
+//	    Get("Get user by ID", func() {
+//	        Tag("users")
+//	        Parameter("id", gswag.PathParam, gswag.String)
 //
-//	        Expect(res).To(gswag.HaveStatus(200))
+//	        Response(200, "user found", func() {
+//	            ResponseSchema(new(User))
+//	            SetParam("id", "1")
+//	            RunTest(func(resp *http.Response) {
+//	                Expect(resp.StatusCode).To(Equal(200))
+//	            })
+//	        })
 //	    })
 //	})
 package gswag

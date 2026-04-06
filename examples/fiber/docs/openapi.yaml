@@ -34,7 +34,7 @@ paths:
           description: Created
       security:
       - bearerAuth: []
-      summary: Submit a review
+      summary: Create a review
       tags:
       - reviews
   /reviews/{id}:

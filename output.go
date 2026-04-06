@@ -20,6 +20,8 @@ func WriteSpecTo(path string, format OutputFormat) error {
 		return nil
 	}
 
+	flushPendingDSLOps()
+
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
