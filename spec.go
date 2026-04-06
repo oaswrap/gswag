@@ -144,6 +144,9 @@ func (sc *SpecCollector) Register(b *RequestBuilder, res *RecordedResponse) {
 
 	// Append declared response header schemas.
 	sc.appendResponseHeaders(b)
+
+	// Append captured examples for request/response bodies (if enabled).
+	sc.appendExamples(b, res)
 }
 
 // injectInferredSchema parses the response body and attaches a best-effort
@@ -331,6 +334,86 @@ func stringParam(name string, loc openapi3.ParameterLocation) openapi3.Parameter
 	por := openapi3.ParameterOrRef{}
 	por.WithParameter(param)
 	return por
+}
+
+// appendExamples attaches captured request/response examples to the spec
+// if the global config enables example capture.
+func (sc *SpecCollector) appendExamples(b *RequestBuilder, res *RecordedResponse) {
+	if globalConfig == nil || !globalConfig.CaptureExamples {
+		return
+	}
+
+	// helper to apply sanitizer and cap
+	sanitize := func(in []byte) []byte {
+		if in == nil {
+			return nil
+		}
+		out := in
+		if globalConfig.Sanitizer != nil {
+			out = globalConfig.Sanitizer(out)
+		}
+		if globalConfig.MaxExampleBytes > 0 && len(out) > globalConfig.MaxExampleBytes {
+			out = out[:globalConfig.MaxExampleBytes]
+		}
+		return out
+	}
+
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
+	if !ok {
+		return
+	}
+	if pathItem.MapOfOperationValues == nil {
+		return
+	}
+
+	methodKey := strings.ToLower(b.method)
+	op, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	// Request body example
+	if op.RequestBody != nil && op.RequestBody.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
+		rb := op.RequestBody.RequestBody
+		ct := "application/json"
+		if rb.Content != nil {
+			if mt, found := rb.Content[ct]; found {
+				bts := sanitize(res.RequestBodyBytes)
+				var ex interface{}
+				if err := json.Unmarshal(bts, &ex); err != nil {
+					ex = string(bts)
+				}
+				mt.Example = &ex
+				rb.Content[ct] = mt
+				op.RequestBody.RequestBody = rb
+			}
+		}
+	}
+
+	// Response body example for the actual status code
+	statusKey := strconv.Itoa(res.StatusCode)
+	if op.Responses.MapOfResponseOrRefValues != nil {
+		if ror, found := op.Responses.MapOfResponseOrRefValues[statusKey]; found && ror.Response != nil {
+			resp := ror.Response
+			ct := "application/json"
+			if resp.Content != nil {
+				if mt, found := resp.Content[ct]; found {
+					bts := sanitize(res.BodyBytes)
+					var ex interface{}
+					if err := json.Unmarshal(bts, &ex); err != nil {
+						ex = string(bts)
+					}
+					mt.Example = &ex
+					resp.Content[ct] = mt
+					ror.Response = resp
+					op.Responses.MapOfResponseOrRefValues[statusKey] = ror
+				}
+			}
+		}
+	}
+
+	pathItem.MapOfOperationValues[methodKey] = op
+	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
 // buildPathParamsStruct creates a dynamic struct with typed fields tagged as

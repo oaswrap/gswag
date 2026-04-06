@@ -185,7 +185,7 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 	baseURL := resolveBaseURL(target)
 	url := baseURL + b.resolvedPath()
 
-	req, err := b.buildRequest(url)
+	req, reqBodyBytes, err := b.buildRequest(url)
 	if err != nil {
 		panic("gswag: failed to build request: " + err.Error())
 	}
@@ -204,11 +204,12 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 	}
 
 	recorded := &RecordedResponse{
-		StatusCode: resp.StatusCode,
-		Headers:    resp.Header,
-		BodyBytes:  body,
-		Duration:   duration,
-		builder:    b,
+		StatusCode:       resp.StatusCode,
+		Headers:          resp.Header,
+		BodyBytes:        body,
+		Duration:         duration,
+		builder:          b,
+		RequestBodyBytes: reqBodyBytes,
 	}
 
 	if globalCollector != nil {
@@ -248,17 +249,20 @@ func (b *RequestBuilder) resolvedPath() string {
 	return p
 }
 
-func (b *RequestBuilder) buildRequest(url string) (*http.Request, error) {
+func (b *RequestBuilder) buildRequest(url string) (*http.Request, []byte, error) {
 	var bodyReader io.Reader
+	var data []byte
 
 	contentType := "application/json"
 	if b.body != nil {
-		data, err := json.Marshal(b.body)
+		d, err := json.Marshal(b.body)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		bodyReader = bytes.NewReader(data)
+		data = d
+		bodyReader = bytes.NewReader(d)
 	} else if len(b.bodyRaw) > 0 {
+		data = b.bodyRaw
 		bodyReader = bytes.NewReader(b.bodyRaw)
 		if b.bodyContentType != "" {
 			contentType = b.bodyContentType
@@ -267,7 +271,7 @@ func (b *RequestBuilder) buildRequest(url string) (*http.Request, error) {
 
 	req, err := http.NewRequest(b.method, url, bodyReader)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if bodyReader != nil {
@@ -286,7 +290,7 @@ func (b *RequestBuilder) buildRequest(url string) (*http.Request, error) {
 		req.URL.RawQuery = q.Encode()
 	}
 
-	return req, nil
+	return req, data, nil
 }
 
 func resolveBaseURL(target interface{}) string {

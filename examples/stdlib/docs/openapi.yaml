@@ -5,24 +5,16 @@ info:
 paths:
   /api/users:
     get:
-      operationId: listUsersAuth
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  properties:
-                    email:
-                      type: string
-                    id:
-                      type: string
-                  type: object
+                  $ref: '#/components/schemas/ApiUser'
                 type: array
           description: OK
-      security:
-      - bearerAuth: []
-      summary: List users (authenticated)
+      summary: List all users
       tags:
       - users
     post:
@@ -75,7 +67,3 @@ components:
       in: header
       name: X-API-Key
       type: apiKey
-    bearerAuth:
-      bearerFormat: JWT
-      scheme: bearer
-      type: http

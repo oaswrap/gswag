@@ -15,4 +15,6 @@ type RecordedResponse struct {
 
 	// retained so spec registration can access metadata
 	builder *RequestBuilder
+	// RequestBodyBytes stores the request body bytes used for the request (if any)
+	RequestBodyBytes []byte
 }

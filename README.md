@@ -308,6 +308,40 @@ gswag.Init(&gswag.Config{
 
 Use `warn` during development to see schema drift without breaking tests, and switch to `fail` in CI to enforce schema correctness.
 
+## Capture request/response examples
+
+`gswag` can optionally capture actual request and response bodies observed during tests and attach them to the generated OpenAPI spec as examples. This is useful for populating live example sections in your docs, but be careful to avoid storing sensitive data.
+
+Settings (in `gswag.Config`):
+
+- `CaptureExamples bool`: enable example capture when true.
+- `MaxExampleBytes int`: cap the number of bytes stored for any single example. `0` means no cap.
+- `Sanitizer func([]byte) []byte`: optional hook called with the raw example bytes before they are stored; use it to redact or transform sensitive fields.
+
+When enabled, `gswag` stores request examples at `requestBody.content.<mediaType>.example` and response examples at `responses.<status>.content.<mediaType>.example` (prefers `application/json`).
+
+Example usage:
+
+```go
+gswag.Init(&gswag.Config{
+    Title:           "My API",
+    Version:         "1.0.0",
+    CaptureExamples: true,
+    MaxExampleBytes: 16384,
+    Sanitizer: func(b []byte) []byte {
+        // Example: redact a JSON password field before storing
+        // (implement your own sanitizer according to your needs).
+        return b
+    },
+})
+```
+
+Notes:
+
+- Example capture is opt-in. Enable it only where you are comfortable storing runtime examples.
+- Use a `Sanitizer` to remove or redact PII before writing the spec.
+- Large responses can bloat specs; use `MaxExampleBytes` to bound size.
+
 ## Swagger UI and ReDoc
 
 Serve the generated spec with a browser UI during development:

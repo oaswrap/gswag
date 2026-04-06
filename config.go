@@ -69,6 +69,16 @@ type Config struct {
 	// Allowed values: "fail" (default) — cause test to fail/panic; "warn" —
 	// write a warning to stderr and continue.
 	ValidationMode string
+	// CaptureExamples enables storing request and response bodies as examples
+	// in the generated spec. When true, request/response bodies observed at
+	// test time are attached to the OpenAPI `examples` or `example` fields.
+	CaptureExamples bool
+	// MaxExampleBytes caps the number of bytes stored for any single example.
+	// A value of 0 means no cap. Defaults to 16384 (16 KiB) when zero.
+	MaxExampleBytes int
+	// Sanitizer is an optional hook to transform or redact example bytes before
+	// they are stored in the spec. If nil, examples are recorded verbatim (subject to cap).
+	Sanitizer func([]byte) []byte
 }
 
 var globalConfig *Config
