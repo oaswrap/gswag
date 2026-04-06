@@ -4,10 +4,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/stdlib/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var testServer *httptest.Server
@@ -22,6 +22,8 @@ var _ = BeforeSuite(func() {
 		Title:      "Users API",
 		Version:    "1.0.0",
 		OutputPath: "./docs/openapi.yaml",
+		// Enable opt-in test-time response validation for examples.
+		EnforceResponseValidation: true,
 		SecuritySchemes: map[string]gswag.SecuritySchemeConfig{
 			"apiKey": gswag.APIKeyHeader("X-API-Key"),
 		},

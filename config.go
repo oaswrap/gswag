@@ -61,6 +61,14 @@ type Config struct {
 	OpenAPIVersion  OpenAPIVersion
 	Servers         []ServerConfig
 	SecuritySchemes map[string]SecuritySchemeConfig
+	// EnforceResponseValidation enables test-time validation of actual HTTP
+	// responses against the declared or inferred response schema. When true,
+	// validation behavior is controlled by ValidationMode.
+	EnforceResponseValidation bool
+	// ValidationMode controls runtime behavior when a validation error occurs.
+	// Allowed values: "fail" (default) — cause test to fail/panic; "warn" —
+	// write a warning to stderr and continue.
+	ValidationMode string
 }
 
 var globalConfig *Config

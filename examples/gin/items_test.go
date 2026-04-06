@@ -3,10 +3,10 @@ package gin_test
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/gin/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 // ListQuery demonstrates typed query parameter schema generation.

@@ -1,12 +1,15 @@
 package gswag_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/oaswrap/gswag"
+	"github.com/swaggest/openapi-go/openapi3"
 )
 
 func TestSpecCollector_RegisterSimpleGET(t *testing.T) {
@@ -261,5 +264,67 @@ func TestSpecCollector_MultipleOperations(t *testing.T) {
 		if iss.Severity == "error" {
 			t.Errorf("unexpected error: %s", iss)
 		}
+	}
+}
+
+func TestSpecCollector_ResponseHeaders(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(dir, "openapi.yaml")
+	gswag.Init(&gswag.Config{
+		Title:      "Header Spec",
+		Version:    "1.0.0",
+		OutputPath: out,
+	})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Rate-Limit", "5")
+		w.WriteHeader(200)
+		w.Write([]byte(`{"ok":true}`)) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	// Declare a response header schema for 200 and execute the request with same builder.
+	gswag.GET("/ping").
+		WithTag("ping").
+		WithSummary("Ping").
+		ExpectResponseHeader("X-Rate-Limit", "").
+		Do(srv)
+
+	// Write spec and read it back.
+	if err := gswag.WriteSpec(); err != nil {
+		t.Fatalf("WriteSpec failed: %v", err)
+	}
+
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("read spec: %v", err)
+	}
+	spec := &openapi3.Spec{}
+	if err := spec.UnmarshalYAML(data); err != nil {
+		// try JSON
+		if err2 := json.Unmarshal(data, spec); err2 != nil {
+			t.Fatalf("parse spec: yaml: %v; json: %v", err, err2)
+		}
+	}
+
+	// Locate header schema.
+	pi, ok := spec.Paths.MapOfPathItemValues["/ping"]
+	if !ok {
+		t.Fatalf("/ping path missing in spec")
+	}
+	op, ok := pi.MapOfOperationValues["get"]
+	if !ok {
+		t.Fatalf("GET operation missing for /ping")
+	}
+	ror, ok := op.Responses.MapOfResponseOrRefValues["200"]
+	if !ok || ror.Response == nil {
+		t.Fatalf("200 response missing for /ping GET")
+	}
+	if ror.Response.Headers == nil {
+		t.Fatalf("response headers missing for 200")
+	}
+	if _, ok := ror.Response.Headers["X-Rate-Limit"]; !ok {
+		t.Fatalf("expected X-Rate-Limit header in response headers")
 	}
 }

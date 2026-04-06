@@ -3,10 +3,10 @@ package stdlib_test
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/stdlib/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("/api/users", func() {

@@ -10,8 +10,8 @@ import (
 
 // Item is the domain model for the items resource.
 type Item struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
+	ID    int     `json:"id"`
+	Name  string  `json:"name"`
 	Price float64 `json:"price"`
 }
 

@@ -3,10 +3,10 @@ package fiber_test
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/fiber/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("/reviews", func() {

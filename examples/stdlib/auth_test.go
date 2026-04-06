@@ -3,9 +3,9 @@ package stdlib_test
 import (
 	"net/http"
 
+	"github.com/oaswrap/gswag"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/oaswrap/gswag"
 )
 
 var _ = Describe("/api/users (auth)", func() {

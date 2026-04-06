@@ -5,10 +5,10 @@ COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
 EXAMPLES   := stdlib gin echo chi fiber
 
-.PHONY: all build test cover lint vet tidy clean \
+.PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help
 
-all: tidy vet test build
+all: tidy vet fmt test build
 
 # ---------------------------------------------------------------------------
 # Build
@@ -47,6 +47,9 @@ cover-html: cover
 
 vet:
 	go vet ./...
+
+fmt:
+	go fmt ./...
 
 lint:
 	@which golangci-lint > /dev/null || (echo "golangci-lint not found; run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
@@ -104,6 +107,7 @@ help:
 	@echo "  cover              Run tests and print coverage summary"
 	@echo "  cover-html         Run tests and open HTML coverage report"
 	@echo "  vet                Run go vet"
+	@echo "  fmt                Run go fmt"
 	@echo "  lint               Run golangci-lint (must be installed)"
 	@echo "  tidy               Run go mod tidy"
 	@echo "  examples           Build and test all examples"

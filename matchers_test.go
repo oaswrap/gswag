@@ -272,7 +272,9 @@ func TestMatchJSONSchema_NonObjectModel(t *testing.T) {
 }
 
 func TestMatchJSONSchema_Messages(t *testing.T) {
-	type Item struct{ ID int `json:"id"` }
+	type Item struct {
+		ID int `json:"id"`
+	}
 	m := gswag.MatchJSONSchema(Item{})
 	if m.FailureMessage(newRecorded(200, []byte(`{}`), nil)) == "" {
 		t.Fatal("expected non-empty failure message")

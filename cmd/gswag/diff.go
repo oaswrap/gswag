@@ -16,8 +16,14 @@ type diffResult struct {
 
 func runDiff(args []string) {
 	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: gswag diff <base-spec> <new-spec>")
+		fmt.Fprintln(os.Stderr, "usage: gswag diff [--json] [--no-fail] <base-spec> <new-spec>")
 		os.Exit(1)
+	}
+
+	jsonOut := hasFlag(args, "--json") || hasFlag(args, "--format=json")
+	failOnBreaking := true
+	if hasFlag(args, "--no-fail") {
+		failOnBreaking = false
 	}
 
 	base, err := loadSpec(args[0])
@@ -32,10 +38,42 @@ func runDiff(args []string) {
 	}
 
 	result := diffSpecs(base, next)
+	if jsonOut {
+		out := struct {
+			Added    []string `json:"added"`
+			Removed  []string `json:"removed"`
+			Modified []string `json:"modified"`
+			Breaking bool     `json:"breaking"`
+		}{
+			Added:    result.added,
+			Removed:  result.removed,
+			Modified: result.modified,
+			Breaking: containsBreakingResult(result),
+		}
+		b, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Println(string(b))
+		if out.Breaking && failOnBreaking {
+			os.Exit(1)
+		}
+		return
+	}
+
 	hasBreaking := printDiff(result)
-	if hasBreaking {
+	if hasBreaking && failOnBreaking {
 		os.Exit(1)
 	}
+}
+
+func containsBreakingResult(r diffResult) bool {
+	if len(r.removed) > 0 {
+		return true
+	}
+	for _, m := range r.modified {
+		if containsBreaking(m) {
+			return true
+		}
+	}
+	return false
 }
 
 func loadSpec(path string) (*openapi3.Spec, error) {

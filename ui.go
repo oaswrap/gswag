@@ -91,3 +91,47 @@ func serveUI(cfg *UIConfig, uiOpt specui.Option) error {
 	fmt.Printf("gswag: serving %s at http://localhost%s%s\n", title, addr, cfg.docsPath())
 	return http.ListenAndServe(addr, mux)
 }
+
+// NewDocsHandler returns an http.Handler that serves the documentation UI and
+// spec for the current in-memory spec. This allows embedding the docs into an
+// existing application's router instead of starting a dedicated server.
+func NewDocsHandler(cfg *UIConfig, uiOpt specui.Option) (http.Handler, error) {
+	if globalCollector == nil {
+		return nil, fmt.Errorf("gswag: not initialised — call Init() first")
+	}
+
+	title := "API Documentation"
+	if globalConfig != nil && globalConfig.Title != "" {
+		title = globalConfig.Title
+	}
+
+	globalCollector.mu.Lock()
+	spec := globalCollector.reflector.Spec
+	globalCollector.mu.Unlock()
+
+	handler := specui.NewHandler(
+		specui.WithTitle(title),
+		specui.WithDocsPath(cfg.docsPath()),
+		specui.WithSpecPath(cfg.specPath()),
+		specui.WithSpecGenerator(spec),
+		uiOpt,
+	)
+
+	mux := http.NewServeMux()
+	mux.Handle(cfg.docsPath(), handler.Docs())
+	mux.Handle(cfg.specPath(), handler.Spec())
+	if handler.AssetsEnabled() {
+		mux.Handle(handler.AssetsPath()+"/", handler.Assets())
+	}
+	return mux, nil
+}
+
+// NewSwaggerUIHandler returns a mountable handler serving Swagger UI.
+func NewSwaggerUIHandler(cfg *UIConfig) (http.Handler, error) {
+	return NewDocsHandler(cfg, swaggerui.WithUI())
+}
+
+// NewRedocHandler returns a mountable handler serving ReDoc.
+func NewRedocHandler(cfg *UIConfig) (http.Handler, error) {
+	return NewDocsHandler(cfg, redoc.WithUI())
+}

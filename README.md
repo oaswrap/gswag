@@ -22,7 +22,7 @@ Ginkgo test → gswag DSL → HTTP request → real server → response
 go get github.com/oaswrap/gswag
 ```
 
-Requires Go 1.22+.
+Requires Go 1.24+.
 
 ## Quick start
 
@@ -286,6 +286,28 @@ Validation checks:
 - Operations should have summary and tags (warning)
 - Security scheme references must be declared in `components.securitySchemes` (error)
 
+## Runtime response validation
+
+`gswag` can optionally validate actual HTTP responses observed during tests against the declared or inferred response schema. Enable this in your test suite by setting `EnforceResponseValidation` in the `Config` passed to `gswag.Init`.
+
+The `ValidationMode` setting controls what happens when a validation error occurs:
+
+- `fail` (default): a validation mismatch causes the test to fail (panic).
+- `warn`: validation issues are printed to stderr and tests continue.
+
+Example:
+
+```go
+gswag.Init(&gswag.Config{
+    Title:                    "My API",
+    Version:                  "1.0.0",
+    EnforceResponseValidation: true,
+    ValidationMode:           "warn", // or "fail"
+})
+```
+
+Use `warn` during development to see schema drift without breaking tests, and switch to `fail` in CI to enforce schema correctness.
+
 ## Swagger UI and ReDoc
 
 Serve the generated spec with a browser UI during development:
@@ -307,6 +329,24 @@ err := gswag.ServeRedoc(&gswag.UIConfig{
 ```
 
 The spec is served live from memory — no file write required. Powered by [`github.com/oaswrap/spec-ui`](https://github.com/oaswrap/spec-ui).
+
+Embedding in existing apps
+
+If you prefer to mount the docs into an existing application router instead of starting a dedicated server, use the mountable handlers:
+
+```go
+// net/http
+handler, err := gswag.NewSwaggerUIHandler(&gswag.UIConfig{DocsPath: "/docs", SpecPath: "/docs/openapi.json"})
+if err != nil { log.Fatal(err) }
+mux := http.NewServeMux()
+mux.Handle("/docs", handler)
+mux.Handle("/docs/openapi.json", handler)
+
+// Gin example
+// router.GET("/docs/*any", gin.WrapH(handler))
+```
+
+These handlers return the UI pages, spec endpoint, and static assets (when enabled) so you can integrate documentation into your server's routing.
 
 ## Parallel Ginkgo support
 
@@ -354,6 +394,16 @@ Detect breaking changes between two spec files:
 ```sh
 gswag diff base.yaml head.yaml
 ```
+
+The `diff` command also supports machine-readable output and CI-friendly flags:
+
+```sh
+gswag diff --json base.yaml head.yaml      # emit JSON describing added/removed/modified
+gswag diff --json --no-fail base head      # don't exit non-zero on breaking changes
+gswag diff --format=json base head         # alias for --json
+```
+
+This is useful in CI to post a structured report or to decide whether to fail a job on breaking changes.
 
 Exits 0 if no breaking changes, 1 if breaking changes are found.
 

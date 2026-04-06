@@ -3,10 +3,10 @@ package chi_test
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/chi/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 // OrderQuery is a typed query param struct for listing orders.

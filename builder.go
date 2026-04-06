@@ -3,9 +3,11 @@ package gswag
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"time"
 )
@@ -18,11 +20,12 @@ type RequestBuilder struct {
 	pathParams      map[string]string
 	queryParams     map[string]string
 	headers         map[string]string
-	body            interface{}   // typed struct → schema inference
-	bodyRaw         []byte        // raw JSON body fallback
-	bodyContentType string        // for raw body
+	body            interface{} // typed struct → schema inference
+	bodyRaw         []byte      // raw JSON body fallback
+	bodyContentType string      // for raw body
 	respBodies      map[int]interface{}
-	queryStruct     interface{}   // typed struct with `query` tags → query param schemas
+	respHeaders     map[int]map[string]interface{}
+	queryStruct     interface{} // typed struct with `query` tags → query param schemas
 	tags            []string
 	summary         string
 	description     string
@@ -54,6 +57,7 @@ func newBuilder(method, path string) *RequestBuilder {
 		queryParams: make(map[string]string),
 		headers:     make(map[string]string),
 		respBodies:  make(map[int]interface{}),
+		respHeaders: make(map[int]map[string]interface{}),
 	}
 }
 
@@ -141,6 +145,20 @@ func (b *RequestBuilder) ExpectResponseBodyFor(status int, model interface{}) *R
 	return b
 }
 
+// ExpectResponseHeader registers a response header schema for the default (200) status.
+func (b *RequestBuilder) ExpectResponseHeader(name string, model interface{}) *RequestBuilder {
+	return b.ExpectResponseHeaderFor(http.StatusOK, name, model)
+}
+
+// ExpectResponseHeaderFor registers a response header schema for a specific HTTP status.
+func (b *RequestBuilder) ExpectResponseHeaderFor(status int, name string, model interface{}) *RequestBuilder {
+	if _, ok := b.respHeaders[status]; !ok {
+		b.respHeaders[status] = make(map[string]interface{})
+	}
+	b.respHeaders[status][name] = model
+	return b
+}
+
 // WithBearerAuth adds Bearer JWT authentication to the operation.
 // A "bearerAuth" HTTP Bearer scheme with BearerFormat: JWT is auto-registered
 // in the spec components if not already present.
@@ -194,6 +212,27 @@ func (b *RequestBuilder) Do(target interface{}) *RecordedResponse {
 	}
 
 	if globalCollector != nil {
+		// Optionally enforce response validation at test time.
+		if globalConfig != nil && globalConfig.EnforceResponseValidation {
+			issues, err := ValidateResponseAgainstOperation(b, recorded)
+			warnMode := strings.EqualFold(globalConfig.ValidationMode, "warn")
+
+			if err != nil {
+				if warnMode {
+					fmt.Fprintln(os.Stderr, "gswag: response validation error:", err)
+				} else {
+					panic("gswag: response validation error: " + err.Error())
+				}
+			} else if len(issues) > 0 {
+				msg := "gswag: response does not match declared schema: " + strings.Join(issues, "; ")
+				if warnMode {
+					fmt.Fprintln(os.Stderr, msg)
+				} else {
+					panic(msg)
+				}
+			}
+		}
+
 		globalCollector.Register(b, recorded)
 	}
 

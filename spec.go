@@ -1,6 +1,7 @@
 package gswag
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -9,9 +10,9 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/oaswrap/gswag/internal/schemautil"
 	openapi "github.com/swaggest/openapi-go"
 	"github.com/swaggest/openapi-go/openapi3"
-	"github.com/oaswrap/gswag/internal/schemautil"
 )
 
 // bearerAuthSchemeName is the conventional component key for Bearer JWT schemes.
@@ -140,6 +141,9 @@ func (sc *SpecCollector) Register(b *RequestBuilder, res *RecordedResponse) {
 
 	// Append individual query and header parameters collected via WithQueryParam / WithHeader.
 	sc.appendParams(b)
+
+	// Append declared response header schemas.
+	sc.appendResponseHeaders(b)
 }
 
 // injectInferredSchema parses the response body and attaches a best-effort
@@ -226,6 +230,86 @@ func (sc *SpecCollector) appendParams(b *RequestBuilder) {
 		op.Parameters = append(op.Parameters, stringParam(name, openapi3.ParameterLocation{
 			HeaderParameter: &openapi3.HeaderParameter{},
 		}))
+	}
+
+	pathItem.MapOfOperationValues[methodKey] = op
+	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
+}
+
+// appendResponseHeaders attaches any response header schemas declared via the
+// RequestBuilder to the corresponding response objects in the registered spec.
+func (sc *SpecCollector) appendResponseHeaders(b *RequestBuilder) {
+	if len(b.respHeaders) == 0 {
+		return
+	}
+
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
+	if !ok {
+		return
+	}
+	if pathItem.MapOfOperationValues == nil {
+		return
+	}
+
+	methodKey := strings.ToLower(b.method)
+	op, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	for status, headers := range b.respHeaders {
+		statusKey := strconv.Itoa(status)
+		respOrRef, ok := op.Responses.MapOfResponseOrRefValues[statusKey]
+		if !ok || respOrRef.Response == nil {
+			continue
+		}
+		resp := respOrRef.Response
+		if resp.Headers == nil {
+			resp.Headers = make(map[string]openapi3.HeaderOrRef)
+		}
+
+		for name, model := range headers {
+			// Marshal model to JSON and infer a schema OR use inference from example bytes.
+			var sor *openapi3.SchemaOrRef
+			if model == nil {
+				// default to string
+				schema := openapi3.Schema{}
+				schema.WithType(openapi3.SchemaTypeString)
+				s := openapi3.SchemaOrRef{}
+				s.WithSchema(schema)
+				sor = &s
+			} else {
+				bts, err := json.Marshal(model)
+				if err != nil {
+					// fallback to string schema on marshal error
+					schema := openapi3.Schema{}
+					schema.WithType(openapi3.SchemaTypeString)
+					s := openapi3.SchemaOrRef{}
+					s.WithSchema(schema)
+					sor = &s
+				} else {
+					inferred := schemautil.InferSchema(bts)
+					if inferred == nil {
+						schema := openapi3.Schema{}
+						schema.WithType(openapi3.SchemaTypeString)
+						s := openapi3.SchemaOrRef{}
+						s.WithSchema(schema)
+						sor = &s
+					} else {
+						sor = inferred
+					}
+				}
+			}
+
+			header := openapi3.Header{}
+			header.WithSchema(*sor)
+			har := openapi3.HeaderOrRef{}
+			har.WithHeader(header)
+			resp.Headers[name] = har
+		}
+
+		respOrRef.Response = resp
+		op.Responses.MapOfResponseOrRefValues[statusKey] = respOrRef
 	}
 
 	pathItem.MapOfOperationValues[methodKey] = op

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // ValidationIssue describes a single spec problem.
@@ -122,4 +124,113 @@ func WriteAndValidateSpec() error {
 		return fmt.Errorf("%w:\n%s", ErrSpecInvalid, strings.Join(errs, "\n"))
 	}
 	return nil
+}
+
+// ValidateResponseAgainstOperation validates an actual RecordedResponse against
+// the declared typed response model on the RequestBuilder (if present). It
+// attempts typed-model unmarshalling first, and falls back to full JSON Schema
+// validation generated from the collected spec using gojsonschema.
+func ValidateResponseAgainstOperation(b *RequestBuilder, res *RecordedResponse) ([]string, error) {
+	if b == nil {
+		return nil, fmt.Errorf("nil RequestBuilder")
+	}
+
+	// If the builder declared a typed response model for this status code,
+	// validate by attempting to unmarshal the response JSON into that type.
+	if model, ok := b.respBodies[res.StatusCode]; ok && model != nil {
+		mt := reflect.TypeOf(model)
+		var target reflect.Value
+		if mt.Kind() == reflect.Ptr {
+			target = reflect.New(mt.Elem())
+		} else {
+			target = reflect.New(mt)
+		}
+		if err := json.Unmarshal(res.BodyBytes, target.Interface()); err != nil {
+			return []string{err.Error()}, nil
+		}
+		return nil, nil
+	}
+
+	// No declared typed model — attempt full JSON Schema validation
+	if globalCollector == nil || globalCollector.reflector == nil {
+		return nil, fmt.Errorf("spec not initialised")
+	}
+
+	globalCollector.mu.Lock()
+	spec := globalCollector.reflector.Spec
+	globalCollector.mu.Unlock()
+
+	// Locate operation in the collected spec using builder's method + path template.
+	pathItem, ok := spec.Paths.MapOfPathItemValues[b.path]
+	if !ok {
+		// Path not found in spec — nothing to validate against.
+		return nil, nil
+	}
+
+	op, ok := pathItem.MapOfOperationValues[strings.ToLower(b.method)]
+	if !ok {
+		return nil, nil
+	}
+
+	statusKey := fmt.Sprintf("%d", res.StatusCode)
+
+	var resp *openapi3.Response
+	if op.Responses.MapOfResponseOrRefValues != nil {
+		if ror, found := op.Responses.MapOfResponseOrRefValues[statusKey]; found {
+			resp = ror.Response
+		}
+	}
+	if resp == nil && op.Responses.Default != nil {
+		resp = op.Responses.Default.Response
+	}
+	if resp == nil {
+		return nil, nil
+	}
+
+	// Prefer application/json content, otherwise take the first available content.
+	var media *openapi3.MediaType
+	if resp.Content != nil {
+		if m, found := resp.Content["application/json"]; found {
+			media = &m
+		} else {
+			for _, m := range resp.Content {
+				media = &m
+				break
+			}
+		}
+	}
+	if media == nil || media.Schema == nil {
+		return nil, nil
+	}
+
+	// Convert OpenAPI SchemaOrRef to JSON Schema structure (inlines components as needed).
+	js := media.Schema.ToJSONSchema(spec)
+
+	schemaBytes, err := json.Marshal(js)
+	if err != nil {
+		return nil, fmt.Errorf("marshal json schema: %w", err)
+	}
+
+	// Compile schema using gojsonschema and validate the instance bytes.
+	schemaLoader := gojsonschema.NewBytesLoader(schemaBytes)
+	schemaCompiled, err := gojsonschema.NewSchema(schemaLoader)
+	if err != nil {
+		return nil, fmt.Errorf("compile schema: %w", err)
+	}
+
+	documentLoader := gojsonschema.NewBytesLoader(res.BodyBytes)
+	result, err := schemaCompiled.Validate(documentLoader)
+	if err != nil {
+		return nil, fmt.Errorf("validation failure: %w", err)
+	}
+
+	if !result.Valid() {
+		var msgs []string
+		for _, e := range result.Errors() {
+			msgs = append(msgs, e.String())
+		}
+		return msgs, nil
+	}
+
+	return nil, nil
 }
