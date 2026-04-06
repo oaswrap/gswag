@@ -35,7 +35,10 @@ func captureStdout(f func()) string {
 		outC <- buf.String()
 	}()
 	f()
-	w.Close()
+	if err := w.Close(); err != nil {
+		// Propagate as panic so the test fails loudly if Close fails.
+		panic(err)
+	}
 	return <-outC
 }
 
@@ -133,12 +136,9 @@ func TestRunInitCreatesFiles(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("runInitNoExit failed with code %d", code)
 	}
-	// expect suite_test.go and workflow file
-	if _, err := os.Stat(filepath.Join(dir, "suite_test.go")); err != nil {
-		t.Fatalf("suite_test.go not created: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(dir, ".github", "workflows", "gswag.yml")); err != nil {
-		t.Fatalf("workflow not created: %v", err)
+	generated := filepath.Base(dir) + "_suite_test.go"
+	if _, err := os.Stat(filepath.Join(dir, generated)); err != nil {
+		t.Fatalf("%s not created: %v", generated, err)
 	}
 }
 
@@ -171,8 +171,7 @@ paths: {}/n`
 
 func TestRunInitForceOverwrite(t *testing.T) {
 	dir := t.TempDir()
-	// create existing suite_test.go with sentinel content
-	sp := filepath.Join(dir, "suite_test.go")
+	sp := filepath.Join(dir, filepath.Base(dir)+"_suite_test.go")
 	if err := os.WriteFile(sp, []byte("OLD"), 0o644); err != nil {
 		t.Fatalf("write sentinel: %v", err)
 	}
@@ -186,7 +185,7 @@ func TestRunInitForceOverwrite(t *testing.T) {
 		t.Fatalf("read suite_test: %v", err)
 	}
 	if string(b) == "" {
-		t.Fatalf("expected suite_test.go to exist")
+		t.Fatalf("expected generated suite file to exist")
 	}
 
 	// run with --force should overwrite
@@ -199,6 +198,22 @@ func TestRunInitForceOverwrite(t *testing.T) {
 	}
 	if bytes.Equal(b, b2) {
 		t.Fatalf("expected file to be overwritten with --force")
+	}
+}
+
+func TestRunInitUsesDetectedPackageInFilename(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "router.go"), []byte("package myapi\n"), 0o644); err != nil {
+		t.Fatalf("write package file: %v", err)
+	}
+
+	code := runInitNoExit([]string{dir})
+	if code != 0 {
+		t.Fatalf("runInitNoExit failed with code %d", code)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "myapi_suite_test.go")); err != nil {
+		t.Fatalf("myapi_suite_test.go not created: %v", err)
 	}
 }
 

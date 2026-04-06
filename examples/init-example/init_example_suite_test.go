@@ -13,14 +13,17 @@ var testServer *httptest.Server
 
 func TestAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Example Suite")
+	RunSpecs(t, "API Suite")
 }
 
 var _ = BeforeSuite(func() {
 	Init(&Config{
-		Title:      "Example API",
-		Version:    "0.1.0",
+		Title:      "My API",
+		Version:    "1.0.0",
 		OutputPath: "./docs/openapi.yaml",
+		SecuritySchemes: map[string]SecuritySchemeConfig{
+			"bearerAuth": BearerJWT(),
+		},
 	})
 	// TODO: start your server here, for example:
 	//   import yourpkg "github.com/your/module/path"

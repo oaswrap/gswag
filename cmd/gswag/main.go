@@ -41,8 +41,8 @@ func main() {
 	}
 }
 
-// runInit scaffolds a minimal Ginkgo `suite_test.go` and a GitHub Actions workflow
-// for using gswag in CI. Usage: gswag init [--force] [path]
+// runInit scaffolds a minimal Ginkgo-style suite file.
+// Usage: gswag init [--force] [path]
 func runInit(args []string) {
 	code := runInitNoExit(args)
 	if code != 0 {
@@ -69,10 +69,23 @@ func runInitNoExit(args []string) int {
 		return 2
 	}
 
-	// Files to create.
+	// Detect package name and generate a Ginkgo-style file name:
+	// <package>_suite_test.go.
+	pkg := detectPackageName(target)
+	if pkg == "" {
+		pkg = defaultPackageName(target)
+	}
+	var testPkg string
+	if strings.HasSuffix(pkg, "_test") {
+		testPkg = pkg
+	} else {
+		testPkg = pkg + "_test"
+	}
+	suiteContent := suiteTemplateFor(testPkg)
+	suiteFilename := pkg + "_suite_test.go"
+
 	files := map[string]string{
-		filepath.Join(target, "suite_test.go"):                     suiteTestTemplate,
-		filepath.Join(target, ".github", "workflows", "gswag.yml"): ghActionsTemplate,
+		filepath.Join(target, suiteFilename): suiteContent,
 	}
 
 	for path, content := range files {
@@ -94,72 +107,92 @@ func runInitNoExit(args []string) int {
 	return 0
 }
 
-const suiteTestTemplate = `package tests
+func detectPackageName(dir string) string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") {
+			b, err := os.ReadFile(filepath.Join(dir, name))
+			if err != nil {
+				continue
+			}
+			for _, line := range strings.Split(string(b), "\n") {
+				line = strings.TrimSpace(line)
+				if strings.HasPrefix(line, "package ") {
+					parts := strings.Fields(line)
+					if len(parts) >= 2 {
+						return parts[1]
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
 
-import (
+func defaultPackageName(target string) string {
+	base := filepath.Base(filepath.Clean(target))
+	if base == "." || base == string(filepath.Separator) {
+		return "api"
+	}
+	base = strings.ReplaceAll(base, "-", "_")
+	base = strings.ReplaceAll(base, " ", "_")
+	if base == "" {
+		return "api"
+	}
+	return base
+}
+
+func suiteTemplateFor(pkg string) string {
+	return "package " + pkg + "\n\n" + `import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// This scaffold creates a minimal Ginkgo suite for gswag.
-// Replace the TODO section with your project's router import and startup.
 var testServer *httptest.Server
 
 func TestAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Example Suite")
+	RunSpecs(t, "API Suite")
 }
 
 var _ = BeforeSuite(func() {
-	gswag.Init(&gswag.Config{
-		Title:      "Example API",
-		Version:    "0.1.0",
+	Init(&Config{
+		Title:      "My API",
+		Version:    "1.0.0",
 		OutputPath: "./docs/openapi.yaml",
+		SecuritySchemes: map[string]SecuritySchemeConfig{
+			"bearerAuth": BearerJWT(),
+		},
 	})
 	// TODO: start your server here, for example:
 	//   import yourpkg "github.com/your/module/path"
 	//   testServer = httptest.NewServer(yourpkg.NewRouter())
+	//   SetTestServer(testServer)
 })
 
 var _ = AfterSuite(func() {
 	if testServer != nil {
 		testServer.Close()
 	}
-	Expect(gswag.WriteSpec()).To(Succeed())
+	Expect(WriteSpec()).To(Succeed())
 })
 `
+}
 
-const ghActionsTemplate = `name: gswag
-
-on:
-	push:
-		branches: [ main ]
-	pull_request:
-		branches: [ main ]
-
-jobs:
-	test:
-		runs-on: ubuntu-latest
-		steps:
-			- uses: actions/checkout@v4
-			- name: Set up Go
-				uses: actions/setup-go@v4
-				with:
-					go-version: '1.24'
-			- name: Install dependencies
-				run: go mod download
-			- name: Run tests
-				run: go test ./... -v
-			- name: Validate OpenAPI spec (if present)
-				run: |
-					if [ -f ./docs/openapi.yaml ]; then
-						gswag validate ./docs/openapi.yaml || exit 1
-					fi
-`
+/* GitHub Actions workflow generation removed from gswag init.
+Previously the CLI created a .github/workflows/gswag.yml file.
+That behavior has been removed: init now only creates <package>_suite_test.go. */
 
 func runValidate(args []string) {
 	code := runValidateNoExit(args)
@@ -217,13 +250,15 @@ func printUsage() {
 
 Commands:
 	validate [--strict] <spec-file>   Validate an OpenAPI spec file.
-																		Exits 1 if errors are found.
-																		With --strict, warnings also cause exit 1.
+		Exits 1 if errors are found.
+		With --strict, warnings also cause exit 1.
 	diff <base-spec> <new-spec>       Diff two OpenAPI spec files.
-																		Exits 1 if breaking changes are detected.
-	init [--force] [path]             Scaffold a Ginkgo suite_test.go and CI workflow.
-																		Writes files into the target path (default: current dir).
-																		Use --force to overwrite existing files.
+		Exits 1 if breaking changes are detected.
+	init [--force] [path]             Scaffold a minimal Ginkgo test suite file.
+		Writes a ` + "`<package>_suite_test.go`" + ` file into the target path (default: current dir).
+		Detects package name from existing .go files; if none, uses target directory name.
+		The generated file uses package <pkg>_test.
+		Use --force to overwrite an existing <package>_suite_test.go.
 	version                           Print the gswag version.
 	help                              Show this help.
 
@@ -231,6 +266,8 @@ Examples:
 	gswag validate ./docs/openapi.yaml
 	gswag validate --strict ./docs/openapi.json
 	gswag diff ./docs/openapi-v1.yaml ./docs/openapi-v2.yaml
-	gswag init .
+	gswag init .                 # create <package>_suite_test.go in current directory
+	gswag init ./tests           # create tests_suite_test.go in ./tests (if no package found)
+	gswag init --force ./tests   # overwrite existing generated suite file
 `)
 }

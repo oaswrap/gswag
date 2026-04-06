@@ -1,9 +1,9 @@
 package gswag
 
-import (
-	"testing"
-)
+import "testing"
 
+// TestDSLFunctions_UpdateOpAndRespExec verifies that the DSL helper functions
+// update the current operation and response execution stacks correctly.
 func TestDSLFunctions_UpdateOpAndRespExec(t *testing.T) {
 	// prepare op and resp exec stacks
 	dslOpStack = nil
@@ -65,6 +65,8 @@ func TestDSLFunctions_UpdateOpAndRespExec(t *testing.T) {
 	dslOpStack = nil
 }
 
+// TestFlushPendingDSLOpsRegisters ensures that pending DSL ops are flushed into
+// the spec collector.
 func TestFlushPendingDSLOpsRegisters(t *testing.T) {
 	// create collector
 	cfg := &Config{Title: "T", Version: "v"}
@@ -86,4 +88,24 @@ func TestFlushPendingDSLOpsRegisters(t *testing.T) {
 
 	// reset collector
 	globalCollector = nil
+}
+
+// TestDSLMethodWrappers_EnqueueOps verifies that the DSL wrapper helpers
+// (Put/Patch/Delete) enqueue operations without panicking when called outside
+// of a Ginkgo runtime.
+func TestDSLMethodWrappers_EnqueueOps(t *testing.T) {
+	// reset pending ops
+	dslPendingOps = nil
+
+	// ensure path stack present so ops get a path
+	dslPathStack = []string{"/wraps"}
+
+	// call wrappers — ensure they don't panic when invoked outside Ginkgo runtime.
+	Put("put op", func() {})
+	Patch("patch op", func() {})
+	Delete("delete op", func() {})
+
+	// cleanup
+	dslPendingOps = nil
+	dslPathStack = nil
 }

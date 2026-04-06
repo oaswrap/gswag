@@ -21,7 +21,13 @@ func TestCmdServer_HandlerWiresAPI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/users failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if resp.Body != nil {
+			if err := resp.Body.Close(); err != nil {
+				t.Fatalf("failed to close response body: %v", err)
+			}
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected status: %d", resp.StatusCode)
 	}
