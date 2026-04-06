@@ -27,7 +27,7 @@ var items = []Item{
 }
 
 // NewRouter returns a configured Gin engine.
-func NewRouter() http.Handler {
+func NewRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 

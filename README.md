@@ -342,46 +342,6 @@ Notes:
 - Use a `Sanitizer` to remove or redact PII before writing the spec.
 - Large responses can bloat specs; use `MaxExampleBytes` to bound size.
 
-## Swagger UI and ReDoc
-
-Serve the generated spec with a browser UI during development:
-
-```go
-// Swagger UI on :8080/docs
-err := gswag.ServeUI(&gswag.UIConfig{
-    Addr:     ":8080",
-    DocsPath: "/docs",
-    SpecPath: "/docs/openapi.yaml",
-})
-
-// ReDoc on :8080/docs
-err := gswag.ServeRedoc(&gswag.UIConfig{
-    Addr:     ":8080",
-    DocsPath: "/docs",
-    SpecPath: "/docs/openapi.yaml",
-})
-```
-
-The spec is served live from memory — no file write required. Powered by [`github.com/oaswrap/spec-ui`](https://github.com/oaswrap/spec-ui).
-
-Embedding in existing apps
-
-If you prefer to mount the docs into an existing application router instead of starting a dedicated server, use the mountable handlers:
-
-```go
-// net/http
-handler, err := gswag.NewSwaggerUIHandler(&gswag.UIConfig{DocsPath: "/docs", SpecPath: "/docs/openapi.json"})
-if err != nil { log.Fatal(err) }
-mux := http.NewServeMux()
-mux.Handle("/docs", handler)
-mux.Handle("/docs/openapi.json", handler)
-
-// Gin example
-// router.GET("/docs/*any", gin.WrapH(handler))
-```
-
-These handlers return the UI pages, spec endpoint, and static assets (when enabled) so you can integrate documentation into your server's routing.
-
 ## Parallel Ginkgo support
 
 When running Ginkgo in parallel (`ginkgo -p`), each worker process calls `WritePartialSpec` and node 1 merges them all:
@@ -495,7 +455,6 @@ Example GitHub Actions workflow:
 | `github.com/swaggest/openapi-go` | OpenAPI 3.0 reflector and spec builder |
 | `github.com/onsi/ginkgo/v2` | BDD test framework |
 | `github.com/onsi/gomega` | Assertion library |
-| `github.com/oaswrap/spec-ui` | Swagger UI / ReDoc HTTP handlers |
 
 ## License
 

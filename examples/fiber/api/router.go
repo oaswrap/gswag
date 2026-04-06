@@ -2,10 +2,7 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
 )
 
 // Review is the domain model for the reviews resource.
@@ -28,8 +25,8 @@ var reviews = []Review{
 	{ID: 2, Author: "Bob", Rating: 4, Comment: "Pretty good"},
 }
 
-// NewRouter returns a Fiber app wrapped as a standard http.Handler.
-func NewRouter() http.Handler {
+// NewRouter returns a Fiber app configured with the API routes.
+func NewRouter() *fiber.App {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 
 	app.Get("/reviews", func(c *fiber.Ctx) error {
@@ -55,5 +52,5 @@ func NewRouter() http.Handler {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 	})
 
-	return adaptor.FiberApp(app)
+	return app
 }

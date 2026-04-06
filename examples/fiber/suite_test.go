@@ -4,6 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/fiber/api"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,7 +27,7 @@ var _ = BeforeSuite(func() {
 			"bearerAuth": gswag.BearerJWT(),
 		},
 	})
-	testServer = httptest.NewServer(api.NewRouter())
+	testServer = httptest.NewServer(adaptor.FiberApp(api.NewRouter()))
 })
 
 var _ = AfterSuite(func() {

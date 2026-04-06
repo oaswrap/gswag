@@ -3,7 +3,7 @@ CMD        := ./cmd/gswag
 BIN        := bin/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
-EXAMPLES   := stdlib gin echo chi fiber
+EXAMPLES   := stdlib init-example gin echo chi fiber
 
 .PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help
@@ -57,6 +57,10 @@ lint:
 
 tidy:
 	go mod tidy
+	@for name in $(EXAMPLES); do \
+		echo "==> examples/$$name"; \
+		(cd examples/$$name && go mod tidy) || exit 1; \
+	done
 
 # ---------------------------------------------------------------------------
 # Examples

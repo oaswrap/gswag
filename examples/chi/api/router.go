@@ -29,7 +29,7 @@ var orders = []Order{
 }
 
 // NewRouter returns a configured Chi router.
-func NewRouter() http.Handler {
+func NewRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Recoverer)
 

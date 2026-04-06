@@ -27,11 +27,9 @@ var products = []Product{
 	{ID: 2, Title: "Book", Category: "Education", Price: 29.99},
 }
 
-// NewRouter returns a configured Echo instance as an http.Handler.
-func NewRouter() http.Handler {
+// NewRouter returns a configured Echo instance with the API routes.
+func NewRouter() *echo.Echo {
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
 
 	e.GET("/products", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, products)
