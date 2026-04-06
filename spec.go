@@ -22,19 +22,85 @@ var pathParamRe = regexp.MustCompile(`\{(\w+)\}`)
 
 // SpecCollector accumulates OpenAPI operations from test executions in a thread-safe manner.
 type SpecCollector struct {
-	mu        sync.Mutex
-	reflector *openapi3.Reflector
+	mu           sync.Mutex
+	reflector    *openapi3.Reflector
+	excludePaths []string
 }
 
 func newSpecCollector(cfg *Config) *SpecCollector {
 	r := openapi3.Reflector{}
-	r.Spec = &openapi3.Spec{Openapi: "3.0.3"}
+	openapiVersion := cfg.OpenAPI
+	if openapiVersion == "" || strings.HasPrefix(openapiVersion, "3.1") {
+		openapiVersion = "3.0.3"
+	}
+	r.Spec = &openapi3.Spec{Openapi: openapiVersion}
 	r.Spec.Info.
 		WithTitle(cfg.Title).
 		WithVersion(cfg.Version)
 
 	if cfg.Description != "" {
 		r.Spec.Info.WithDescription(cfg.Description)
+	}
+	if cfg.TermsOfService != "" {
+		r.Spec.Info.WithTermsOfService(cfg.TermsOfService)
+	}
+	if cfg.Contact != nil {
+		c := openapi3.Contact{}
+		if cfg.Contact.Name != "" {
+			c.WithName(cfg.Contact.Name)
+		}
+		if cfg.Contact.URL != "" {
+			c.WithURL(cfg.Contact.URL)
+		}
+		if cfg.Contact.Email != "" {
+			c.WithEmail(cfg.Contact.Email)
+		}
+		r.Spec.Info.WithContact(c)
+	}
+	if cfg.License != nil {
+		l := openapi3.License{}
+		if cfg.License.Name != "" {
+			l.WithName(cfg.License.Name)
+		}
+		if cfg.License.URL != "" {
+			l.WithURL(cfg.License.URL)
+		}
+		r.Spec.Info.WithLicense(l)
+	}
+
+	if cfg.ExternalDocs != nil && cfg.ExternalDocs.URL != "" {
+		ed := openapi3.ExternalDocumentation{}
+		ed.WithURL(cfg.ExternalDocs.URL)
+		if cfg.ExternalDocs.Description != "" {
+			ed.WithDescription(cfg.ExternalDocs.Description)
+		}
+		r.Spec.WithExternalDocs(ed)
+	}
+
+	if len(cfg.Tags) > 0 {
+		tags := make([]openapi3.Tag, 0, len(cfg.Tags))
+		for _, tc := range cfg.Tags {
+			if tc.Name == "" {
+				continue
+			}
+			t := openapi3.Tag{}
+			t.WithName(tc.Name)
+			if tc.Description != "" {
+				t.WithDescription(tc.Description)
+			}
+			if tc.ExternalDocs != nil && tc.ExternalDocs.URL != "" {
+				ed := openapi3.ExternalDocumentation{}
+				ed.WithURL(tc.ExternalDocs.URL)
+				if tc.ExternalDocs.Description != "" {
+					ed.WithDescription(tc.ExternalDocs.Description)
+				}
+				t.WithExternalDocs(ed)
+			}
+			tags = append(tags, t)
+		}
+		if len(tags) > 0 {
+			r.Spec.WithTags(tags...)
+		}
 	}
 
 	for _, srv := range cfg.Servers {
@@ -46,7 +112,7 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 		r.Spec.WithServers(s)
 	}
 
-	sc := &SpecCollector{reflector: &r}
+	sc := &SpecCollector{reflector: &r, excludePaths: append([]string(nil), cfg.ExcludePaths...)}
 
 	// Pre-register security schemes declared in Config.
 	for name, schemeCfg := range cfg.SecuritySchemes {
@@ -74,6 +140,9 @@ func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 	}
 	if b.summary != "" {
 		op.SetSummary(b.summary)
+	}
+	if sc.isExcludedPath(b.path) {
+		return
 	}
 	if b.description != "" {
 		op.SetDescription(b.description)
@@ -134,6 +203,9 @@ func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 		return
 	}
 
+	// Inject request body schema/media type from the actual request when needed.
+	sc.injectInferredRequestSchema(b, res)
+
 	// Inject inferred JSON schema into the fallback response slot.
 	if len(b.respBodies) == 0 {
 		sc.injectInferredSchema(b, res)
@@ -146,7 +218,63 @@ func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 	sc.appendResponseHeaders(b)
 
 	// Append captured examples for request/response bodies (if enabled).
-	sc.appendExamples(b, res)
+	sc.appendExamplesLocked(b, res)
+}
+
+// injectInferredRequestSchema attaches request body media type/schema from the
+// actual request when a request body exists at runtime.
+func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *recordedResponse) {
+	if len(res.RequestBodyBytes) == 0 {
+		return
+	}
+
+	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
+	if !ok || pathItem.MapOfOperationValues == nil {
+		return
+	}
+
+	methodKey := strings.ToLower(b.method)
+	op, ok := pathItem.MapOfOperationValues[methodKey]
+	if !ok {
+		return
+	}
+
+	ct := strings.TrimSpace(b.bodyContentType)
+	if ct == "" {
+		if b.body != nil {
+			ct = "application/json"
+		} else {
+			ct = "application/octet-stream"
+		}
+	}
+
+	var schema *openapi3.SchemaOrRef
+	if strings.Contains(strings.ToLower(ct), "json") {
+		schema = schemautil.InferSchema(res.RequestBodyBytes)
+	}
+	if schema == nil {
+		s := openapi3.Schema{}
+		s.WithType(openapi3.SchemaTypeString)
+		s.WithFormat("binary")
+		sor := openapi3.SchemaOrRef{}
+		sor.WithSchema(s)
+		schema = &sor
+	}
+
+	or := op.RequestBodyEns()
+	rb := or.RequestBodyEns()
+	if rb.Content == nil {
+		rb.Content = map[string]openapi3.MediaType{}
+	}
+
+	mt := rb.Content[ct]
+	if mt.Schema == nil {
+		mt.Schema = schema
+		rb.Content[ct] = mt
+	}
+
+	pathItem.MapOfOperationValues[methodKey] = op
+	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
 // injectInferredSchema parses the response body and attaches a best-effort
@@ -339,6 +467,12 @@ func stringParam(name string, loc openapi3.ParameterLocation) openapi3.Parameter
 // appendExamples attaches captured request/response examples to the spec
 // if the global config enables example capture.
 func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	sc.appendExamplesLocked(b, res)
+}
+
+func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedResponse) {
 	if globalConfig == nil || !globalConfig.CaptureExamples {
 		return
 	}
@@ -375,7 +509,7 @@ func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse
 	// Request body example
 	if op.RequestBody != nil && op.RequestBody.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
 		rb := op.RequestBody.RequestBody
-		ct := "application/json"
+		ct := requestExampleContentType(b, res)
 		if rb.Content != nil {
 			if mt, found := rb.Content[ct]; found {
 				bts := sanitize(res.RequestBodyBytes)
@@ -395,7 +529,7 @@ func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse
 	if op.Responses.MapOfResponseOrRefValues != nil {
 		if ror, found := op.Responses.MapOfResponseOrRefValues[statusKey]; found && ror.Response != nil {
 			resp := ror.Response
-			ct := "application/json"
+			ct := responseExampleContentType(res)
 			if resp.Content != nil {
 				if mt, found := resp.Content[ct]; found {
 					bts := sanitize(res.BodyBytes)
@@ -414,6 +548,38 @@ func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse
 
 	pathItem.MapOfOperationValues[methodKey] = op
 	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
+}
+
+func requestExampleContentType(b *requestBuilder, res *recordedResponse) string {
+	if b != nil {
+		if ct := normalizeContentType(b.bodyContentType); ct != "" {
+			return ct
+		}
+		if b.body != nil || len(res.RequestBodyBytes) > 0 {
+			return "application/json"
+		}
+	}
+	return "application/json"
+}
+
+func responseExampleContentType(res *recordedResponse) string {
+	if res != nil && res.Headers != nil {
+		if ct := normalizeContentType(res.Headers.Get("Content-Type")); ct != "" {
+			return ct
+		}
+	}
+	return "application/json"
+}
+
+func normalizeContentType(ct string) string {
+	ct = strings.TrimSpace(ct)
+	if ct == "" {
+		return ""
+	}
+	if idx := strings.Index(ct, ";"); idx >= 0 {
+		ct = ct[:idx]
+	}
+	return strings.TrimSpace(ct)
 }
 
 // buildPathParamsStruct creates a dynamic struct with typed fields tagged as
@@ -501,6 +667,29 @@ func buildSecuritySchemeOrRef(cfg SecuritySchemeConfig) openapi3.SecuritySchemeO
 			ak.WithIn(openapi3.APIKeySecuritySchemeInCookie)
 		}
 		scheme.WithAPIKeySecurityScheme(ak)
+
+	case "oauth2":
+		flows := openapi3.OAuthFlows{}
+		implicit := openapi3.ImplicitOAuthFlow{}
+		implicit.WithAuthorizationURL(cfg.AuthorizationURL)
+		if cfg.RefreshURL != "" {
+			implicit.WithRefreshURL(cfg.RefreshURL)
+		}
+		if len(cfg.Scopes) > 0 {
+			implicit.WithScopes(cfg.Scopes)
+		} else {
+			implicit.WithScopes(map[string]string{})
+		}
+		flows.WithImplicit(implicit)
+
+		oo := openapi3.OAuth2SecurityScheme{}
+		oo.WithFlows(flows)
+		scheme.WithOAuth2SecurityScheme(oo)
+
+	case "openidconnect":
+		oid := openapi3.OpenIDConnectSecurityScheme{}
+		oid.WithOpenIDConnectURL(cfg.AuthorizationURL)
+		scheme.WithOpenIDConnectSecurityScheme(oid)
 	}
 
 	sor.WithSecurityScheme(scheme)
@@ -513,6 +702,10 @@ func buildSecuritySchemeOrRef(cfg SecuritySchemeConfig) openapi3.SecuritySchemeO
 func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
+
+	if op.hidden || sc.isExcludedPath(op.path) {
+		return
+	}
 
 	opCtx, err := sc.reflector.NewOperationContext(op.method, op.path)
 	if err != nil {
@@ -591,6 +784,30 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 
 	// Append declared response header schemas.
 	sc.appendDSLResponseHeaders(op)
+}
+
+func (sc *SpecCollector) isExcludedPath(path string) bool {
+	if len(sc.excludePaths) == 0 {
+		return false
+	}
+
+	for _, pattern := range sc.excludePaths {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			continue
+		}
+		if pattern == path {
+			return true
+		}
+		if strings.HasSuffix(pattern, "*") {
+			prefix := strings.TrimSuffix(pattern, "*")
+			if strings.HasPrefix(path, prefix) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // injectRecordedResponseSchema injects an inferred schema from the actual response body
@@ -686,12 +903,12 @@ func (sc *SpecCollector) appendDSLParams(op *dslOp) {
 	}
 
 	for _, p := range queryParams {
-		operation.Parameters = append(operation.Parameters, dslSchemaParam(p.name, p.typ, openapi3.ParameterLocation{
+		operation.Parameters = append(operation.Parameters, dslSchemaParam(p, openapi3.ParameterLocation{
 			QueryParameter: &openapi3.QueryParameter{},
 		}))
 	}
 	for _, p := range headerParams {
-		operation.Parameters = append(operation.Parameters, dslSchemaParam(p.name, p.typ, openapi3.ParameterLocation{
+		operation.Parameters = append(operation.Parameters, dslSchemaParam(p, openapi3.ParameterLocation{
 			HeaderParameter: &openapi3.HeaderParameter{},
 		}))
 	}
@@ -816,17 +1033,36 @@ func dslSchemaTypeToReflect(typ SchemaType) reflect.Type {
 }
 
 // dslSchemaParam builds an OpenAPI ParameterOrRef with the given name, schema type, and location.
-func dslSchemaParam(name string, typ SchemaType, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
-	schemaTypeVal := openapi3.SchemaType(string(typ))
+func dslSchemaParam(p dslParam, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
+	schemaTypeVal := openapi3.SchemaType(string(p.typ))
 	s := openapi3.Schema{}
 	s.WithType(schemaTypeVal)
+	if p.typ == Array {
+		itemSchema := openapi3.Schema{}
+		itemSchema.WithType(openapi3.SchemaTypeString)
+		itemSor := openapi3.SchemaOrRef{}
+		itemSor.WithSchema(itemSchema)
+		s.WithItems(itemSor)
+	}
+	if len(p.enumVals) > 0 {
+		s.WithEnum(p.enumVals...)
+	}
+	if p.hasDef {
+		s.WithDefault(p.defVal)
+	}
 	sor := openapi3.SchemaOrRef{}
 	sor.WithSchema(s)
 
 	param := openapi3.Parameter{}
-	param.WithName(name)
+	param.WithName(p.name)
 	param.WithLocation(loc)
 	param.WithSchema(sor)
+	if p.required != nil {
+		param.WithRequired(*p.required)
+	}
+	if p.explode != nil {
+		param.WithExplode(*p.explode)
+	}
 
 	por := openapi3.ParameterOrRef{}
 	por.WithParameter(param)

@@ -58,6 +58,22 @@ func TestAPIKeyCookie(t *testing.T) {
 	}
 }
 
+func TestOAuth2Implicit(t *testing.T) {
+	s := gswag.OAuth2Implicit("https://petstore3.swagger.io/oauth/authorize", map[string]string{
+		"write:pets": "modify pets in your account",
+		"read:pets":  "read your pets",
+	})
+	if s.Type != "oauth2" {
+		t.Errorf("expected type 'oauth2', got %q", s.Type)
+	}
+	if s.AuthorizationURL != "https://petstore3.swagger.io/oauth/authorize" {
+		t.Errorf("expected auth URL set, got %q", s.AuthorizationURL)
+	}
+	if len(s.Scopes) != 2 {
+		t.Errorf("expected 2 scopes, got %d", len(s.Scopes))
+	}
+}
+
 func TestInit_DefaultOutputPath(t *testing.T) {
 	gswag.Init(&gswag.Config{
 		Title:   "Test",

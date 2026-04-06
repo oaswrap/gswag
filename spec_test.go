@@ -3,6 +3,7 @@ package gswag
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -116,6 +117,139 @@ func TestNewSpecCollector_InitialisesSpecAndSecurity(t *testing.T) {
 	}
 	if sc.reflector.Spec.Components == nil || sc.reflector.Spec.Components.SecuritySchemes == nil {
 		t.Fatalf("components.securityschemes not initialised")
+	}
+}
+
+func TestNewSpecCollector_AppliesTopLevelMetadata(t *testing.T) {
+	cfg := &Config{
+		Title:          "Meta API",
+		Version:        "1.2.3",
+		Description:    "desc",
+		TermsOfService: "https://example.com/terms",
+		Contact:        &ContactConfig{Name: "API Team", Email: "team@example.com", URL: "https://example.com/contact"},
+		License:        &LicenseConfig{Name: "Apache 2.0", URL: "https://example.com/license"},
+		ExternalDocs:   &ExternalDocsConfig{Description: "More", URL: "https://example.com/docs"},
+		Tags: []TagConfig{{
+			Name:        "pets",
+			Description: "pets tag",
+			ExternalDocs: &ExternalDocsConfig{
+				Description: "pets docs",
+				URL:         "https://example.com/pets",
+			},
+		}},
+		OpenAPI: "3.0.4",
+	}
+
+	sc := newSpecCollector(cfg)
+	if sc.reflector.Spec.Openapi != "3.0.4" {
+		t.Fatalf("expected openapi 3.0.4, got %q", sc.reflector.Spec.Openapi)
+	}
+	if sc.reflector.Spec.Info.TermsOfService == nil || *sc.reflector.Spec.Info.TermsOfService != cfg.TermsOfService {
+		t.Fatalf("termsOfService not set")
+	}
+	if sc.reflector.Spec.Info.Contact == nil || sc.reflector.Spec.Info.Contact.Email == nil || *sc.reflector.Spec.Info.Contact.Email != cfg.Contact.Email {
+		t.Fatalf("contact not set")
+	}
+	if sc.reflector.Spec.Info.License == nil || sc.reflector.Spec.Info.License.Name != cfg.License.Name {
+		t.Fatalf("license not set")
+	}
+	if sc.reflector.Spec.ExternalDocs == nil || sc.reflector.Spec.ExternalDocs.URL != cfg.ExternalDocs.URL {
+		t.Fatalf("external docs not set")
+	}
+	if len(sc.reflector.Spec.Tags) != 1 || sc.reflector.Spec.Tags[0].Name != "pets" {
+		t.Fatalf("tags metadata not set")
+	}
+}
+
+func TestBuildSecuritySchemeOrRef_OAuth2Implicit(t *testing.T) {
+	sor := buildSecuritySchemeOrRef(SecuritySchemeConfig{
+		Type:             "oauth2",
+		AuthorizationURL: "https://petstore3.swagger.io/oauth/authorize",
+		Scopes: map[string]string{
+			"write:pets": "modify pets in your account",
+			"read:pets":  "read your pets",
+		},
+	})
+
+	if sor.SecurityScheme == nil || sor.SecurityScheme.OAuth2SecurityScheme == nil {
+		t.Fatalf("expected oauth2 security scheme")
+	}
+	flows := sor.SecurityScheme.OAuth2SecurityScheme.Flows
+	if flows.Implicit == nil {
+		t.Fatalf("expected implicit oauth flow")
+	}
+	if flows.Implicit.AuthorizationURL != "https://petstore3.swagger.io/oauth/authorize" {
+		t.Fatalf("unexpected authorization url: %q", flows.Implicit.AuthorizationURL)
+	}
+	if got := flows.Implicit.Scopes["write:pets"]; got != "modify pets in your account" {
+		t.Fatalf("unexpected write:pets scope description: %q", got)
+	}
+}
+
+func TestRegisterDSLOperation_HiddenSkipsSpecRegistration(t *testing.T) {
+	sc := newSpecCollector(&Config{Title: "T", Version: "v"})
+	sc.RegisterDSLOperation(&dslOp{
+		method:  http.MethodGet,
+		path:    "/hidden",
+		summary: "hidden",
+		hidden:  true,
+		responses: map[int]*dslRespSpec{
+			200: {description: "ok"},
+		},
+	})
+
+	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/hidden"]; ok {
+		t.Fatalf("expected hidden operation to be excluded from spec")
+	}
+}
+
+func TestRegister_ExcludePathsSkipsSpecRegistration(t *testing.T) {
+	sc := newSpecCollector(&Config{Title: "T", Version: "v", ExcludePaths: []string{"/internal/*", "/admin/health"}})
+
+	b := newRequestBuilder(http.MethodGet, "/internal/users")
+	b.summary = "internal"
+	rec := &recordedResponse{StatusCode: 200, Headers: http.Header{"Content-Type": {"application/json"}}, BodyBytes: []byte(`{"ok":true}`)}
+	sc.Register(b, rec)
+
+	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/internal/users"]; ok {
+		t.Fatalf("expected excluded builder path to be skipped")
+	}
+
+	b2 := newRequestBuilder(http.MethodGet, "/public/users")
+	b2.summary = "public"
+	sc.Register(b2, rec)
+	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/public/users"]; !ok {
+		t.Fatalf("expected non-excluded builder path to be registered")
+	}
+}
+
+func TestRegisterDSLOperation_ExcludePathsSkipsSpecRegistration(t *testing.T) {
+	sc := newSpecCollector(&Config{Title: "T", Version: "v", ExcludePaths: []string{"/internal/*", "/admin/health"}})
+
+	sc.RegisterDSLOperation(&dslOp{
+		method:  http.MethodGet,
+		path:    "/admin/health",
+		summary: "health",
+		responses: map[int]*dslRespSpec{
+			200: {description: "ok"},
+		},
+	})
+
+	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/admin/health"]; ok {
+		t.Fatalf("expected excluded DSL path to be skipped")
+	}
+
+	sc.RegisterDSLOperation(&dslOp{
+		method:  http.MethodGet,
+		path:    "/public/health",
+		summary: "health",
+		responses: map[int]*dslRespSpec{
+			200: {description: "ok"},
+		},
+	})
+
+	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/public/health"]; !ok {
+		t.Fatalf("expected non-excluded DSL path to be registered")
 	}
 }
 
@@ -256,6 +390,60 @@ func TestSpecCollectorRegister_InferSchemaAndExamplesAndParams(t *testing.T) {
 	}
 }
 
+func TestDSLExecution_AppendsExamples(t *testing.T) {
+	prevCfg := globalConfig
+	prevCollector := globalCollector
+	defer func() {
+		globalConfig = prevCfg
+		globalCollector = prevCollector
+	}()
+
+	globalConfig = &Config{Title: "T", Version: "v", CaptureExamples: true, MaxExampleBytes: 1024}
+	globalCollector = newSpecCollector(globalConfig)
+
+	type payload struct {
+		Name string `json:"name"`
+	}
+
+	op := &dslOp{
+		method:       http.MethodPost,
+		path:         "/dsl-capture",
+		summary:      "capture",
+		tags:         []string{"capture"},
+		reqBodyModel: new(payload),
+		responses: map[int]*dslRespSpec{
+			200: {description: "ok", bodyModel: new(payload)},
+		},
+	}
+	globalCollector.RegisterDSLOperation(op)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"name":"alice"}`))
+	}))
+	defer ts.Close()
+
+	b := dslBuildRequest(http.MethodPost, "/dsl-capture", &dslRespExec{body: &payload{Name: "alice"}})
+	recorded := b.do(ts)
+	globalCollector.injectInferredRequestSchema(b, recorded)
+	globalCollector.injectRecordedResponseSchema(http.MethodPost, "/dsl-capture", recorded)
+	globalCollector.appendExamples(b, recorded)
+
+	opItem := globalCollector.reflector.Spec.Paths.MapOfPathItemValues["/dsl-capture"].MapOfOperationValues["post"]
+	if opItem.RequestBody == nil || opItem.RequestBody.RequestBody == nil {
+		t.Fatalf("expected request body")
+	}
+	requestMT := opItem.RequestBody.RequestBody.Content["application/json"]
+	if requestMT.Example == nil {
+		t.Fatalf("expected request example to be set")
+	}
+	responseMT := opItem.Responses.MapOfResponseOrRefValues["200"].Response.Content["application/json"]
+	if responseMT.Example == nil {
+		t.Fatalf("expected response example to be set")
+	}
+}
+
 func TestDslSchemaTypeToReflect(t *testing.T) {
 	if dslSchemaTypeToReflect(Integer) != reflect.TypeOf(int64(0)) {
 		t.Fatalf("Integer did not map to int64")
@@ -272,7 +460,7 @@ func TestDslSchemaTypeToReflect(t *testing.T) {
 }
 
 func TestDslSchemaParamAndStringParamJSON(t *testing.T) {
-	p := dslSchemaParam("limit", Integer, openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}})
+	p := dslSchemaParam(dslParam{name: "limit", typ: Integer}, openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}})
 	if reflect.ValueOf(p).IsZero() {
 		t.Fatalf("expected non-zero parameter")
 	}
@@ -280,6 +468,53 @@ func TestDslSchemaParamAndStringParamJSON(t *testing.T) {
 	sp := stringParam("q", openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}})
 	if reflect.ValueOf(sp).IsZero() {
 		t.Fatalf("expected non-zero string param")
+	}
+}
+
+func TestDslSchemaParam_RequiredAndExplode(t *testing.T) {
+	req := true
+	explode := true
+	p := dslSchemaParam(
+		dslParam{name: "tags", typ: Array, required: &req, explode: &explode},
+		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+	)
+	if p.Parameter == nil {
+		t.Fatalf("expected parameter")
+	}
+	if p.Parameter.Required == nil || !*p.Parameter.Required {
+		t.Fatalf("expected required=true")
+	}
+	if p.Parameter.Explode == nil || !*p.Parameter.Explode {
+		t.Fatalf("expected explode=true")
+	}
+	if p.Parameter.Schema == nil || p.Parameter.Schema.Schema == nil || p.Parameter.Schema.Schema.Items == nil {
+		t.Fatalf("expected array items schema")
+	}
+}
+
+func TestDslSchemaParam_EnumAndDefault(t *testing.T) {
+	p := dslSchemaParam(
+		dslParam{
+			name:     "status",
+			typ:      String,
+			enumVals: []interface{}{"available", "pending", "sold"},
+			defVal:   "available",
+			hasDef:   true,
+		},
+		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+	)
+	if p.Parameter == nil || p.Parameter.Schema == nil || p.Parameter.Schema.Schema == nil {
+		t.Fatalf("expected parameter schema")
+	}
+	s := p.Parameter.Schema.Schema
+	if len(s.Enum) != 3 {
+		t.Fatalf("expected enum length 3, got %d", len(s.Enum))
+	}
+	if s.Default == nil {
+		t.Fatalf("expected default value")
+	}
+	if dv, ok := (*s.Default).(string); !ok || dv != "available" {
+		t.Fatalf("unexpected default value: %#v", *s.Default)
 	}
 }
 

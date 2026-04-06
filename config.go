@@ -8,18 +8,36 @@ const (
 	JSON
 )
 
-// OpenAPIVersion selects the OpenAPI specification version.
-type OpenAPIVersion int
-
-const (
-	V30 OpenAPIVersion = iota
-	V31
-)
-
 // ServerConfig describes an OpenAPI server entry.
 type ServerConfig struct {
 	URL         string
 	Description string
+}
+
+// ContactConfig describes OpenAPI info.contact metadata.
+type ContactConfig struct {
+	Name  string
+	URL   string
+	Email string
+}
+
+// LicenseConfig describes OpenAPI info.license metadata.
+type LicenseConfig struct {
+	Name string
+	URL  string
+}
+
+// ExternalDocsConfig describes OpenAPI external documentation metadata.
+type ExternalDocsConfig struct {
+	Description string
+	URL         string
+}
+
+// TagConfig describes a top-level OpenAPI tag with optional metadata.
+type TagConfig struct {
+	Name         string
+	Description  string
+	ExternalDocs *ExternalDocsConfig
 }
 
 // SecuritySchemeConfig describes a named security scheme.
@@ -29,6 +47,10 @@ type SecuritySchemeConfig struct {
 	BearerFormat string // e.g. "JWT"
 	In           string // "header", "query", "cookie" (apiKey)
 	Name         string // header/query/cookie parameter name (apiKey)
+	// OAuth2 implicit flow fields.
+	AuthorizationURL string            // e.g. https://petstore3.swagger.io/oauth/authorize
+	RefreshURL       string            // optional refresh URL
+	Scopes           map[string]string // scope -> description
 }
 
 // BearerJWT returns a SecuritySchemeConfig for an HTTP Bearer JWT scheme.
@@ -51,15 +73,28 @@ func APIKeyCookie(cookieName string) SecuritySchemeConfig {
 	return SecuritySchemeConfig{Type: "apiKey", In: "cookie", Name: cookieName}
 }
 
+// OAuth2Implicit returns a SecuritySchemeConfig for an OAuth2 implicit flow.
+func OAuth2Implicit(authURL string, scopes map[string]string) SecuritySchemeConfig {
+	return SecuritySchemeConfig{Type: "oauth2", AuthorizationURL: authURL, Scopes: scopes}
+}
+
 // Config holds global settings for gswag.
 type Config struct {
-	Title           string
-	Version         string
-	Description     string
-	OutputPath      string // default: "./docs/openapi.yaml"
-	OutputFormat    OutputFormat
-	OpenAPIVersion  OpenAPIVersion
-	Servers         []ServerConfig
+	Title          string
+	Version        string
+	Description    string
+	TermsOfService string
+	Contact        *ContactConfig
+	License        *LicenseConfig
+	ExternalDocs   *ExternalDocsConfig
+	Tags           []TagConfig
+	OpenAPI        string // e.g. "3.0.4"; if empty defaults to "3.0.3".
+	OutputPath     string // default: "./docs/openapi.yaml"
+	OutputFormat   OutputFormat
+	Servers        []ServerConfig
+	// ExcludePaths omits matching operations from the generated spec.
+	// Entries support exact path matches and simple prefix patterns ending in '*'.
+	ExcludePaths    []string
 	SecuritySchemes map[string]SecuritySchemeConfig
 	// EnforceResponseValidation enables test-time validation of actual HTTP
 	// responses against the declared or inferred response schema. When true,

@@ -40,8 +40,6 @@ var _ = AfterSuite(func() {
 	Expect(WriteSpec()).To(Succeed())
 })
 
-// ------------------------- merged from users_test.go -------------------------
-
 var _ = Path("/api/users", func() {
 	Get("List all users", func() {
 		Tag("users")
@@ -88,8 +86,6 @@ var _ = Path("/api/users/{id}", func() {
 	})
 })
 
-// ------------------------- merged from auth_test.go -------------------------
-
 // Delete /api/users/{id} with Bearer JWT auth requirement — spec documentation.
 var _ = Path("/api/users/{id}", func() {
 	Delete("Delete user by ID", func() {
@@ -107,8 +103,6 @@ var _ = Path("/api/users/{id}", func() {
 		})
 	})
 })
-
-// ------------------------- merged from api/router_test.go (moved into stdlib_test) -------------------------
 
 func TestNewRouter_ListUsers(t *testing.T) {
 	srv := httptest.NewServer(api.NewRouter())

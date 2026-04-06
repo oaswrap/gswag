@@ -33,8 +33,6 @@ var _ = AfterSuite(func() {
 	Expect(WriteSpec()).To(Succeed())
 })
 
-// ------------------------- merged from products_test.go -------------------------
-
 type ProductQuery struct {
 	Category string  `query:"category"`
 	MaxPrice float64 `query:"max_price"`

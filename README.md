@@ -129,6 +129,7 @@ Tag("users", "admin")
 Description("Returns one user")
 OperationID("getUser")
 Deprecated()
+Hidden() // run test, but do not add the operation to the spec
 ```
 
 ### Security
@@ -190,15 +191,40 @@ Init(&Config{
     Title:           "My API",           // required
     Version:         "1.0.0",            // required
     Description:     "Public API",
+    TermsOfService:  "https://example.com/terms",
+    Contact: &ContactConfig{
+        Name:  "API Team",
+        URL:   "https://example.com/support",
+        Email: "api@example.com",
+    },
+    License: &LicenseConfig{
+        Name: "Apache 2.0",
+        URL:  "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+    ExternalDocs: &ExternalDocsConfig{
+        Description: "More docs",
+        URL:         "https://example.com/docs",
+    },
+    Tags: []TagConfig{
+        {Name: "users", Description: "User operations"},
+    },
+    OpenAPI:         "3.0.4",      // optional exact 3.0.x version override
     OutputPath:      "./docs/openapi.yaml", // default: ./docs/openapi.yaml
     OutputFormat:    YAML,          // or JSON
-    OpenAPIVersion:  V30,           // or V31
     Servers: []ServerConfig{
         {URL: "https://api.example.com", Description: "prod"},
+    },
+    ExcludePaths: []string{
+        "/internal/*",
+        "/admin/health",
     },
     SecuritySchemes: map[string]SecuritySchemeConfig{
         "bearerAuth": BearerJWT(),
         "apiKey":     APIKeyHeader("X-API-Key"),
+        "oauth2":     OAuth2Implicit("https://example.com/oauth/authorize", map[string]string{
+            "read:users":  "read users",
+            "write:users": "modify users",
+        }),
     },
 
     EnforceResponseValidation: true,
@@ -212,12 +238,16 @@ Init(&Config{
 })
 ```
 
+`ExcludePaths` supports exact path matches and simple prefix patterns ending in `*`.
+Excluded operations are still executed by tests when you hit them through `RunTest`; they are only omitted from spec generation.
+
 Security helpers:
 
 - `BearerJWT()`
 - `APIKeyHeader(name)`
 - `APIKeyQuery(name)`
 - `APIKeyCookie(name)`
+- `OAuth2Implicit(authURL, scopes)`
 
 ## Gomega Matchers
 

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,14 +18,14 @@ type captureBody struct {
 	Name string `json:"name"`
 }
 
-var _ = gswag.Path(captureExamplesPath, func() {
-	gswag.Post("Echo capture", func() {
-		gswag.Tag("capture")
-		gswag.RequestBody(new(captureBody))
+var _ = Path(captureExamplesPath, func() {
+	Post("Echo capture", func() {
+		Tag("capture")
+		RequestBody(new(captureBody))
 
-		gswag.Response(200, "echoed", func() {
-			gswag.SetBody(&captureBody{Name: "alice"})
-			gswag.RunTest(func(resp *http.Response) {
+		Response(200, "echoed", func() {
+			SetBody(&captureBody{Name: "alice"})
+			RunTest(func(resp *http.Response) {
 				Expect(resp.StatusCode).To(Equal(200))
 			})
 		})
@@ -37,7 +37,7 @@ var _ = Describe("CaptureExamples / Sanitizer", func() {
 		dir := GinkgoT().TempDir()
 		outPath := filepath.Join(dir, "with-examples.yaml")
 
-		Expect(gswag.WriteSpecTo(outPath, gswag.YAML)).To(Succeed())
+		Expect(WriteSpecTo(outPath, YAML)).To(Succeed())
 
 		data, err := os.ReadFile(outPath)
 		Expect(err).NotTo(HaveOccurred())
@@ -48,7 +48,7 @@ var _ = Describe("CaptureExamples / Sanitizer", func() {
 		dir := GinkgoT().TempDir()
 		outPath := filepath.Join(dir, "with-examples.json")
 
-		Expect(gswag.WriteSpecTo(outPath, gswag.JSON)).To(Succeed())
+		Expect(WriteSpecTo(outPath, JSON)).To(Succeed())
 
 		data, err := os.ReadFile(outPath)
 		Expect(err).NotTo(HaveOccurred())

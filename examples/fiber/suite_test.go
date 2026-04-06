@@ -41,8 +41,6 @@ var _ = AfterSuite(func() {
 	Expect(WriteSpec()).To(Succeed())
 })
 
-// ------------------------- merged from reviews_test.go -------------------------
-
 var _ = Path("/reviews", func() {
 	Get("List all reviews", func() {
 		Tag("reviews")

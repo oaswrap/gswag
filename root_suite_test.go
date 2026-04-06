@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/oaswrap/gswag"
+	. "github.com/oaswrap/gswag"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,16 +27,16 @@ var _ = BeforeSuite(func() {
 	}))
 
 	rootOutDir = GinkgoT().TempDir()
-	gswag.Init(&gswag.Config{
+	Init(&Config{
 		Title:           "Root Suite API",
 		Version:         "1.0.0",
 		OutputPath:      filepath.Join(rootOutDir, "openapi.yaml"),
 		CaptureExamples: true,
 	})
-	gswag.SetTestServer(rootSrv)
+	SetTestServer(rootSrv)
 })
 
 var _ = AfterSuite(func() {
 	rootSrv.Close()
-	Expect(gswag.WriteSpec()).To(Succeed())
+	Expect(WriteSpec()).To(Succeed())
 })

@@ -30,6 +30,7 @@ func WriteSpecTo(path string, format OutputFormat) error {
 	var err error
 
 	globalCollector.mu.Lock()
+	sanitizeSpecForSerialization(globalCollector.reflector.Spec)
 	spec := globalCollector.reflector.Spec
 	globalCollector.mu.Unlock()
 

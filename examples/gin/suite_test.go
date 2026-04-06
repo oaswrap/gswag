@@ -33,8 +33,6 @@ var _ = AfterSuite(func() {
 	Expect(WriteSpec()).To(Succeed())
 })
 
-// ------------------------- merged from items_test.go -------------------------
-
 type ListQuery struct {
 	Search string `query:"search"`
 	Page   int    `query:"page"`

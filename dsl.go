@@ -35,6 +35,7 @@ type dslOp struct {
 	tags         []string
 	operationID  string
 	deprecated   bool
+	hidden       bool
 	security     []map[string][]string
 	params       []dslParam
 	reqBodyModel interface{}
@@ -47,6 +48,43 @@ type dslParam struct {
 	name     string
 	location ParamLocation
 	typ      SchemaType
+	required *bool
+	explode  *bool
+	enumVals []interface{}
+	defVal   interface{}
+	hasDef   bool
+}
+
+// ParameterOption customizes an operation parameter declared by Parameter.
+type ParameterOption func(*dslParam)
+
+// ParamRequired marks a parameter as required/optional in the generated spec.
+func ParamRequired(required bool) ParameterOption {
+	return func(p *dslParam) {
+		p.required = &required
+	}
+}
+
+// ParamExplode controls the OpenAPI explode flag for the parameter.
+func ParamExplode(explode bool) ParameterOption {
+	return func(p *dslParam) {
+		p.explode = &explode
+	}
+}
+
+// ParamEnum constrains parameter values to the provided enum values.
+func ParamEnum(values ...interface{}) ParameterOption {
+	return func(p *dslParam) {
+		p.enumVals = append([]interface{}(nil), values...)
+	}
+}
+
+// ParamDefault sets the parameter default value in the generated schema.
+func ParamDefault(value interface{}) ParameterOption {
+	return func(p *dslParam) {
+		p.defVal = value
+		p.hasDef = true
+	}
 }
 
 // dslRespSpec holds spec-side response metadata for one status code.
@@ -139,6 +177,12 @@ func Deprecated() {
 	topOp().deprecated = true
 }
 
+// Hidden excludes the current operation from the generated spec while still
+// allowing RunTest to execute the underlying HTTP request.
+func Hidden() {
+	topOp().hidden = true
+}
+
 // Security adds a named security requirement to the current operation.
 func Security(schemeName string, scopes ...string) {
 	op := topOp()
@@ -152,9 +196,15 @@ func BearerAuth() {
 }
 
 // Parameter declares a named parameter for the current operation.
-func Parameter(name string, in ParamLocation, typ SchemaType) {
+func Parameter(name string, in ParamLocation, typ SchemaType, opts ...ParameterOption) {
 	op := topOp()
-	op.params = append(op.params, dslParam{name: name, location: in, typ: typ})
+	p := dslParam{name: name, location: in, typ: typ}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&p)
+		}
+	}
+	op.params = append(op.params, p)
 }
 
 // RequestBody sets a typed struct as the request body schema for the current operation.
@@ -257,7 +307,9 @@ func RunTest(fn ...func(*http.Response)) {
 		recorded := b.do(target)
 
 		if globalCollector != nil {
+			globalCollector.injectInferredRequestSchema(b, recorded)
 			globalCollector.injectRecordedResponseSchema(method, path, recorded)
+			globalCollector.appendExamples(b, recorded)
 		}
 
 		if len(fn) > 0 && fn[0] != nil {
@@ -315,6 +367,13 @@ func copyDslOp(op *dslOp) *dslOp {
 	cp := *op
 	cp.tags = append([]string(nil), op.tags...)
 	cp.params = append([]dslParam(nil), op.params...)
+	for i := range cp.params {
+		cp.params[i].required = cloneBoolPtr(op.params[i].required)
+		cp.params[i].explode = cloneBoolPtr(op.params[i].explode)
+		cp.params[i].enumVals = append([]interface{}(nil), op.params[i].enumVals...)
+		cp.params[i].defVal = op.params[i].defVal
+		cp.params[i].hasDef = op.params[i].hasDef
+	}
 	cp.security = nil
 	for _, s := range op.security {
 		m := make(map[string][]string, len(s))
@@ -335,6 +394,14 @@ func copyDslOp(op *dslOp) *dslOp {
 		cp.responses[k] = &c
 	}
 	return &cp
+}
+
+func cloneBoolPtr(v *bool) *bool {
+	if v == nil {
+		return nil
+	}
+	b := *v
+	return &b
 }
 
 func copyDslRespExec(r *dslRespExec) *dslRespExec {
