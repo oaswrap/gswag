@@ -9,7 +9,7 @@ import (
 
 	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/internal/golden"
-	"github.com/oaswrap/gswag/test/allmethods"
+	allmethods "github.com/oaswrap/gswag/test/all_methods"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -29,7 +29,7 @@ var _ = BeforeSuite(func() {
 		Title:                       "All Methods API",
 		Version:                     "1.0.0",
 		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"Allmethods"},
+		StripDefinitionNamePrefixes: []string{"AllMethods"},
 	})
 	testServer = httptest.NewServer(allmethods.NewRouter())
 	SetTestServer(testServer)
@@ -44,14 +44,14 @@ var _ = AfterSuite(func() {
 	// Golden: compare the complete YAML spec
 	yamlData, err := os.ReadFile(filepath.Join(rootOutDir, "openapi.yaml"))
 	Expect(err).NotTo(HaveOccurred())
-	golden.Check(GinkgoT(), "allmethods.yaml", yamlData)
+	golden.Check(GinkgoT(), "all_methods.yaml", yamlData)
 
 	// Golden: compare the complete JSON spec.
 	jsonPath := filepath.Join(rootOutDir, "openapi.json")
 	Expect(WriteSpecTo(jsonPath, JSON)).To(Succeed())
 	jsonData, err := os.ReadFile(jsonPath)
 	Expect(err).NotTo(HaveOccurred())
-	golden.Check(GinkgoT(), "allmethods.json", jsonData)
+	golden.Check(GinkgoT(), "all_methods.json", jsonData)
 })
 
 var _ = Path("/allmethods", func() {

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/oaswrap/gswag/test/util"
 )
 
 type Category struct {
@@ -80,7 +82,7 @@ func NewRouter() *http.ServeMux {
 			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, http.StatusOK, p)
+		util.WriteJSON(w, http.StatusOK, p)
 	})
 
 	r.HandleFunc("POST /pet", func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +94,7 @@ func NewRouter() *http.ServeMux {
 		if p.ID == 0 {
 			p.ID = 2
 		}
-		writeJSON(w, http.StatusOK, p)
+		util.WriteJSON(w, http.StatusOK, p)
 	})
 
 	r.HandleFunc("GET /pet/findByStatus", func(w http.ResponseWriter, r *http.Request) {
@@ -106,19 +108,19 @@ func NewRouter() *http.ServeMux {
 				res = append(res, p)
 			}
 		}
-		writeJSON(w, http.StatusOK, res)
+		util.WriteJSON(w, http.StatusOK, res)
 	})
 
 	r.HandleFunc("GET /pet/findByTags", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.URL.Query().Get("tags")
-		writeJSON(w, http.StatusOK, pets)
+		util.WriteJSON(w, http.StatusOK, pets)
 	})
 
 	r.HandleFunc("GET /pet/{petId}", func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(r.PathValue("petId"), 10, 64)
 		for _, p := range pets {
 			if p.ID == id {
-				writeJSON(w, http.StatusOK, p)
+				util.WriteJSON(w, http.StatusOK, p)
 				return
 			}
 		}
@@ -137,7 +139,7 @@ func NewRouter() *http.ServeMux {
 		if status != "" {
 			pet.Status = status
 		}
-		writeJSON(w, http.StatusOK, pet)
+		util.WriteJSON(w, http.StatusOK, pet)
 	})
 
 	r.HandleFunc("DELETE /pet/{petId}", func(w http.ResponseWriter, r *http.Request) {
@@ -146,12 +148,12 @@ func NewRouter() *http.ServeMux {
 
 	r.HandleFunc("POST /pet/{petId}/uploadImage", func(w http.ResponseWriter, r *http.Request) {
 		resp := APIResponse{Code: 200, Type: "success", Message: "uploaded"}
-		writeJSON(w, http.StatusOK, resp)
+		util.WriteJSON(w, http.StatusOK, resp)
 	})
 
 	r.HandleFunc("GET /store/inventory", func(w http.ResponseWriter, r *http.Request) {
 		inv := map[string]int{"available": 1, "pending": 0, "sold": 0}
-		writeJSON(w, http.StatusOK, inv)
+		util.WriteJSON(w, http.StatusOK, inv)
 	})
 
 	r.HandleFunc("POST /store/order", func(w http.ResponseWriter, r *http.Request) {
@@ -163,20 +165,20 @@ func NewRouter() *http.ServeMux {
 		if o.ID == 0 {
 			o.ID = 2
 		}
-		writeJSON(w, http.StatusOK, o)
+		util.WriteJSON(w, http.StatusOK, o)
 	})
 
 	r.HandleFunc("GET /store/order/{orderId}", func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(r.PathValue("orderId"), 10, 64)
 		for _, o := range orders {
 			if o.ID == id {
-				writeJSON(w, http.StatusOK, o)
+				util.WriteJSON(w, http.StatusOK, o)
 				return
 			}
 		}
 		fallback := orders[0]
 		fallback.ID = id
-		writeJSON(w, http.StatusOK, fallback)
+		util.WriteJSON(w, http.StatusOK, fallback)
 	})
 
 	r.HandleFunc("DELETE /store/order/{orderId}", func(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +194,7 @@ func NewRouter() *http.ServeMux {
 		if u.ID == 0 {
 			u.ID = 2
 		}
-		writeJSON(w, http.StatusOK, u)
+		util.WriteJSON(w, http.StatusOK, u)
 	})
 
 	r.HandleFunc("POST /user/createWithList", func(w http.ResponseWriter, r *http.Request) {
@@ -201,13 +203,13 @@ func NewRouter() *http.ServeMux {
 			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, http.StatusOK, in)
+		util.WriteJSON(w, http.StatusOK, in)
 	})
 
 	r.HandleFunc("GET /user/login", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Rate-Limit", "500")
 		w.Header().Set("X-Expires-After", "2026-01-01T00:00:00Z")
-		writeJSON(w, http.StatusOK, map[string]string{"token": "ok"})
+		util.WriteJSON(w, http.StatusOK, map[string]string{"token": "ok"})
 	})
 
 	r.HandleFunc("GET /user/logout", func(w http.ResponseWriter, r *http.Request) {
@@ -218,13 +220,13 @@ func NewRouter() *http.ServeMux {
 		username := r.PathValue("username")
 		for _, u := range users {
 			if strings.EqualFold(u.Username, username) {
-				writeJSON(w, http.StatusOK, u)
+				util.WriteJSON(w, http.StatusOK, u)
 				return
 			}
 		}
 		fallback := users[0]
 		fallback.Username = username
-		writeJSON(w, http.StatusOK, fallback)
+		util.WriteJSON(w, http.StatusOK, fallback)
 	})
 
 	r.HandleFunc("PUT /user/{username}", func(w http.ResponseWriter, r *http.Request) {
@@ -238,7 +240,7 @@ func NewRouter() *http.ServeMux {
 			in.ID = 1
 		}
 		in.Username = username
-		writeJSON(w, http.StatusOK, in)
+		util.WriteJSON(w, http.StatusOK, in)
 	})
 
 	r.HandleFunc("DELETE /user/{username}", func(w http.ResponseWriter, r *http.Request) {
@@ -246,10 +248,4 @@ func NewRouter() *http.ServeMux {
 	})
 
 	return r
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
 }

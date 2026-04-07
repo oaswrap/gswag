@@ -9,7 +9,7 @@ import (
 
 	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/internal/golden"
-	"github.com/oaswrap/gswag/test/basicdata"
+	basicdata "github.com/oaswrap/gswag/test/basic_data"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -32,7 +32,7 @@ var _ = BeforeSuite(func() {
 			"bearerAuth": BearerJWT(),
 		},
 		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"Basicdata"},
+		StripDefinitionNamePrefixes: []string{"BasicData"},
 	})
 	testServer = httptest.NewServer(basicdata.NewRouter())
 	SetTestServer(testServer)
@@ -47,14 +47,14 @@ var _ = AfterSuite(func() {
 	// Golden: compare the complete YAML spec
 	yamlData, err := os.ReadFile(filepath.Join(rootOutDir, "openapi.yaml"))
 	Expect(err).NotTo(HaveOccurred())
-	golden.Check(GinkgoT(), "basicdata.yaml", yamlData)
+	golden.Check(GinkgoT(), "basic_data.yaml", yamlData)
 
 	// Golden: compare the complete JSON spec.
 	jsonPath := filepath.Join(rootOutDir, "openapi.json")
 	Expect(WriteSpecTo(jsonPath, JSON)).To(Succeed())
 	jsonData, err := os.ReadFile(jsonPath)
 	Expect(err).NotTo(HaveOccurred())
-	golden.Check(GinkgoT(), "basicdata.json", jsonData)
+	golden.Check(GinkgoT(), "basic_data.json", jsonData)
 })
 
 var _ = Path("/basicdata", func() {
@@ -96,6 +96,20 @@ var _ = Path("/basicdata", func() {
 			})
 			RunTest(func(r *http.Response) {
 				Expect(r.StatusCode).To(Equal(200))
+			})
+		})
+		Response(400, "invalid input", func() {
+			RunTest(func(r *http.Response) {
+				Expect(r.StatusCode).To(Equal(400))
+				Expect(r).To(ContainJSONKey("error"))
+			})
+		})
+		Response(400, "invalid input", func() {
+			SetBody(map[string]any{
+				"int": "not an int",
+			})
+			RunTest(func(r *http.Response) {
+				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
 	})

@@ -3,6 +3,8 @@ package basicdata
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/oaswrap/gswag/test/util"
 )
 
 type AllBasicDataTypes struct {
@@ -65,7 +67,7 @@ func NewRouter() *http.ServeMux {
 			String:  "test",
 			Bool:    true,
 		}
-		writeJSON(w, http.StatusOK, u)
+		util.WriteJSON(w, http.StatusOK, u)
 	})
 
 	r.HandleFunc("POST /basicdata", func(w http.ResponseWriter, r *http.Request) {
@@ -74,29 +76,29 @@ func NewRouter() *http.ServeMux {
 			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, http.StatusOK, u)
+		util.WriteJSON(w, http.StatusOK, u)
 	})
 
 	r.HandleFunc("GET /basicdata-pointers", func(w http.ResponseWriter, r *http.Request) {
 		u := AllBasicDataTypesPointers{
-			Int:     ptr(1),
-			Int8:    ptr(int8(2)),
-			Int16:   ptr(int16(3)),
-			Int32:   ptr(int32(4)),
-			Int64:   ptr(int64(5)),
-			Uint:    ptr(uint(6)),
-			Uint8:   ptr(uint8(7)),
-			Uint16:  ptr(uint16(8)),
-			Uint32:  ptr(uint32(9)),
-			Uint64:  ptr(uint64(10)),
-			Float32: ptr(float32(1.23)),
-			Float64: ptr(float64(4.56)),
-			Byte:    ptr(byte('a')),
-			Rune:    ptr(rune('b')),
-			String:  ptr("test"),
-			Bool:    ptr(true),
+			Int:     util.Ptr(1),
+			Int8:    util.Ptr(int8(2)),
+			Int16:   util.Ptr(int16(3)),
+			Int32:   util.Ptr(int32(4)),
+			Int64:   util.Ptr(int64(5)),
+			Uint:    util.Ptr(uint(6)),
+			Uint8:   util.Ptr(uint8(7)),
+			Uint16:  util.Ptr(uint16(8)),
+			Uint32:  util.Ptr(uint32(9)),
+			Uint64:  util.Ptr(uint64(10)),
+			Float32: util.Ptr(float32(1.23)),
+			Float64: util.Ptr(float64(4.56)),
+			Byte:    util.Ptr(byte('a')),
+			Rune:    util.Ptr(rune('b')),
+			String:  util.Ptr("test"),
+			Bool:    util.Ptr(true),
 		}
-		writeJSON(w, http.StatusOK, u)
+		util.WriteJSON(w, http.StatusOK, u)
 	})
 
 	r.HandleFunc("POST /basicdata-pointers", func(w http.ResponseWriter, r *http.Request) {
@@ -105,19 +107,8 @@ func NewRouter() *http.ServeMux {
 			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, http.StatusOK, u)
+		util.WriteJSON(w, http.StatusOK, u)
 	})
 
 	return r
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	// Ignoring error since this is just test data.
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
