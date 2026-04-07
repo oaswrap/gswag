@@ -137,13 +137,9 @@ func TestNewSpecCollector_AppliesTopLevelMetadata(t *testing.T) {
 				URL:         "https://example.com/pets",
 			},
 		}},
-		OpenAPI: "3.0.4",
 	}
 
 	sc := newSpecCollector(cfg)
-	if sc.reflector.Spec.Openapi != "3.0.4" {
-		t.Fatalf("expected openapi 3.0.4, got %q", sc.reflector.Spec.Openapi)
-	}
 	if sc.reflector.Spec.Info.TermsOfService == nil || *sc.reflector.Spec.Info.TermsOfService != cfg.TermsOfService {
 		t.Fatalf("termsOfService not set")
 	}

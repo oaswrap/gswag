@@ -6,7 +6,7 @@ COVER_HTML := coverage.html
 EXAMPLES   := stdlib init-example gin echo chi fiber petstore
 
 .PHONY: all build test cover lint vet tidy clean fmt \
-        examples validate-examples install help
+        examples validate-examples install help update-golden
 
 all: tidy vet fmt test build
 
@@ -26,6 +26,9 @@ install:
 
 test:
 	go test ./...
+
+update-golden:
+	UPDATE_GOLDEN=true go test ./...
 
 test-verbose:
 	go test -v ./...
@@ -119,3 +122,4 @@ help:
 	@echo "  validate SPEC=<f>  Validate a spec file (requires SPEC=)"
 	@echo "  diff BASE=<f> HEAD=<f>  Diff two spec files"
 	@echo "  clean              Remove build artefacts"
+	@echo "  update-golden      Regenerate golden test fixtures"

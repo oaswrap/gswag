@@ -3,7 +3,6 @@ module github.com/oaswrap/gswag/examples/petstore
 go 1.24.0
 
 require (
-	github.com/go-chi/chi/v5 v5.2.1
 	github.com/oaswrap/gswag v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1

@@ -49,6 +49,7 @@ paths:
         name: id
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "204":
@@ -62,6 +63,7 @@ paths:
         name: id
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "200":
@@ -80,6 +82,7 @@ components:
         name:
           type: string
         price:
+          format: double
           type: number
       type: object
     ApiItem:
@@ -89,5 +92,6 @@ components:
         name:
           type: string
         price:
+          format: double
           type: number
       type: object

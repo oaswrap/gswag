@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/oaswrap/gswag/internal/schemautil"
+	"github.com/swaggest/jsonschema-go"
 	openapi "github.com/swaggest/openapi-go"
 	"github.com/swaggest/openapi-go/openapi3"
 )
@@ -28,12 +29,21 @@ type SpecCollector struct {
 }
 
 func newSpecCollector(cfg *Config) *SpecCollector {
-	r := openapi3.Reflector{}
-	openapiVersion := cfg.OpenAPI
-	if openapiVersion == "" || strings.HasPrefix(openapiVersion, "3.1") {
-		openapiVersion = "3.0.3"
+	r := openapi3.NewReflector()
+	// Apply optional config to underlying JSON Schema reflector.
+	if len(cfg.StripDefinitionNamePrefixes) > 0 {
+		r.JSONSchemaReflector().DefaultOptions = append(r.JSONSchemaReflector().DefaultOptions,
+			jsonschema.StripDefinitionNamePrefix(cfg.StripDefinitionNamePrefixes...))
 	}
-	r.Spec = &openapi3.Spec{Openapi: openapiVersion}
+	if cfg.InlineRefs {
+		r.JSONSchemaReflector().DefaultOptions = append(r.JSONSchemaReflector().DefaultOptions,
+			jsonschema.InlineRefs)
+	}
+	if len(cfg.TypeMappings) > 0 {
+		for _, m := range cfg.TypeMappings {
+			r.JSONSchemaReflector().AddTypeMapping(m.Src, m.Dst)
+		}
+	}
 	r.Spec.Info.
 		WithTitle(cfg.Title).
 		WithVersion(cfg.Version)
@@ -112,7 +122,7 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 		r.Spec.WithServers(s)
 	}
 
-	sc := &SpecCollector{reflector: &r, excludePaths: append([]string(nil), cfg.ExcludePaths...)}
+	sc := &SpecCollector{reflector: r, excludePaths: append([]string(nil), cfg.ExcludePaths...)}
 
 	// Pre-register security schemes declared in Config.
 	for name, schemeCfg := range cfg.SecuritySchemes {
@@ -447,6 +457,23 @@ func (sc *SpecCollector) appendResponseHeaders(b *requestBuilder) {
 	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
+// locationToParamIn converts a ParameterLocation to the corresponding ParameterIn
+// value. Using WithIn (instead of WithLocation) avoids duplicate "in" keys in the
+// marshaled JSON, which occurs because Parameter.MarshalJSON merges both
+// marshalParameter (emitting p.In) and p.Location (emitting its own const "in").
+func locationToParamIn(loc openapi3.ParameterLocation) openapi3.ParameterIn {
+	switch {
+	case loc.PathParameter != nil:
+		return openapi3.ParameterInPath
+	case loc.HeaderParameter != nil:
+		return openapi3.ParameterInHeader
+	case loc.CookieParameter != nil:
+		return openapi3.ParameterInCookie
+	default:
+		return openapi3.ParameterInQuery
+	}
+}
+
 func stringParam(name string, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
 	schemaType := openapi3.SchemaTypeString
 	schema := openapi3.Schema{}
@@ -456,7 +483,7 @@ func stringParam(name string, loc openapi3.ParameterLocation) openapi3.Parameter
 
 	param := openapi3.Parameter{}
 	param.WithName(name)
-	param.WithLocation(loc)
+	param.WithIn(locationToParamIn(loc))
 	param.WithSchema(sor)
 
 	por := openapi3.ParameterOrRef{}
@@ -1055,7 +1082,7 @@ func dslSchemaParam(p dslParam, loc openapi3.ParameterLocation) openapi3.Paramet
 
 	param := openapi3.Parameter{}
 	param.WithName(p.name)
-	param.WithLocation(loc)
+	param.WithIn(locationToParamIn(loc))
 	param.WithSchema(sor)
 	if p.required != nil {
 		param.WithRequired(*p.required)

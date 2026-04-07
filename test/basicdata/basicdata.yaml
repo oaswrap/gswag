@@ -1,0 +1,175 @@
+openapi: 3.0.3
+info:
+  title: My API
+  version: 1.0.0
+paths:
+  /basicdata:
+    get:
+      operationId: get_basicdata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllBasicDataTypes'
+          description: OK
+      summary: get basic data types
+      tags:
+      - basicdata
+    post:
+      operationId: post_basicdata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllBasicDataTypes'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllBasicDataTypes'
+          description: OK
+      summary: post basic data types
+      tags:
+      - basicdata
+  /basicdata-pointers:
+    get:
+      operationId: get_basicdata_pointers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllBasicDataTypesPointers'
+          description: OK
+      summary: get basic data types with pointers
+      tags:
+      - basicdata
+    post:
+      operationId: post_basicdata_pointers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllBasicDataTypesPointers'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllBasicDataTypesPointers'
+          description: OK
+      summary: post basic data types with pointers
+      tags:
+      - basicdata
+components:
+  schemas:
+    AllBasicDataTypes:
+      properties:
+        bool:
+          type: boolean
+        byte:
+          minimum: 0
+          type: integer
+        float32:
+          format: float
+          type: number
+        float64:
+          format: double
+          type: number
+        int:
+          type: integer
+        int8:
+          type: integer
+        int16:
+          type: integer
+        int32:
+          format: int32
+          type: integer
+        int64:
+          format: int64
+          type: integer
+        rune:
+          format: int32
+          type: integer
+        string:
+          type: string
+        uint:
+          minimum: 0
+          type: integer
+        uint8:
+          minimum: 0
+          type: integer
+        uint16:
+          minimum: 0
+          type: integer
+        uint32:
+          minimum: 0
+          type: integer
+        uint64:
+          minimum: 0
+          type: integer
+      type: object
+    AllBasicDataTypesPointers:
+      properties:
+        bool:
+          nullable: true
+          type: boolean
+        byte:
+          minimum: 0
+          nullable: true
+          type: integer
+        float32:
+          nullable: true
+          type: number
+        float64:
+          nullable: true
+          type: number
+        int:
+          nullable: true
+          type: integer
+        int8:
+          nullable: true
+          type: integer
+        int16:
+          nullable: true
+          type: integer
+        int32:
+          nullable: true
+          type: integer
+        int64:
+          nullable: true
+          type: integer
+        rune:
+          nullable: true
+          type: integer
+        string:
+          nullable: true
+          type: string
+        uint:
+          minimum: 0
+          nullable: true
+          type: integer
+        uint8:
+          minimum: 0
+          nullable: true
+          type: integer
+        uint16:
+          minimum: 0
+          nullable: true
+          type: integer
+        uint32:
+          minimum: 0
+          nullable: true
+          type: integer
+        uint64:
+          minimum: 0
+          nullable: true
+          type: integer
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

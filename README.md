@@ -208,9 +208,8 @@ Init(&Config{
     Tags: []TagConfig{
         {Name: "users", Description: "User operations"},
     },
-    OpenAPI:         "3.0.4",      // optional exact 3.0.x version override
     OutputPath:      "./docs/openapi.yaml", // default: ./docs/openapi.yaml
-    OutputFormat:    YAML,          // or JSON
+    OutputFormat:    YAML,                   // YAML or JSON
     Servers: []ServerConfig{
         {URL: "https://api.example.com", Description: "prod"},
     },
@@ -231,7 +230,7 @@ Init(&Config{
     ValidationMode:            "warn", // "fail" (default) or "warn"
 
     CaptureExamples: true,
-    MaxExampleBytes: 16384, // 0 means no cap
+    MaxExampleBytes: 0, // 0 means default cap of 16384 bytes; set >0 to override
     Sanitizer: func(b []byte) []byte {
         return b // redact sensitive data here
     },

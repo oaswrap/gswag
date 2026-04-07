@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/oaswrap/gswag"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/oaswrap/gswag"
 )
 
 var _ = Describe("WriteSpec / WriteSpecTo", func() {

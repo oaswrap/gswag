@@ -14,10 +14,14 @@ func main() {
 		port = "8080"
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/", api.NewRouter())
-
+	router := api.NewRouter()
 	addr := ":" + port
-	log.Printf("starting petstore example on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+
+	log.Printf("starting petstore example on http://localhost%s", addr)
+	log.Fatal(server.ListenAndServe())
 }

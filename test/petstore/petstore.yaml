@@ -1,0 +1,569 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: apiteam@swagger.io
+  description: |-
+    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
+    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
+    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+
+    Some useful links:
+    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
+    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://swagger.io/terms/
+  title: Swagger Petstore - OpenAPI 3.0
+  version: 1.0.27
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+- url: /api/v3
+tags:
+- description: Everything about your Pets
+  externalDocs:
+    description: Find out more
+    url: https://swagger.io
+  name: pet
+- description: Access to Petstore orders
+  externalDocs:
+    description: Find out more about our store
+    url: https://swagger.io
+  name: store
+- description: Operations about user
+  name: user
+paths:
+  /pet:
+    post:
+      operationId: addPet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Add a new pet to the store
+      tags:
+      - pet
+    put:
+      operationId: updatePet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Update an existing pet
+      tags:
+      - pet
+  /pet/{petId}:
+    delete:
+      operationId: deletePet
+      parameters:
+      - in: path
+        name: petId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: header
+        name: api_key
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Deletes a pet
+      tags:
+      - pet
+    get:
+      operationId: getPetById
+      parameters:
+      - in: path
+        name: petId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: OK
+      security:
+      - api_key: []
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Find pet by ID
+      tags:
+      - pet
+    post:
+      operationId: updatePetWithForm
+      parameters:
+      - in: path
+        name: petId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Updates a pet in the store with form data
+      tags:
+      - pet
+  /pet/{petId}/uploadImage:
+    post:
+      operationId: uploadFile
+      parameters:
+      - in: path
+        name: petId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: additionalMetadata
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              format: binary
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Uploads an image
+      tags:
+      - pet
+  /pet/findByStatus:
+    get:
+      operationId: findPetsByStatus
+      parameters:
+      - explode: true
+        in: query
+        name: status
+        required: true
+        schema:
+          default: available
+          enum:
+          - available
+          - pending
+          - sold
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Pet'
+                type: array
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Finds Pets by status
+      tags:
+      - pet
+  /pet/findByTags:
+    get:
+      operationId: findPetsByTags
+      parameters:
+      - explode: true
+        in: query
+        name: tags
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Pet'
+                type: array
+          description: OK
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+      summary: Finds Pets by tags
+      tags:
+      - pet
+  /store/inventory:
+    get:
+      operationId: getInventory
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: integer
+                type: object
+          description: OK
+      security:
+      - api_key: []
+      summary: Returns pet inventories by status
+      tags:
+      - store
+  /store/order:
+    post:
+      operationId: placeOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: OK
+      summary: Place an order for a pet
+      tags:
+      - store
+  /store/order/{orderId}:
+    delete:
+      operationId: deleteOrder
+      parameters:
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          description: OK
+      summary: Delete purchase order by identifier
+      tags:
+      - store
+    get:
+      operationId: getOrderById
+      parameters:
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: OK
+      summary: Find purchase order by ID
+      tags:
+      - store
+  /user:
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: OK
+      summary: Create user
+      tags:
+      - user
+  /user/{username}:
+    delete:
+      operationId: deleteUser
+      parameters:
+      - in: path
+        name: username
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+      summary: Delete user resource
+      tags:
+      - user
+    get:
+      operationId: getUserByName
+      parameters:
+      - in: path
+        name: username
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: OK
+      summary: Get user by user name
+      tags:
+      - user
+    put:
+      operationId: updateUser
+      parameters:
+      - in: path
+        name: username
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  email:
+                    type: string
+                  firstName:
+                    type: string
+                  id:
+                    type: integer
+                  lastName:
+                    type: string
+                  password:
+                    type: string
+                  phone:
+                    type: string
+                  userStatus:
+                    type: integer
+                  username:
+                    type: string
+                type: object
+          description: OK
+      summary: Update user resource
+      tags:
+      - user
+  /user/createWithList:
+    post:
+      operationId: createUsersWithListInput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/User'
+              nullable: true
+              type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                type: array
+          description: OK
+      summary: Creates list of users with given input array
+      tags:
+      - user
+  /user/login:
+    get:
+      operationId: loginUser
+      parameters:
+      - in: query
+        name: username
+        schema:
+          type: string
+      - in: query
+        name: password
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      summary: Logs user into the system
+      tags:
+      - user
+  /user/logout:
+    get:
+      operationId: logoutUser
+      responses:
+        "200":
+          description: OK
+      summary: Logs out current logged in user session
+      tags:
+      - user
+components:
+  schemas:
+    APIResponse:
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        type:
+          type: string
+      type: object
+    Category:
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+      type: object
+    Order:
+      properties:
+        complete:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        petId:
+          format: int64
+          type: integer
+        quantity:
+          type: integer
+        shipDate:
+          type: string
+        status:
+          type: string
+      type: object
+    Pet:
+      properties:
+        category:
+          $ref: '#/components/schemas/Category'
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+        photoUrls:
+          items:
+            type: string
+          nullable: true
+          type: array
+        status:
+          type: string
+        tags:
+          items:
+            $ref: '#/components/schemas/Tag'
+          nullable: true
+          type: array
+      type: object
+    Tag:
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+      type: object
+    User:
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        id:
+          format: int64
+          type: integer
+        lastName:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+        userStatus:
+          type: integer
+        username:
+          type: string
+      type: object
+  securitySchemes:
+    api_key:
+      in: header
+      name: api_key
+      type: apiKey
+    petstore_auth:
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            read:pets: read your pets
+            write:pets: modify pets in your account
+      type: oauth2

@@ -27,6 +27,13 @@ type LicenseConfig struct {
 	URL  string
 }
 
+// TypeMapping describes a substitution between two Go types for JSON Schema reflection.
+// Provide a sample `Src` value (or a type) and a `Dst` value to map to.
+type TypeMapping struct {
+	Src interface{}
+	Dst interface{}
+}
+
 // ExternalDocsConfig describes OpenAPI external documentation metadata.
 type ExternalDocsConfig struct {
 	Description string
@@ -88,7 +95,6 @@ type Config struct {
 	License        *LicenseConfig
 	ExternalDocs   *ExternalDocsConfig
 	Tags           []TagConfig
-	OpenAPI        string // e.g. "3.0.4"; if empty defaults to "3.0.3".
 	OutputPath     string // default: "./docs/openapi.yaml"
 	OutputFormat   OutputFormat
 	Servers        []ServerConfig
@@ -114,6 +120,17 @@ type Config struct {
 	// Sanitizer is an optional hook to transform or redact example bytes before
 	// they are stored in the spec. If nil, examples are recorded verbatim (subject to cap).
 	Sanitizer func([]byte) []byte
+	// StripDefinitionNamePrefixes lists definition name prefixes that should be
+	// removed from reflected JSON Schema definition names. Applied when building
+	// reflectors so component schema names are cleaner.
+	StripDefinitionNamePrefixes []string
+	// InlineRefs controls whether JSON Schema reflector inlines referenced
+	// types instead of creating component references. When true, schemas
+	// are attempted to be inlined where possible.
+	InlineRefs bool
+	// TypeMappings holds list of type substitutions to apply to the jsonschema
+	// reflector. Each mapping calls `AddTypeMapping(src, dst)`.
+	TypeMappings []TypeMapping
 }
 
 var globalConfig *Config

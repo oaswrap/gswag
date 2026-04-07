@@ -1,4 +1,4 @@
-package api
+package petstore
 
 import (
 	"encoding/json"

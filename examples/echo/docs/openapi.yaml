@@ -13,6 +13,7 @@ paths:
       - in: query
         name: max_price
         schema:
+          format: double
           type: number
       responses:
         "200":
@@ -49,6 +50,7 @@ paths:
         name: id
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "200":
@@ -67,6 +69,7 @@ components:
         category:
           type: string
         price:
+          format: double
           type: number
         title:
           type: string
@@ -78,6 +81,7 @@ components:
         id:
           type: integer
         price:
+          format: double
           type: number
         title:
           type: string

@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: All Methods API
+  version: 1.0.0
+paths:
+  /allmethods:
+    delete:
+      operationId: delete_allmethods
+      responses:
+        "200":
+          description: OK
+      summary: delete allmethods
+      tags:
+      - allmethods
+    get:
+      operationId: get_allmethods
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      summary: get allmethods
+      tags:
+      - allmethods
+    patch:
+      operationId: patch_allmethods
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllMethodsModel'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllMethodsModel'
+          description: OK
+      summary: patch allmethods
+      tags:
+      - allmethods
+    post:
+      operationId: post_allmethods
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllMethodsModel'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllMethodsModel'
+          description: OK
+      summary: post allmethods
+      tags:
+      - allmethods
+    put:
+      operationId: put_allmethods
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllMethodsModel'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllMethodsModel'
+          description: OK
+      summary: put allmethods
+      tags:
+      - allmethods
+components:
+  schemas:
+    AllMethodsModel:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      type: object

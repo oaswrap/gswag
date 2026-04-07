@@ -1,0 +1,257 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "My API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/basicdata": {
+      "get": {
+        "tags": [
+          "basicdata"
+        ],
+        "summary": "get basic data types",
+        "operationId": "get_basicdata",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllBasicDataTypes"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "basicdata"
+        ],
+        "summary": "post basic data types",
+        "operationId": "post_basicdata",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllBasicDataTypes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllBasicDataTypes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/basicdata-pointers": {
+      "get": {
+        "tags": [
+          "basicdata"
+        ],
+        "summary": "get basic data types with pointers",
+        "operationId": "get_basicdata_pointers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "basicdata"
+        ],
+        "summary": "post basic data types with pointers",
+        "operationId": "post_basicdata_pointers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AllBasicDataTypes": {
+        "type": "object",
+        "properties": {
+          "bool": {
+            "type": "boolean"
+          },
+          "byte": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "float32": {
+            "type": "number",
+            "format": "float"
+          },
+          "float64": {
+            "type": "number",
+            "format": "double"
+          },
+          "int": {
+            "type": "integer"
+          },
+          "int16": {
+            "type": "integer"
+          },
+          "int32": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "int64": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "int8": {
+            "type": "integer"
+          },
+          "rune": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "string": {
+            "type": "string"
+          },
+          "uint": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "uint16": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "uint32": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "uint64": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "uint8": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      },
+      "AllBasicDataTypesPointers": {
+        "type": "object",
+        "properties": {
+          "bool": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "byte": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          },
+          "float32": {
+            "type": "number",
+            "nullable": true
+          },
+          "float64": {
+            "type": "number",
+            "nullable": true
+          },
+          "int": {
+            "type": "integer",
+            "nullable": true
+          },
+          "int16": {
+            "type": "integer",
+            "nullable": true
+          },
+          "int32": {
+            "type": "integer",
+            "nullable": true
+          },
+          "int64": {
+            "type": "integer",
+            "nullable": true
+          },
+          "int8": {
+            "type": "integer",
+            "nullable": true
+          },
+          "rune": {
+            "type": "integer",
+            "nullable": true
+          },
+          "string": {
+            "type": "string",
+            "nullable": true
+          },
+          "uint": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          },
+          "uint16": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          },
+          "uint32": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          },
+          "uint64": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          },
+          "uint8": {
+            "minimum": 0,
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
