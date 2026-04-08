@@ -79,7 +79,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("PUT /pet", func(w http.ResponseWriter, r *http.Request) {
 		var p Pet
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, p)
@@ -88,7 +88,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /pet", func(w http.ResponseWriter, r *http.Request) {
 		var p Pet
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		if p.ID == 0 {
@@ -124,7 +124,7 @@ func NewRouter() *http.ServeMux {
 				return
 			}
 		}
-		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+		util.WriteErrorJSON(w, http.StatusNotFound, "not found")
 	})
 
 	r.HandleFunc("POST /pet/{petId}", func(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +159,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /store/order", func(w http.ResponseWriter, r *http.Request) {
 		var o Order
 		if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		if o.ID == 0 {
@@ -188,7 +188,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /user", func(w http.ResponseWriter, r *http.Request) {
 		var u User
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		if u.ID == 0 {
@@ -200,7 +200,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /user/createWithList", func(w http.ResponseWriter, r *http.Request) {
 		var in []User
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, in)
@@ -233,7 +233,7 @@ func NewRouter() *http.ServeMux {
 		username := r.PathValue("username")
 		var in User
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, `{"error":"bad request"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "bad request")
 			return
 		}
 		if in.ID == 0 {

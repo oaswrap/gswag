@@ -22,7 +22,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /allmethods", func(w http.ResponseWriter, r *http.Request) {
 		var in AllMethodsModel
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, in)
@@ -31,7 +31,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("PUT /allmethods", func(w http.ResponseWriter, r *http.Request) {
 		var in AllMethodsModel
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, in)
@@ -40,7 +40,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("PATCH /allmethods", func(w http.ResponseWriter, r *http.Request) {
 		var in AllMethodsModel
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, in)

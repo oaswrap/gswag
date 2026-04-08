@@ -73,7 +73,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /basicdata", func(w http.ResponseWriter, r *http.Request) {
 		var u AllBasicDataTypes
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, u)
@@ -104,7 +104,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("POST /basicdata-pointers", func(w http.ResponseWriter, r *http.Request) {
 		var u AllBasicDataTypesPointers
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, u)

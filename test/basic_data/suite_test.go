@@ -10,6 +10,7 @@ import (
 	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/internal/golden"
 	basicdata "github.com/oaswrap/gswag/test/basic_data"
+	"github.com/oaswrap/gswag/test/util"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -135,22 +136,22 @@ var _ = Path("/basicdata-pointers", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(basicdata.AllBasicDataTypesPointers))
 			SetBody(&basicdata.AllBasicDataTypesPointers{
-				Int:     ptr(1),
-				Int8:    ptr(int8(2)),
-				Int16:   ptr(int16(3)),
-				Int32:   ptr(int32(4)),
-				Int64:   ptr(int64(5)),
-				Uint:    ptr(uint(6)),
-				Uint8:   ptr(uint8(7)),
-				Uint16:  ptr(uint16(8)),
-				Uint32:  ptr(uint32(9)),
-				Uint64:  ptr(uint64(10)),
-				Float32: ptr(float32(1.23)),
-				Float64: ptr(float64(4.56)),
-				Byte:    ptr(byte('a')),
-				Rune:    ptr(rune('b')),
-				String:  ptr("test"),
-				Bool:    ptr(true),
+				Int:     util.Ptr(1),
+				Int8:    util.Ptr(int8(2)),
+				Int16:   util.Ptr(int16(3)),
+				Int32:   util.Ptr(int32(4)),
+				Int64:   util.Ptr(int64(5)),
+				Uint:    util.Ptr(uint(6)),
+				Uint8:   util.Ptr(uint8(7)),
+				Uint16:  util.Ptr(uint16(8)),
+				Uint32:  util.Ptr(uint32(9)),
+				Uint64:  util.Ptr(uint64(10)),
+				Float32: util.Ptr(float32(1.23)),
+				Float64: util.Ptr(float64(4.56)),
+				Byte:    util.Ptr(byte('a')),
+				Rune:    util.Ptr(rune('b')),
+				String:  util.Ptr("test"),
+				Bool:    util.Ptr(true),
 			})
 			RunTest(func(r *http.Response) {
 				Expect(r.StatusCode).To(Equal(200))
@@ -158,7 +159,3 @@ var _ = Path("/basicdata-pointers", func() {
 		})
 	})
 })
-
-func ptr[T any](v T) *T {
-	return &v
-}

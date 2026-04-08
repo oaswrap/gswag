@@ -35,7 +35,7 @@ func NewRouter() *http.ServeMux {
 		ct := r.Header.Get("Content-Type")
 		mediaType, params, err := mime.ParseMediaType(ct)
 		if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
-			http.Error(w, `{"error":"expected multipart/form-data"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "expected multipart/form-data")
 			return
 		}
 		mr := multipart.NewReader(r.Body, params["boundary"])
@@ -47,7 +47,7 @@ func NewRouter() *http.ServeMux {
 				break
 			}
 			if err != nil {
-				http.Error(w, `{"error":"bad multipart"}`, http.StatusBadRequest)
+				util.WriteErrorJSON(w, http.StatusBadRequest, "bad multipart")
 				return
 			}
 			b, _ := io.ReadAll(p)

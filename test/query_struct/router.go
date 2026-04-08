@@ -63,7 +63,7 @@ func NewRouter() *http.ServeMux {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, `{"error":"invalid id"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid id")
 			return
 		}
 		for _, p := range products {
@@ -72,7 +72,7 @@ func NewRouter() *http.ServeMux {
 				return
 			}
 		}
-		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+		util.WriteErrorJSON(w, http.StatusNotFound, "not found")
 	})
 
 	return mux

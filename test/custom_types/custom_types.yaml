@@ -1,0 +1,158 @@
+openapi: 3.0.3
+info:
+  description: Demonstrates generic types, custom named types, Nullable[T], time.Time,
+    and json.RawMessage in OpenAPI spec generation.
+  title: Custom Types API
+  version: 1.0.0
+paths:
+  /events:
+    get:
+      description: Returns events with time.Time (date-time string) and json.RawMessage
+        (free-form JSON) fields.
+      operationId: listEvents
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Event'
+                type: array
+          description: OK
+      summary: list events
+      tags:
+      - events
+  /items:
+    get:
+      description: Returns a paginated list of items. The response wraps a generic
+        Page[Item] type.
+      operationId: listItems
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageGithubComOaswrapGswagTestCustomTypesItem'
+          description: OK
+      summary: list items (paginated)
+      tags:
+      - items
+    post:
+      description: 'Creates an item using custom named types: UserID (int64) and Status
+        (string).'
+      operationId: createItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Item'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
+      summary: create item
+      tags:
+      - items
+  /nullable:
+    get:
+      description: Returns a struct with Nullable[T] fields mapped to nullable scalars
+        via TypeMappings.
+      operationId: getNullable
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NullableFields'
+          description: OK
+      summary: get nullable fields
+      tags:
+      - nullable
+    post:
+      operationId: postNullable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NullableFields'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NullableFields'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
+      summary: post nullable fields
+      tags:
+      - nullable
+components:
+  schemas:
+    Event:
+      properties:
+        id:
+          type: integer
+        metadata: {}
+        name:
+          type: string
+        occurred_at:
+          format: date-time
+          type: string
+      type: object
+    Item:
+      properties:
+        id:
+          $ref: '#/components/schemas/UserID'
+        name:
+          type: string
+        status:
+          type: string
+      type: object
+    NullableFields:
+      properties:
+        active:
+          type: boolean
+        age:
+          type: integer
+        name:
+          type: string
+        score:
+          type: number
+      type: object
+    PageGithubComOaswrapGswagTestCustomTypesItem:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Item'
+          nullable: true
+          type: array
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+      type: object
+    UserID:
+      format: int64
+      type: integer

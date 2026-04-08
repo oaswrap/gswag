@@ -44,7 +44,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("POST /customers", func(w http.ResponseWriter, r *http.Request) {
 		var c Customer
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-			http.Error(w, `{"error":"invalid input"}`, http.StatusBadRequest)
+			util.WriteErrorJSON(w, http.StatusBadRequest, "invalid input")
 			return
 		}
 		c.ID = 2
