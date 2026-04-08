@@ -25,6 +25,8 @@ Requires Go 1.24+.
 
 ### 1. Configure suite and server
 
+Scaffold a suite file with `gswag init`, or write it manually:
+
 ```go
 // suite_test.go
 package api_test
@@ -63,6 +65,20 @@ var _ = AfterSuite(func() {
     testServer.Close()
     Expect(WriteSpec()).To(Succeed())
 })
+```
+
+Or use the `RegisterSuiteHandlers` helper (single-process suites):
+
+```go
+func TestAPI(t *testing.T) {
+    gswag.RegisterSuiteHandlers(&gswag.Config{
+        Title:      "My API",
+        Version:    "1.0.0",
+        OutputPath: "./docs/openapi.yaml",
+    })
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "API Suite")
+}
 ```
 
 ### 2. Write API specs with the DSL
@@ -184,6 +200,56 @@ Request value setters (for execution):
 - `SetBody(body)`
 - `SetRawBody([]byte, contentType)`
 
+### Content types
+
+By default gswag documents request bodies as `application/json`. Use `Consumes` and `Produces` to override:
+
+```go
+Post("Upload file", func() {
+    Consumes("multipart/form-data")
+    Produces("application/json")
+    RequestBody(new(UploadForm))
+
+    Response(200, "uploaded", func() {
+        SetRawBody(formData, "multipart/form-data")
+        RunTest(...)
+    })
+})
+```
+
+`Produces` accepts multiple types when an endpoint can serve different formats:
+
+```go
+Get("Export data", func() {
+    Produces("application/json", "text/csv")
+    ...
+})
+```
+
+### Shared request setup with BeforeRequest
+
+Use `BeforeRequest` (a thin `BeforeEach` wrapper) to share `SetParam`, `SetHeader`, or `SetBody` calls across multiple `Response` blocks — similar to `let` in rswag:
+
+```go
+Get("Get order", func() {
+    BeforeRequest(func() {
+        SetHeader("Authorization", "Bearer test-token")
+    })
+
+    Response(200, "found", func() {
+        SetParam("id", "42")
+        RunTest(...)
+    })
+
+    Response(404, "not found", func() {
+        SetParam("id", "999")
+        RunTest(...)
+    })
+})
+```
+
+> **Note:** `BeforeRequest` runs during test execution (Ginkgo `BeforeEach`), so it is suited for values that can only be determined at runtime. Static values (known at test-tree build time) should be set directly inside the `Response` block.
+
 ## Config
 
 ```go
@@ -234,6 +300,8 @@ Init(&Config{
     Sanitizer: func(b []byte) []byte {
         return b // redact sensitive data here
     },
+
+    MergeTimeout: 60 * time.Second, // how long MergeAndWriteSpec waits for slow nodes (default 30s)
 })
 ```
 
@@ -305,22 +373,38 @@ Validation highlights:
 
 ## Parallel Ginkgo Support
 
-For `ginkgo -p`, write partial specs from every process and merge on process 1.
+For `ginkgo -p`, each parallel process writes a partial spec and process 1 merges them all.
+
+### Option A — helper (recommended)
 
 ```go
-var _ = AfterSuite(func() {
-    node := GinkgoParallelProcess()
+func TestAPI(t *testing.T) {
+    gswag.RegisterParallelSuiteHandlers(&gswag.Config{
+        Title:      "My API",
+        Version:    "1.0.0",
+        OutputPath: "./docs/openapi.yaml",
+    }, "./tmp/gswag") // partialDir shared by all nodes
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "API Suite")
+}
+```
+
+`RegisterParallelSuiteHandlers` uses Ginkgo's `SynchronizedAfterSuite` internally, which guarantees that node 1 only merges *after* all other nodes have finished writing their partial files.
+
+### Option B — manual `SynchronizedAfterSuite`
+
+```go
+var _ = SynchronizedAfterSuite(func() {
+    // Runs on every node — write this node's partial spec.
+    Expect(gswag.WritePartialSpec(GinkgoParallelProcess(), "./tmp/gswag")).To(Succeed())
+}, func() {
+    // Runs only on node 1, after all other nodes finish the block above.
     suiteCfg, _ := GinkgoConfiguration()
-
-    Expect(WritePartialSpec(node, "./tmp/gswag")).To(Succeed())
-
-    if node == 1 {
-        Expect(MergeAndWriteSpec(suiteCfg.ParallelTotal, "./tmp/gswag")).To(Succeed())
-    }
+    Expect(gswag.MergeAndWriteSpec(suiteCfg.ParallelTotal, "./tmp/gswag")).To(Succeed())
 })
 ```
 
-Partial files are stored as `tmp/gswag/node-N.json`.
+Partial files are written as `./tmp/gswag/node-N.json`. `MergeAndWriteSpec` polls for each file with a configurable timeout (default 30 s, override via `Config.MergeTimeout`).
 
 ## CLI
 
@@ -330,11 +414,23 @@ Install:
 go install github.com/oaswrap/gswag/cmd/gswag@latest
 ```
 
+### Init
+
+Scaffold a gswag suite file in your package:
+
+```sh
+gswag init                  # creates <package>_suite_test.go in the current directory
+gswag init ./internal/api   # target a specific package path
+gswag init --force          # overwrite an existing file
+```
+
+The generated file includes a `BeforeSuite`/`AfterSuite` skeleton with `Init` and `WriteSpec` already wired up.
+
 ### Validate
 
 ```sh
 gswag validate docs/openapi.yaml
-gswag validate --strict docs/openapi.yaml
+gswag validate --strict docs/openapi.yaml  # treat warnings as errors
 ```
 
 ### Diff

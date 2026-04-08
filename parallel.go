@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/swaggest/openapi-go/openapi3"
 )
+
+const defaultMergeTimeout = 30 * time.Second
 
 // WritePartialSpec serialises the current collector's spec to a file inside dir.
 // The file is named after nodeIndex (1-based) so that the merge step can discover
@@ -33,18 +36,27 @@ func WritePartialSpec(nodeIndex int, dir string) error {
 // MergeAndWriteSpec reads all partial spec files written by WritePartialSpec,
 // merges their paths and schemas, then writes the final spec using the global config.
 // This must only be called on node 1 after all other nodes have called WritePartialSpec.
+//
+// It polls for each node's partial file until it appears, using the MergeTimeout
+// from the global config (default 30 s). Use Ginkgo's SynchronizedAfterSuite to
+// guarantee all nodes have finished writing before this is called.
 func MergeAndWriteSpec(totalNodes int, dir string) error {
 	if globalConfig == nil {
 		return fmt.Errorf("gswag: not initialised — call Init() first")
 	}
 
-	base, err := readPartialSpec(dir, 1)
+	timeout := globalConfig.MergeTimeout
+	if timeout <= 0 {
+		timeout = defaultMergeTimeout
+	}
+
+	base, err := waitAndReadPartialSpec(dir, 1, timeout)
 	if err != nil {
 		return fmt.Errorf("gswag: reading node 1 partial: %w", err)
 	}
 
 	for i := 2; i <= totalNodes; i++ {
-		partial, err := readPartialSpec(dir, i)
+		partial, err := waitAndReadPartialSpec(dir, i, timeout)
 		if err != nil {
 			return fmt.Errorf("gswag: reading node %d partial: %w", i, err)
 		}
@@ -73,65 +85,131 @@ func partialSpecPath(dir string, nodeIndex int) string {
 	return filepath.Join(dir, fmt.Sprintf("node-%d.json", nodeIndex))
 }
 
-func readPartialSpec(dir string, nodeIndex int) (*openapi3.Spec, error) {
+// waitAndReadPartialSpec polls for the partial spec file until it appears or timeout expires.
+func waitAndReadPartialSpec(dir string, nodeIndex int, timeout time.Duration) (*openapi3.Spec, error) {
 	path := partialSpecPath(dir, nodeIndex)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+	deadline := time.Now().Add(timeout)
+	for {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			spec := &openapi3.Spec{}
+			if unmarshalErr := json.Unmarshal(data, spec); unmarshalErr != nil {
+				return nil, unmarshalErr
+			}
+			return spec, nil
+		}
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("timeout waiting for node %d partial spec at %s", nodeIndex, path)
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
-	spec := &openapi3.Spec{}
-	if err := json.Unmarshal(data, spec); err != nil {
-		return nil, err
-	}
-	return spec, nil
 }
 
-// mergeSpec merges paths and schemas from src into dst in place.
+// mergeSpec merges paths and all component types from src into dst in place.
 func mergeSpec(dst, src *openapi3.Spec) {
-	// Merge paths.
-	if src.Paths.MapOfPathItemValues == nil {
-		return
-	}
-	if dst.Paths.MapOfPathItemValues == nil {
-		dst.Paths.MapOfPathItemValues = make(map[string]openapi3.PathItem)
-	}
-	for path, srcItem := range src.Paths.MapOfPathItemValues {
-		if existing, ok := dst.Paths.MapOfPathItemValues[path]; ok {
-			// Merge operations into the existing path item.
-			if srcItem.MapOfOperationValues != nil {
-				if existing.MapOfOperationValues == nil {
-					existing.MapOfOperationValues = make(map[string]openapi3.Operation)
-				}
-				for method, op := range srcItem.MapOfOperationValues {
-					if _, alreadyDefined := existing.MapOfOperationValues[method]; !alreadyDefined {
-						existing.MapOfOperationValues[method] = op
+	// Merge paths (independent of component merging).
+	if src.Paths.MapOfPathItemValues != nil {
+		if dst.Paths.MapOfPathItemValues == nil {
+			dst.Paths.MapOfPathItemValues = make(map[string]openapi3.PathItem)
+		}
+		for path, srcItem := range src.Paths.MapOfPathItemValues {
+			if existing, ok := dst.Paths.MapOfPathItemValues[path]; ok {
+				// Merge operations into the existing path item.
+				if srcItem.MapOfOperationValues != nil {
+					if existing.MapOfOperationValues == nil {
+						existing.MapOfOperationValues = make(map[string]openapi3.Operation)
+					}
+					for method, op := range srcItem.MapOfOperationValues {
+						if _, alreadyDefined := existing.MapOfOperationValues[method]; !alreadyDefined {
+							existing.MapOfOperationValues[method] = op
+						}
 					}
 				}
+				dst.Paths.MapOfPathItemValues[path] = existing
+			} else {
+				dst.Paths.MapOfPathItemValues[path] = srcItem
 			}
-			dst.Paths.MapOfPathItemValues[path] = existing
-		} else {
-			dst.Paths.MapOfPathItemValues[path] = srcItem
 		}
 	}
 
-	// Merge component schemas.
+	// Merge components — always runs even when src has no paths.
 	if src.Components == nil {
 		return
 	}
 	dst.ComponentsEns()
+
 	if src.Components.Schemas != nil {
 		dst.Components.SchemasEns()
-		for name, schema := range src.Components.Schemas.MapOfSchemaOrRefValues {
+		for name, v := range src.Components.Schemas.MapOfSchemaOrRefValues {
 			if _, exists := dst.Components.Schemas.MapOfSchemaOrRefValues[name]; !exists {
-				dst.Components.Schemas.WithMapOfSchemaOrRefValuesItem(name, schema)
+				dst.Components.Schemas.WithMapOfSchemaOrRefValuesItem(name, v)
 			}
 		}
 	}
 	if src.Components.SecuritySchemes != nil {
 		dst.Components.SecuritySchemesEns()
-		for name, ss := range src.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues {
+		for name, v := range src.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues {
 			if _, exists := dst.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues[name]; !exists {
-				dst.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem(name, ss)
+				dst.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Responses != nil {
+		dst.Components.ResponsesEns()
+		for name, v := range src.Components.Responses.MapOfResponseOrRefValues {
+			if _, exists := dst.Components.Responses.MapOfResponseOrRefValues[name]; !exists {
+				dst.Components.Responses.WithMapOfResponseOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Parameters != nil {
+		dst.Components.ParametersEns()
+		for name, v := range src.Components.Parameters.MapOfParameterOrRefValues {
+			if _, exists := dst.Components.Parameters.MapOfParameterOrRefValues[name]; !exists {
+				dst.Components.Parameters.WithMapOfParameterOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.RequestBodies != nil {
+		dst.Components.RequestBodiesEns()
+		for name, v := range src.Components.RequestBodies.MapOfRequestBodyOrRefValues {
+			if _, exists := dst.Components.RequestBodies.MapOfRequestBodyOrRefValues[name]; !exists {
+				dst.Components.RequestBodies.WithMapOfRequestBodyOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Headers != nil {
+		dst.Components.HeadersEns()
+		for name, v := range src.Components.Headers.MapOfHeaderOrRefValues {
+			if _, exists := dst.Components.Headers.MapOfHeaderOrRefValues[name]; !exists {
+				dst.Components.Headers.WithMapOfHeaderOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Examples != nil {
+		dst.Components.ExamplesEns()
+		for name, v := range src.Components.Examples.MapOfExampleOrRefValues {
+			if _, exists := dst.Components.Examples.MapOfExampleOrRefValues[name]; !exists {
+				dst.Components.Examples.WithMapOfExampleOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Links != nil {
+		dst.Components.LinksEns()
+		for name, v := range src.Components.Links.MapOfLinkOrRefValues {
+			if _, exists := dst.Components.Links.MapOfLinkOrRefValues[name]; !exists {
+				dst.Components.Links.WithMapOfLinkOrRefValuesItem(name, v)
+			}
+		}
+	}
+	if src.Components.Callbacks != nil {
+		dst.Components.CallbacksEns()
+		for name, v := range src.Components.Callbacks.MapOfCallbackOrRefValues {
+			if _, exists := dst.Components.Callbacks.MapOfCallbackOrRefValues[name]; !exists {
+				dst.Components.Callbacks.WithMapOfCallbackOrRefValuesItem(name, v)
 			}
 		}
 	}

@@ -25,6 +25,7 @@ var dslRespExecStack []*dslRespExec
 
 var dslPendingMu sync.Mutex
 var dslPendingOps []*dslOp
+var dslFlushOnce sync.Once
 
 // dslOp holds spec-level metadata for one HTTP operation.
 type dslOp struct {
@@ -41,6 +42,8 @@ type dslOp struct {
 	reqBodyModel interface{}
 	queryStruct  interface{}
 	responses    map[int]*dslRespSpec
+	consumes     string   // explicit request content-type (default: application/json)
+	produces     []string // explicit response content-types (default: application/json)
 }
 
 // dslParam is a declared parameter (spec-side only; values come from dslRespExec).
@@ -181,6 +184,34 @@ func Deprecated() {
 // allowing RunTest to execute the underlying HTTP request.
 func Hidden() {
 	topOp().hidden = true
+}
+
+// Consumes sets the request body content-type for the current operation.
+// Defaults to "application/json" when not called. Useful for multipart,
+// form-encoded, or other non-JSON request bodies.
+func Consumes(contentType string) {
+	topOp().consumes = contentType
+}
+
+// Produces sets the accepted response content-types for the current operation.
+// Defaults to "application/json" when not called. Multiple content types may be
+// specified to document endpoints that serve e.g. both JSON and XML.
+func Produces(contentTypes ...string) {
+	topOp().produces = append([]string(nil), contentTypes...)
+}
+
+// BeforeRequest registers a Ginkgo BeforeEach that runs before each RunTest It
+// block inside the current operation or response. Use it to share SetParam,
+// SetHeader, or SetBody calls across multiple Response blocks — similar to
+// RSpec's let blocks in rswag.
+//
+//	Get("Get user", func() {
+//	    BeforeRequest(func() { SetParam("id", "42") })
+//	    Response(200, "found", func() { RunTest(...) })
+//	    Response(404, "missing", func() { RunTest(...) })
+//	})
+func BeforeRequest(fn func()) {
+	ginkgo.BeforeEach(fn)
 }
 
 // Security adds a named security requirement to the current operation.
@@ -366,6 +397,7 @@ func topRespExec() *dslRespExec {
 func copyDslOp(op *dslOp) *dslOp {
 	cp := *op
 	cp.tags = append([]string(nil), op.tags...)
+	cp.produces = append([]string(nil), op.produces...)
 	cp.params = append([]dslParam(nil), op.params...)
 	for i := range cp.params {
 		cp.params[i].required = cloneBoolPtr(op.params[i].required)
@@ -432,13 +464,13 @@ func flushPendingDSLOps() {
 	if globalCollector == nil {
 		return
 	}
-
-	dslPendingMu.Lock()
-	pending := dslPendingOps
-	dslPendingOps = nil
-	dslPendingMu.Unlock()
-
-	for _, op := range pending {
-		globalCollector.RegisterDSLOperation(op)
-	}
+	dslFlushOnce.Do(func() {
+		dslPendingMu.Lock()
+		pending := dslPendingOps
+		dslPendingOps = nil
+		dslPendingMu.Unlock()
+		for _, op := range pending {
+			globalCollector.RegisterDSLOperation(op)
+		}
+	})
 }

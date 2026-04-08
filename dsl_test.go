@@ -1,6 +1,9 @@
 package gswag
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 // TestDSLFunctions_UpdateOpAndRespExec verifies that the DSL helper functions
 // update the current operation and response execution stacks correctly.
@@ -73,8 +76,9 @@ func TestFlushPendingDSLOpsRegisters(t *testing.T) {
 	sc := newSpecCollector(cfg)
 	globalCollector = sc
 
-	// ensure pending empty
+	// ensure pending empty and flush gate reset
 	dslPendingOps = nil
+	dslFlushOnce = sync.Once{}
 
 	op := &dslOp{method: "GET", path: "/x", summary: "s", responses: make(map[int]*dslRespSpec)}
 	enqueuePendingDSLOp(op)
@@ -86,8 +90,37 @@ func TestFlushPendingDSLOpsRegisters(t *testing.T) {
 		t.Fatalf("expected pending op to be registered into spec")
 	}
 
-	// reset collector
+	// reset collector and flush gate
 	globalCollector = nil
+	dslFlushOnce = sync.Once{}
+}
+
+// TestConsumesProduces verifies that Consumes and Produces set the fields on the
+// current operation and that copyDslOp preserves them.
+func TestConsumesProduces(t *testing.T) {
+	dslOpStack = nil
+	op := &dslOp{method: "POST", path: "/upload", responses: make(map[int]*dslRespSpec)}
+	dslOpStack = append(dslOpStack, op)
+
+	Consumes("multipart/form-data")
+	Produces("application/json", "application/xml")
+
+	if op.consumes != "multipart/form-data" {
+		t.Fatalf("consumes not set: got %q", op.consumes)
+	}
+	if len(op.produces) != 2 || op.produces[0] != "application/json" || op.produces[1] != "application/xml" {
+		t.Fatalf("produces not set correctly: got %v", op.produces)
+	}
+
+	cp := copyDslOp(op)
+	if cp.consumes != "multipart/form-data" {
+		t.Fatalf("copyDslOp did not preserve consumes")
+	}
+	if len(cp.produces) != 2 || cp.produces[0] != "application/json" {
+		t.Fatalf("copyDslOp did not preserve produces: got %v", cp.produces)
+	}
+
+	dslOpStack = nil
 }
 
 // TestDSLMethodWrappers_EnqueueOps verifies that the DSL wrapper helpers

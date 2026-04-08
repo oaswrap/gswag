@@ -1,5 +1,10 @@
 package gswag
 
+import (
+	"sync"
+	"time"
+)
+
 // OutputFormat controls the serialization format of the generated spec.
 type OutputFormat int
 
@@ -131,6 +136,9 @@ type Config struct {
 	// TypeMappings holds list of type substitutions to apply to the jsonschema
 	// reflector. Each mapping calls `AddTypeMapping(src, dst)`.
 	TypeMappings []TypeMapping
+	// MergeTimeout is the maximum duration MergeAndWriteSpec will wait for each
+	// parallel node's partial spec file to appear. Defaults to 30 s when zero.
+	MergeTimeout time.Duration
 }
 
 var globalConfig *Config
@@ -147,4 +155,8 @@ func Init(cfg *Config) {
 	}
 	globalConfig = cfg
 	globalCollector = newSpecCollector(cfg)
+	// Reset the flush gate so re-initialisation (e.g. across test suites in the
+	// same process) gets a fresh flush cycle.
+	dslFlushOnce = sync.Once{}
 }
+

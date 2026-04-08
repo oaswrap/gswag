@@ -277,6 +277,18 @@ func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *rec
 		rb.Content = map[string]openapi3.MediaType{}
 	}
 
+	// If any content-type key already has a schema (e.g. placed by Consumes +
+	// RequestBody via the DSL), do not inject an inferred schema under a
+	// potentially different key from SetRawBody. That would produce conflicting
+	// entries in the spec.
+	for _, existingMT := range rb.Content {
+		if existingMT.Schema != nil {
+			pathItem.MapOfOperationValues[methodKey] = op
+			sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
+			return
+		}
+	}
+
 	mt := rb.Content[ct]
 	if mt.Schema == nil {
 		mt.Schema = schema
@@ -773,7 +785,11 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 
 	// Request body schema.
 	if op.reqBodyModel != nil {
-		opCtx.AddReqStructure(op.reqBodyModel)
+		if op.consumes != "" {
+			opCtx.AddReqStructure(op.reqBodyModel, openapi.WithContentType(op.consumes))
+		} else {
+			opCtx.AddReqStructure(op.reqBodyModel)
+		}
 	}
 
 	// Response schemas — one entry per declared Response() block.
@@ -784,9 +800,18 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 			if resp != nil {
 				model = resp.bodyModel
 			}
-			opCtx.AddRespStructure(model, func(cu *openapi.ContentUnit) {
-				cu.HTTPStatus = s
-			})
+			if len(op.produces) > 0 {
+				for _, ct := range op.produces {
+					contentType := ct
+					opCtx.AddRespStructure(model, openapi.WithContentType(contentType), func(cu *openapi.ContentUnit) {
+						cu.HTTPStatus = s
+					})
+				}
+			} else {
+				opCtx.AddRespStructure(model, func(cu *openapi.ContentUnit) {
+					cu.HTTPStatus = s
+				})
+			}
 		}
 	} else {
 		opCtx.AddRespStructure(nil, func(cu *openapi.ContentUnit) {
