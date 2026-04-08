@@ -21,6 +21,9 @@ const bearerAuthSchemeName = "bearerAuth"
 
 var pathParamRe = regexp.MustCompile(`\{(\w+)\}`)
 
+// genericInstRe detects Go generic instantiation names like "Page[pkg/path.Item]".
+var genericInstRe = regexp.MustCompile(`^(\w+)\[(.+)\]$`)
+
 // SpecCollector accumulates OpenAPI operations from test executions in a thread-safe manner.
 type SpecCollector struct {
 	mu           sync.Mutex
@@ -35,6 +38,31 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 		r.JSONSchemaReflector().DefaultOptions = append(r.JSONSchemaReflector().DefaultOptions,
 			jsonschema.StripDefinitionNamePrefix(cfg.StripDefinitionNamePrefixes...))
 	}
+	// Always intercept generic instantiation names to strip full package paths from
+	// type arguments. Go's reflect returns names like "Page[pkg/path.Item]" for
+	// named-package generics, which produces verbose schema names. We shorten them
+	// to "PageItem" by keeping only the bare type-argument name.
+	// IMPORTANT: this must be added AFTER StripDefinitionNamePrefix because that
+	// function overwrites rc.DefName directly, while InterceptDefName chains onto
+	// whatever rc.DefName is already set.
+	r.JSONSchemaReflector().DefaultOptions = append(r.JSONSchemaReflector().DefaultOptions,
+		jsonschema.InterceptDefName(func(t reflect.Type, defaultDefName string) string {
+			m := genericInstRe.FindStringSubmatch(t.Name())
+			if m == nil {
+				return defaultDefName
+			}
+			args := strings.Split(m[2], ", ")
+			result := m[1]
+			for _, arg := range args {
+				arg = strings.TrimPrefix(arg, "*")
+				if i := strings.LastIndex(arg, "."); i >= 0 {
+					arg = arg[i+1:]
+				}
+				result += arg
+			}
+			return result
+		}),
+	)
 	if cfg.InlineRefs {
 		r.JSONSchemaReflector().DefaultOptions = append(r.JSONSchemaReflector().DefaultOptions,
 			jsonschema.InlineRefs)

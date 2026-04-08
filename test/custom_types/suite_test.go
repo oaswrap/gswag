@@ -72,7 +72,7 @@ var _ = Path("/items", func() {
 			"The response wraps a generic Page[Item] type.")
 
 		Response(200, "paginated item list", func() {
-			ResponseSchema(new(customtypes.ItemPage))
+			ResponseSchema(new(customtypes.Page[customtypes.Item]))
 			RunTest(func(r *http.Response) {
 				Expect(r.StatusCode).To(Equal(200))
 				Expect(r).To(ContainJSONKey("items"))

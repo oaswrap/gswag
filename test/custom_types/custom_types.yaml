@@ -32,7 +32,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PageGithubComOaswrapGswagTestCustomTypesItem'
+                $ref: '#/components/schemas/PageItem'
           description: OK
       summary: list items (paginated)
       tags:
@@ -139,7 +139,7 @@ components:
         score:
           type: number
       type: object
-    PageGithubComOaswrapGswagTestCustomTypesItem:
+    PageItem:
       properties:
         items:
           items:

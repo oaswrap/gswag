@@ -83,14 +83,11 @@ type Event struct {
 	Metadata   json.RawMessage `json:"metadata,omitempty"`
 }
 
-// ItemPage is a concrete instantiation of the generic Page wrapper.
-type ItemPage = Page[Item]
-
 func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
-		util.WriteJSON(w, http.StatusOK, ItemPage{
+		util.WriteJSON(w, http.StatusOK, Page[Item]{
 			Items: []Item{
 				{ID: 1, Status: StatusActive, Name: "Widget"},
 				{ID: 2, Status: StatusInactive, Name: "Gadget"},
