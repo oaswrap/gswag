@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: QueryStruct API
+  version: 1.0.0
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: tag
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/QueryStructProduct'
+                type: array
+          description: OK
+          headers:
+            X-Page:
+              schema:
+                type: integer
+              style: simple
+            X-Page-Size:
+              schema:
+                type: integer
+              style: simple
+            X-Total-Count:
+              schema:
+                type: integer
+              style: simple
+      summary: List products
+      tags:
+      - products
+  /products/{id}:
+    get:
+      operationId: getProduct
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryStructProduct'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Get product by ID
+      tags:
+      - products
+components:
+  schemas:
+    QueryStructProduct:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+        tag:
+          type: string
+      type: object

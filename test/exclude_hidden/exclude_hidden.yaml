@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: Exclude Hidden API
+  version: 1.0.0
+paths:
+  /public:
+    get:
+      operationId: getPublic
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExcludeHiddenPublicResource'
+          description: OK
+      summary: Get public resource
+      tags:
+      - public
+components:
+  schemas:
+    ExcludeHiddenPublicResource:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      type: object

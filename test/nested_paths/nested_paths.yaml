@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Nested Paths API
+  version: 1.0.0
+paths:
+  /api/v1/users:
+    get:
+      operationId: listUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NestedPathsUser'
+                type: array
+          description: OK
+      summary: List users
+      tags:
+      - users
+  /api/v1/users/{id}:
+    get:
+      operationId: getUser
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NestedPathsUser'
+          description: OK
+      summary: Get user by ID
+      tags:
+      - users
+  /api/v1/users/{id}/orders:
+    get:
+      operationId: listUserOrders
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NestedPathsOrder'
+                type: array
+          description: OK
+      summary: List orders for user
+      tags:
+      - orders
+  /api/v1/users/{id}/orders/{orderId}:
+    get:
+      operationId: getOrder
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NestedPathsOrder'
+          description: OK
+      summary: Get order
+      tags:
+      - orders
+  /api/v1/users/{id}/orders/{orderId}/items:
+    get:
+      operationId: listOrderItems
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NestedPathsOrderItem'
+                type: array
+          description: OK
+      summary: List order items
+      tags:
+      - orders
+components:
+  schemas:
+    NestedPathsOrder:
+      properties:
+        id:
+          type: string
+        total:
+          type: integer
+        user_id:
+          type: string
+      type: object
+    NestedPathsOrderItem:
+      properties:
+        id:
+          type: string
+        order_id:
+          type: string
+        product:
+          type: string
+        qty:
+          type: integer
+      type: object
+    NestedPathsUser:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object

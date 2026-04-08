@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Content-Type API
+  version: 1.0.0
+paths:
+  /report:
+    get:
+      operationId: getReport
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTypeReport'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/ContentTypeReport'
+          description: OK
+      summary: Get report
+      tags:
+      - report
+  /upload:
+    post:
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              format: binary
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTypeUploadResponse'
+          description: OK
+      summary: Upload a file
+      tags:
+      - upload
+components:
+  schemas:
+    ContentTypeReport:
+      properties:
+        id:
+          type: integer
+        rows:
+          type: integer
+        title:
+          type: string
+      type: object
+    ContentTypeUploadResponse:
+      properties:
+        filename:
+          type: string
+        id:
+          type: string
+        size:
+          format: int64
+          type: integer
+      type: object

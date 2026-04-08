@@ -250,6 +250,11 @@ func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *rec
 	}
 
 	ct := strings.TrimSpace(b.bodyContentType)
+	// Strip content-type parameters (e.g. boundary= from multipart/form-data)
+	// so the media type key in the spec is the canonical base type only.
+	if i := strings.Index(ct, ";"); i >= 0 {
+		ct = strings.TrimSpace(ct[:i])
+	}
 	if ct == "" {
 		if b.body != nil {
 			ct = "application/json"

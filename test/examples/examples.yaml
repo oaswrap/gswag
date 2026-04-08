@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: Examples API
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      operationId: listItems
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+              - id: 1
+                name: Widget
+                price: 10
+              - id: 2
+                name: Gadget
+                price: 25
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExamplesItem'
+                type: array
+          description: OK
+      summary: List items
+      tags:
+      - items
+    post:
+      operationId: createItem
+      requestBody:
+        content:
+          application/json:
+            example:
+              id: 0
+              name: Sprocket
+              price: 5
+            schema:
+              $ref: '#/components/schemas/ExamplesItem'
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                id: 3
+                name: Sprocket
+                price: 5
+              schema:
+                $ref: '#/components/schemas/ExamplesItem'
+          description: Created
+      summary: Create item
+      tags:
+      - items
+components:
+  schemas:
+    ExamplesItem:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+      type: object

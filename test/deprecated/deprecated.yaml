@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  description: API demonstrating deprecated operations, descriptions, and operationIds.
+  title: Versioned API
+  version: 2.0.0
+tags:
+- description: Legacy item endpoints (deprecated)
+  name: items-v1
+- description: Current item endpoints
+  name: items-v2
+paths:
+  /v1/items:
+    get:
+      deprecated: true
+      description: 'Returns all items in the legacy format. Deprecated: use GET /v2/items
+        instead.'
+      operationId: listItemsV1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LegacyItem'
+                type: array
+          description: OK
+      summary: List items (v1)
+      tags:
+      - items-v1
+  /v1/items/{id}:
+    get:
+      deprecated: true
+      description: 'Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id}
+        instead.'
+      operationId: getItemV1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegacyItem'
+          description: OK
+      summary: Get item by ID (v1)
+      tags:
+      - items-v1
+  /v2/items:
+    get:
+      description: Returns all items in the current format.
+      operationId: listItemsV2
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ItemV2'
+                type: array
+          description: OK
+      summary: List items (v2)
+      tags:
+      - items-v2
+components:
+  schemas:
+    ItemV2:
+      properties:
+        display_name:
+          type: string
+        id:
+          type: integer
+        slug:
+          type: string
+      type: object
+    LegacyItem:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      type: object

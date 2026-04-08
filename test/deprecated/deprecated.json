@@ -1,0 +1,134 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Versioned API",
+    "description": "API demonstrating deprecated operations, descriptions, and operationIds.",
+    "version": "2.0.0"
+  },
+  "tags": [
+    {
+      "name": "items-v1",
+      "description": "Legacy item endpoints (deprecated)"
+    },
+    {
+      "name": "items-v2",
+      "description": "Current item endpoints"
+    }
+  ],
+  "paths": {
+    "/v1/items": {
+      "get": {
+        "tags": [
+          "items-v1"
+        ],
+        "summary": "List items (v1)",
+        "description": "Returns all items in the legacy format. Deprecated: use GET /v2/items instead.",
+        "operationId": "listItemsV1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegacyItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/v1/items/{id}": {
+      "get": {
+        "tags": [
+          "items-v1"
+        ],
+        "summary": "Get item by ID (v1)",
+        "description": "Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id} instead.",
+        "operationId": "getItemV1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyItem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/v2/items": {
+      "get": {
+        "tags": [
+          "items-v2"
+        ],
+        "summary": "List items (v2)",
+        "description": "Returns all items in the current format.",
+        "operationId": "listItemsV2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemV2"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ItemV2": {
+        "type": "object",
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "LegacyItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

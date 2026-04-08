@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: InlineRefs API
+  version: 1.0.0
+paths:
+  /customers:
+    get:
+      operationId: listCustomers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    address:
+                      properties:
+                        city:
+                          type: string
+                        country:
+                          type: string
+                        street:
+                          type: string
+                      type: object
+                    contact:
+                      properties:
+                        email:
+                          type: string
+                        phone:
+                          type: string
+                      type: object
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                  type: object
+                type: array
+          description: OK
+      summary: List customers
+      tags:
+      - customers
+    post:
+      operationId: createCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                address:
+                  properties:
+                    city:
+                      type: string
+                    country:
+                      type: string
+                    street:
+                      type: string
+                  type: object
+                contact:
+                  properties:
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                  type: object
+                id:
+                  type: integer
+                name:
+                  type: string
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                properties:
+                  address:
+                    properties:
+                      city:
+                        type: string
+                      country:
+                        type: string
+                      street:
+                        type: string
+                    type: object
+                  contact:
+                    properties:
+                      email:
+                        type: string
+                      phone:
+                        type: string
+                    type: object
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                type: object
+          description: Created
+      summary: Create customer
+      tags:
+      - customers
