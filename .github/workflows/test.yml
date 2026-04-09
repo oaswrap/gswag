@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.22", "1.23", "1.24"]
+        go: ["1.22", "1.23", "1.24", "1.25"]
 
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +53,12 @@ jobs:
           go mod download
           go test ./... -v
 
+      - name: Run Todo example tests
+        working-directory: examples/todo
+        run: |
+          go mod download
+          go test ./... -v
+
       - name: Build CLI
         run: go build -o gswag ./cmd/gswag
 
@@ -71,45 +77,8 @@ jobs:
       - name: Validate generated Fiber spec
         run: ./gswag validate ./examples/fiber/docs/openapi.yaml
 
-  golden-file-diff:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-
-      - name: Generate specs on PR branch
-        run: |
-          go test ./...
-          cd examples/gin && go mod download && go test ./...
-          cd ../echo && go mod download && go test ./...
-          cd ../chi && go mod download && go test ./...
-          cd ../fiber && go mod download && go test ./...
-
-
-      - name: Diff specs against base branch
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          git diff origin/${{ github.base_ref }} -- \
-            examples/stdlib/docs/openapi.yaml \
-            examples/gin/docs/openapi.yaml \
-            examples/echo/docs/openapi.yaml \
-            > spec.diff || true
-          if [ -s spec.diff ]; then
-            echo "### OpenAPI spec changed" >> $GITHUB_STEP_SUMMARY
-            echo '```diff' >> $GITHUB_STEP_SUMMARY
-            cat spec.diff >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No spec changes detected." >> $GITHUB_STEP_SUMMARY
-          fi
+      - name: Validate generated Todo spec
+        run: ./gswag validate ./examples/todo/docs/openapi.yaml
 
   vet-and-lint:
     runs-on: ubuntu-latest

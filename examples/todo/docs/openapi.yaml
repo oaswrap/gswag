@@ -1,0 +1,215 @@
+openapi: 3.0.3
+info:
+  title: Todo API
+  version: 1.0.0
+paths:
+  /todos:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodoList'
+          description: OK
+      summary: List all todos
+      tags:
+      - todos
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelCreateTodoRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
+          description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
+      summary: Create a todo
+      tags:
+      - todos
+  /todos/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Delete a todo
+      tags:
+      - todos
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Get a todo by ID
+      tags:
+      - todos
+    put:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelUpdateTodoRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Update a todo
+      tags:
+      - todos
+  /todos/{id}/done:
+    patch:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Mark a todo as done
+      tags:
+      - todos
+components:
+  schemas:
+    ModelCreateTodoRequest:
+      properties:
+        description:
+          type: string
+        title:
+          type: string
+      type: object
+    ModelTodo:
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        description:
+          type: string
+        done:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        title:
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
+    ModelUpdateTodoRequest:
+      properties:
+        description:
+          type: string
+        done:
+          type: boolean
+        title:
+          type: string
+      type: object
+    ResponseTodo:
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelTodo'
+        message:
+          type: string
+      type: object
+    ResponseTodoList:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/ModelTodo'
+          nullable: true
+          type: array
+        message:
+          type: string
+      type: object

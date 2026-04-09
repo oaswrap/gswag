@@ -55,10 +55,19 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 			result := m[1]
 			for _, arg := range args {
 				arg = strings.TrimPrefix(arg, "*")
+				// Preserve slice nesting as a "List" suffix so that
+				// Response[Todo] → "ResponseTodo" and
+				// Response[[]Todo] → "ResponseTodoList" stay distinct.
+				suffix := ""
+				for strings.HasPrefix(arg, "[]") {
+					suffix += "List"
+					arg = arg[2:]
+				}
+				arg = strings.TrimPrefix(arg, "*")
 				if i := strings.LastIndex(arg, "."); i >= 0 {
 					arg = arg[i+1:]
 				}
-				result += arg
+				result += arg + suffix
 			}
 			return result
 		}),

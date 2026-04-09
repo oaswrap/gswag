@@ -3,7 +3,7 @@ CMD        := ./cmd/gswag
 BIN        := bin/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
-EXAMPLES   := stdlib gin echo gorilla chi fiber petstore
+EXAMPLES   := stdlib gin echo gorilla chi fiber todo
 
 .PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help update-golden
