@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	. "github.com/oaswrap/gswag"
@@ -52,7 +51,7 @@ var _ = AfterSuite(func() {
 	// Verify hidden path is absent from the spec.
 	Expect(string(yamlData)).NotTo(ContainSubstring("/secret"))
 	// Verify public path is present.
-	Expect(strings.Contains(string(yamlData), "/public")).To(BeTrue())
+	Expect(string(yamlData)).To(ContainSubstring("/public"))
 
 	golden.Check(GinkgoT(), "exclude_hidden.yaml", yamlData)
 
@@ -72,7 +71,8 @@ var _ = Path("/public", func() {
 		Response(200, "public resource", func() {
 			ResponseSchema(new(excludehidden.PublicResource))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
 			})
 		})
 	})
@@ -88,7 +88,8 @@ var _ = Path("/internal", func() {
 			ResponseSchema(new(excludehidden.InternalResource))
 			RunTest(func(resp *http.Response) {
 				// The HTTP request still runs even though the operation is excluded.
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -102,7 +103,7 @@ var _ = Path("/secret", func() {
 
 		Response(200, "secret resource", func() {
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -116,7 +117,7 @@ var _ = Path("/admin/metrics", func() {
 
 		Response(200, "metrics", func() {
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -130,7 +131,7 @@ var _ = Path("/admin/health", func() {
 
 		Response(200, "health", func() {
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})

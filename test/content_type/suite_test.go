@@ -76,8 +76,18 @@ var _ = Path("/upload", func() {
 			body, ct := buildMultipart()
 			SetRawBody(body, ct)
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(ContainJSONKey("id"))
+				Expect(resp).To(HaveNonEmptyBody())
+			})
+		})
+
+		// Negative: plain JSON body instead of multipart → 400.
+		Response(400, "invalid content type", func() {
+			SetRawBody([]byte(`{"file":"data"}`), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -90,10 +100,21 @@ var _ = Path("/report", func() {
 		// Document that the endpoint can serve both JSON and CSV.
 		Produces("application/json", "text/csv")
 
-		Response(200, "report data", func() {
+		Response(200, "report data (JSON)", func() {
 			ResponseSchema(new(contenttype.Report))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative alternative: request CSV — verifies Accept header routing.
+		Response(200, "report data (CSV)", func() {
+			SetHeader("Accept", "text/csv")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveHeader("Content-Type", "text/csv"))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})

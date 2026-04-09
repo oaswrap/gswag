@@ -1,4 +1,4 @@
-package stdlib_test
+package api_test
 
 import (
 	"bytes"
@@ -10,35 +10,8 @@ import (
 
 	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/stdlib/api"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-var testServer *httptest.Server
-
-func TestAPI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "stdlib example suite")
-}
-
-var _ = BeforeSuite(func() {
-	Init(&Config{
-		Title:      "Users API",
-		Version:    "1.0.0",
-		OutputPath: "./docs/openapi.yaml",
-		SecuritySchemes: map[string]SecuritySchemeConfig{
-			"apiKey":     APIKeyHeader("X-API-Key"),
-			"bearerAuth": BearerJWT(),
-		},
-	})
-	testServer = httptest.NewServer(api.NewRouter())
-	SetTestServer(testServer)
-})
-
-var _ = AfterSuite(func() {
-	testServer.Close()
-	Expect(WriteSpec()).To(Succeed())
-})
 
 var _ = Path("/api/users", func() {
 	Get("List all users", func() {
@@ -47,8 +20,8 @@ var _ = Path("/api/users", func() {
 		Response(200, "list of users", func() {
 			ResponseSchema(new([]api.User))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(resp.Header.Get("Content-Type")).To(Equal("application/json"))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveHeader("Content-Type", "application/json"))
 				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
@@ -62,8 +35,16 @@ var _ = Path("/api/users", func() {
 			ResponseSchema(new(api.User))
 			SetBody(&api.User{Name: "Charlie", Email: "charlie@example.com"})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(HaveStatus(http.StatusCreated))
 				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400 (plain text response).
+		Response(400, "bad request", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
 			})
 		})
 	})
@@ -78,9 +59,17 @@ var _ = Path("/api/users/{id}", func() {
 			ResponseSchema(new(api.User))
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(ContainJSONKey("id"))
 				Expect(resp).To(ContainJSONKey("name"))
+			})
+		})
+
+		// Negative: unknown user id → 404 (plain text response).
+		Response(404, "user not found", func() {
+			SetParam("id", "999")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusNotFound))
 			})
 		})
 	})
@@ -98,7 +87,7 @@ var _ = Path("/api/users/{id}", func() {
 			ResponseSchema(new(api.User))
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})

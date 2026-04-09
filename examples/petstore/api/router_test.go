@@ -1,83 +1,12 @@
-package petstore_test
+package api_test
 
 import (
 	"net/http"
-	"net/http/httptest"
-	"testing"
 
 	. "github.com/oaswrap/gswag"
 	"github.com/oaswrap/gswag/examples/petstore/api"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-var testServer *httptest.Server
-
-func TestAPI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Petstore Chi example suite")
-}
-
-var _ = BeforeSuite(func() {
-	Init(&Config{
-		Title:          "Swagger Petstore - OpenAPI 3.0",
-		Description:    "This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!\nYou can now help us improve the API whether it's by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)",
-		TermsOfService: "https://swagger.io/terms/",
-		Contact: &ContactConfig{
-			Email: "apiteam@swagger.io",
-		},
-		License: &LicenseConfig{
-			Name: "Apache 2.0",
-			URL:  "https://www.apache.org/licenses/LICENSE-2.0.html",
-		},
-		ExternalDocs: &ExternalDocsConfig{
-			Description: "Find out more about Swagger",
-			URL:         "https://swagger.io",
-		},
-		Tags: []TagConfig{
-			{
-				Name:        "pet",
-				Description: "Everything about your Pets",
-				ExternalDocs: &ExternalDocsConfig{
-					Description: "Find out more",
-					URL:         "https://swagger.io",
-				},
-			},
-			{
-				Name:        "store",
-				Description: "Access to Petstore orders",
-				ExternalDocs: &ExternalDocsConfig{
-					Description: "Find out more about our store",
-					URL:         "https://swagger.io",
-				},
-			},
-			{
-				Name:        "user",
-				Description: "Operations about user",
-			},
-		},
-		OpenAPI:    "3.0.4",
-		Version:    "1.0.27",
-		OutputPath: "./docs/openapi.yaml",
-		Servers: []ServerConfig{{
-			URL: "/api/v3",
-		}},
-		SecuritySchemes: map[string]SecuritySchemeConfig{
-			"petstore_auth": OAuth2Implicit("https://petstore3.swagger.io/oauth/authorize", map[string]string{
-				"write:pets": "modify pets in your account",
-				"read:pets":  "read your pets",
-			}),
-			"api_key": APIKeyHeader("api_key"),
-		},
-	})
-	testServer = httptest.NewServer(api.NewRouter())
-	SetTestServer(testServer)
-})
-
-var _ = AfterSuite(func() {
-	testServer.Close()
-	Expect(WriteSpec()).To(Succeed())
-})
 
 var _ = Path("/pet", func() {
 	Put("Update an existing pet", func() {
@@ -90,7 +19,17 @@ var _ = Path("/pet", func() {
 			ResponseSchema(new(api.Pet))
 			SetBody(&api.Pet{ID: 1, Name: "doggie", Status: "available", PhotoURLs: []string{"https://example.com/dog.jpg"}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -105,7 +44,17 @@ var _ = Path("/pet", func() {
 			ResponseSchema(new(api.Pet))
 			SetBody(&api.Pet{ID: 2, Name: "cat", Status: "available", PhotoURLs: []string{"https://example.com/cat.jpg"}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -127,7 +76,8 @@ var _ = Path("/pet/findByStatus", func() {
 			ResponseSchema(new([]api.Pet))
 			SetQueryParam("status", "available")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -144,7 +94,8 @@ var _ = Path("/pet/findByTags", func() {
 			ResponseSchema(new([]api.Pet))
 			SetQueryParam("tags", "friendly")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -162,7 +113,17 @@ var _ = Path("/pet/{petId}", func() {
 			ResponseSchema(new(api.Pet))
 			SetParam("petId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(MatchJSONSchema(&api.Pet{}))
+			})
+		})
+
+		// Negative: unknown pet id → 404.
+		Response(404, "pet not found", func() {
+			SetParam("petId", "9999")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusNotFound))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -181,7 +142,8 @@ var _ = Path("/pet/{petId}", func() {
 			SetQueryParam("name", "doggie")
 			SetQueryParam("status", "sold")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
 			})
 		})
 	})
@@ -197,7 +159,7 @@ var _ = Path("/pet/{petId}", func() {
 			SetHeader("api_key", "demo-key")
 			SetParam("petId", "2")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -217,7 +179,8 @@ var _ = Path("/pet/{petId}/uploadImage", func() {
 			SetQueryParam("additionalMetadata", "sample")
 			SetRawBody([]byte("image-bytes"), "application/octet-stream")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("code"))
 			})
 		})
 	})
@@ -232,7 +195,8 @@ var _ = Path("/store/inventory", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(map[string]int))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -248,7 +212,17 @@ var _ = Path("/store/order", func() {
 			ResponseSchema(new(api.Order))
 			SetBody(&api.Order{ID: 1, PetID: 1, Quantity: 1, Status: "placed", Complete: false})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -264,7 +238,8 @@ var _ = Path("/store/order/{orderId}", func() {
 			ResponseSchema(new(api.Order))
 			SetParam("orderId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(MatchJSONSchema(&api.Order{}))
 			})
 		})
 	})
@@ -277,7 +252,7 @@ var _ = Path("/store/order/{orderId}", func() {
 		Response(200, "order deleted", func() {
 			SetParam("orderId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -293,7 +268,17 @@ var _ = Path("/user", func() {
 			ResponseSchema(new(api.User))
 			SetBody(&api.User{ID: 2, Username: "theUser", FirstName: "John", LastName: "James", Email: "john@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -309,7 +294,8 @@ var _ = Path("/user/createWithList", func() {
 			ResponseSchema(new([]api.User))
 			SetBody([]api.User{{ID: 3, Username: "user3", FirstName: "A", LastName: "B", Email: "a@b.com", Password: "123", Phone: "555", UserStatus: 1}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -327,7 +313,8 @@ var _ = Path("/user/login", func() {
 			SetQueryParam("username", "user1")
 			SetQueryParam("password", "password")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -340,7 +327,7 @@ var _ = Path("/user/logout", func() {
 
 		Response(200, "successful operation", func() {
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -356,7 +343,8 @@ var _ = Path("/user/{username}", func() {
 			ResponseSchema(new(api.User))
 			SetParam("username", "user1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(MatchJSONSchema(&api.User{}))
 			})
 		})
 	})
@@ -371,7 +359,18 @@ var _ = Path("/user/{username}", func() {
 			SetParam("username", "user1")
 			SetBody(&api.User{ID: 1, Username: "user1", FirstName: "John", LastName: "James", Email: "john+new@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON → 400.
+		Response(400, "bad request", func() {
+			SetParam("username", "user1")
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -384,7 +383,7 @@ var _ = Path("/user/{username}", func() {
 		Response(200, "User deleted", func() {
 			SetParam("username", "user1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})

@@ -63,7 +63,8 @@ var _ = Path("/api", func() {
 				Response(200, "list of users", func() {
 					ResponseSchema(new([]nestedpaths.User))
 					RunTest(func(resp *http.Response) {
-						Expect(resp.StatusCode).To(Equal(http.StatusOK))
+						Expect(resp).To(HaveStatus(http.StatusOK))
+						Expect(resp).To(HaveNonEmptyBody())
 					})
 				})
 			})
@@ -78,8 +79,9 @@ var _ = Path("/api", func() {
 						ResponseSchema(new(nestedpaths.User))
 						SetParam("id", "u1")
 						RunTest(func(resp *http.Response) {
-							Expect(resp.StatusCode).To(Equal(http.StatusOK))
+							Expect(resp).To(HaveStatus(http.StatusOK))
 							Expect(resp).To(ContainJSONKey("id"))
+							Expect(resp).To(MatchJSONSchema(&nestedpaths.User{}))
 						})
 					})
 				})
@@ -94,7 +96,8 @@ var _ = Path("/api", func() {
 							ResponseSchema(new([]nestedpaths.Order))
 							SetParam("id", "u1")
 							RunTest(func(resp *http.Response) {
-								Expect(resp.StatusCode).To(Equal(http.StatusOK))
+								Expect(resp).To(HaveStatus(http.StatusOK))
+								Expect(resp).To(HaveNonEmptyBody())
 							})
 						})
 					})
@@ -111,7 +114,8 @@ var _ = Path("/api", func() {
 								SetParam("id", "u1")
 								SetParam("orderId", "o1")
 								RunTest(func(resp *http.Response) {
-									Expect(resp.StatusCode).To(Equal(http.StatusOK))
+									Expect(resp).To(HaveStatus(http.StatusOK))
+									Expect(resp).To(ContainJSONKey("id"))
 								})
 							})
 						})
@@ -128,7 +132,8 @@ var _ = Path("/api", func() {
 									SetParam("id", "u1")
 									SetParam("orderId", "o1")
 									RunTest(func(resp *http.Response) {
-										Expect(resp.StatusCode).To(Equal(http.StatusOK))
+										Expect(resp).To(HaveStatus(http.StatusOK))
+										Expect(resp).To(HaveNonEmptyBody())
 									})
 								})
 							})

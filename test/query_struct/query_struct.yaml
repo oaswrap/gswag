@@ -65,6 +65,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryStructProduct'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
         "404":
           content:
             application/json:

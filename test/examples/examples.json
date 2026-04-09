@@ -52,11 +52,7 @@
               "schema": {
                 "$ref": "#/components/schemas/ExamplesItem"
               },
-              "example": {
-                "id": 0,
-                "name": "Sprocket",
-                "price": 5
-              }
+              "example": "not json"
             }
           }
         },
@@ -72,6 +68,24 @@
                   "id": 3,
                   "name": "Sprocket",
                   "price": 5
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "invalid input"
                 }
               }
             }

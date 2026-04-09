@@ -62,7 +62,8 @@ var _ = Path("/allmethods", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(map[string]string))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(http.StatusOK))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -76,7 +77,16 @@ var _ = Path("/allmethods", func() {
 			ResponseSchema(new(allmethods.AllMethodsModel))
 			SetBody(&allmethods.AllMethodsModel{ID: 1, Name: "one"})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(http.StatusOK))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(ContainJSONKey("id"))
+			})
+		})
+
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(r *http.Response) {
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
+				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -90,7 +100,16 @@ var _ = Path("/allmethods", func() {
 			ResponseSchema(new(allmethods.AllMethodsModel))
 			SetBody(&allmethods.AllMethodsModel{ID: 2, Name: "two"})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(http.StatusOK))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(ContainJSONKey("id"))
+			})
+		})
+
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(r *http.Response) {
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
+				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -104,7 +123,16 @@ var _ = Path("/allmethods", func() {
 			ResponseSchema(new(allmethods.AllMethodsModel))
 			SetBody(&allmethods.AllMethodsModel{ID: 3, Name: "three"})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(http.StatusOK))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(ContainJSONKey("id"))
+			})
+		})
+
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(r *http.Response) {
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
+				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -115,7 +143,7 @@ var _ = Path("/allmethods", func() {
 
 		Response(200, "successful operation", func() {
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(http.StatusOK))
+				Expect(r).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})

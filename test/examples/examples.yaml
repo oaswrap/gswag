@@ -30,10 +30,7 @@ paths:
       requestBody:
         content:
           application/json:
-            example:
-              id: 0
-              name: Sprocket
-              price: 5
+            example: not json
             schema:
               $ref: '#/components/schemas/ExamplesItem'
       responses:
@@ -47,6 +44,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExamplesItem'
           description: Created
+        "400":
+          content:
+            application/json:
+              example:
+                error: invalid input
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Create item
       tags:
       - items

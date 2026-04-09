@@ -18,12 +18,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentTypeReport"
+                  "type": "string"
                 }
               },
               "text/csv": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentTypeReport"
+                  "type": "string"
                 }
               }
             }
@@ -58,6 +58,21 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -65,20 +80,6 @@
   },
   "components": {
     "schemas": {
-      "ContentTypeReport": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "rows": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          }
-        }
-      },
       "ContentTypeUploadResponse": {
         "type": "object",
         "properties": {

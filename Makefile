@@ -3,7 +3,7 @@ CMD        := ./cmd/gswag
 BIN        := bin/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
-EXAMPLES   := stdlib init-example gin echo chi fiber petstore
+EXAMPLES   := stdlib gin echo gorilla chi fiber petstore
 
 .PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help update-golden
@@ -25,7 +25,7 @@ install:
 # ---------------------------------------------------------------------------
 
 test:
-	go test ./...
+	go test ./... 
 
 update-golden:
 	UPDATE_GOLDEN=true go test ./...
@@ -37,12 +37,13 @@ test-race:
 	go test -race ./...
 
 cover:
-	go test ./... -coverprofile=$(COVER_OUT) -covermode=atomic
+	GOCOVERDIR=coverage go test -coverprofile=$(COVER_OUT) -covermode=atomic -coverpkg=./... ./...
 	go tool cover -func=$(COVER_OUT)
 
 cover-html: cover
 	go tool cover -html=$(COVER_OUT) -o $(COVER_HTML)
 	@echo "Coverage report: $(COVER_HTML)"
+	@which open > /dev/null && open $(COVER_HTML) || echo "Please open $(COVER_HTML) in your browser"
 
 # ---------------------------------------------------------------------------
 # Code quality

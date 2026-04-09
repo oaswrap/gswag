@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/oaswrap/gswag v0.0.0-00010101000000-000000000000
+	github.com/oaswrap/spec-ui v0.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 )

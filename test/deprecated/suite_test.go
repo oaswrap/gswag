@@ -68,7 +68,8 @@ var _ = Path("/v1/items", func() {
 		Response(200, "list of legacy items", func() {
 			ResponseSchema(new([]deprecated.LegacyItem))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -86,8 +87,9 @@ var _ = Path("/v1/items/{id}", func() {
 			ResponseSchema(new(deprecated.LegacyItem))
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(ContainJSONKey("id"))
+				Expect(resp).To(MatchJSONSchema(&deprecated.LegacyItem{}))
 			})
 		})
 	})
@@ -103,7 +105,7 @@ var _ = Path("/v2/items", func() {
 		Response(200, "list of items", func() {
 			ResponseSchema(new([]deprecated.ItemV2))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})

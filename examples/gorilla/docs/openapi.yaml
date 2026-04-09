@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Tasks API (Gorilla)
+  version: 1.0.0
+paths:
+  /tasks:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiTask'
+                type: array
+          description: OK
+      summary: List all tasks
+      tags:
+      - tasks
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateTaskRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTask'
+          description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
+      summary: Create a task
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a task
+      tags:
+      - tasks
+    get:
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTask'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
+      summary: Get task by ID
+      tags:
+      - tasks
+components:
+  schemas:
+    ApiCreateTaskRequest:
+      properties:
+        title:
+          type: string
+      type: object
+    ApiTask:
+      properties:
+        done:
+          type: boolean
+        id:
+          type: integer
+        title:
+          type: string
+      type: object

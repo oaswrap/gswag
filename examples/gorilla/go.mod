@@ -1,9 +1,11 @@
-module github.com/oaswrap/gswag/examples/init-example
+module github.com/oaswrap/gswag/examples/gorilla
 
 go 1.24.0
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/oaswrap/gswag v0.0.0
+	github.com/oaswrap/spec-ui v0.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 )

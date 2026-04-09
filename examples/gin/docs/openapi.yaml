@@ -39,6 +39,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiItem'
           description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Create an item
       tags:
       - items
@@ -72,6 +81,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiItem'
           description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
       summary: Get item by ID
       tags:
       - items

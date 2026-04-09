@@ -1,4 +1,4 @@
-openapi: 3.0.4
+openapi: 3.0.3
 info:
   contact:
     email: apiteam@swagger.io
@@ -51,6 +51,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiPet'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       security:
       - petstore_auth:
         - write:pets
@@ -72,6 +81,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiPet'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       security:
       - petstore_auth:
         - write:pets
@@ -87,12 +105,12 @@ paths:
         name: petId
         required: true
         schema:
+          format: int64
           type: integer
       - in: header
         name: api_key
         schema:
           type: string
-        style: simple
       responses:
         "200":
           description: OK
@@ -110,6 +128,7 @@ paths:
         name: petId
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "200":
@@ -118,6 +137,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiPet'
           description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
       security:
       - api_key: []
       - petstore_auth:
@@ -133,6 +161,7 @@ paths:
         name: petId
         required: true
         schema:
+          format: int64
           type: integer
       - in: query
         name: name
@@ -164,6 +193,7 @@ paths:
         name: petId
         required: true
         schema:
+          format: int64
           type: integer
       - in: query
         name: additionalMetadata
@@ -280,6 +310,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiOrder'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Place an order for a pet
       tags:
       - store
@@ -291,6 +330,7 @@ paths:
         name: orderId
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "200":
@@ -305,6 +345,7 @@ paths:
         name: orderId
         required: true
         schema:
+          format: int64
           type: integer
       responses:
         "200":
@@ -331,6 +372,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiUser'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Create user
       tags:
       - user
@@ -404,6 +454,15 @@ paths:
                     type: string
                 type: object
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Update user resource
       tags:
       - user
@@ -477,6 +536,7 @@ components:
     ApiCategory:
       properties:
         id:
+          format: int64
           type: integer
         name:
           type: string
@@ -486,8 +546,10 @@ components:
         complete:
           type: boolean
         id:
+          format: int64
           type: integer
         petId:
+          format: int64
           type: integer
         quantity:
           type: integer
@@ -501,6 +563,7 @@ components:
         category:
           $ref: '#/components/schemas/ApiCategory'
         id:
+          format: int64
           type: integer
         name:
           type: string
@@ -520,6 +583,7 @@ components:
     ApiTag:
       properties:
         id:
+          format: int64
           type: integer
         name:
           type: string
@@ -531,6 +595,7 @@ components:
         firstName:
           type: string
         id:
+          format: int64
           type: integer
         lastName:
           type: string

@@ -69,8 +69,9 @@ var _ = Path("/products", func() {
 			SetQueryParam("page_size", "10")
 			SetQueryParam("tag", "hardware")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp.Header.Get("X-Total-Count")).NotTo(BeEmpty())
+				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -86,15 +87,27 @@ var _ = Path("/products/{id}", func() {
 			ResponseSchema(new(querystruct.Product))
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(ContainJSONKey("id"))
+				Expect(resp).To(MatchJSONSchema(&querystruct.Product{}))
 			})
 		})
 
+		// Negative: non-numeric id → 400.
+		Response(400, "invalid id", func() {
+			SetParam("id", "abc")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
+		// Negative: id not found → 404.
 		Response(404, "product not found", func() {
 			SetParam("id", "9999")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				Expect(resp).To(HaveStatus(http.StatusNotFound))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})

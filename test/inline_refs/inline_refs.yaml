@@ -95,6 +95,15 @@ paths:
                     type: string
                 type: object
           description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Create customer
       tags:
       - customers

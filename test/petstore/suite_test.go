@@ -111,7 +111,7 @@ var _ = Path("/pet", func() {
 			ResponseSchema(new(petstore.Pet))
 			SetBody(&petstore.Pet{ID: 1, Name: "doggie", Status: "available", PhotoURLs: []string{"https://example.com/dog.jpg"}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -126,7 +126,7 @@ var _ = Path("/pet", func() {
 			ResponseSchema(new(petstore.Pet))
 			SetBody(&petstore.Pet{ID: 2, Name: "cat", Status: "available", PhotoURLs: []string{"https://example.com/cat.jpg"}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -148,7 +148,7 @@ var _ = Path("/pet/findByStatus", func() {
 			ResponseSchema(new([]petstore.Pet))
 			SetQueryParam("status", "available")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -165,7 +165,7 @@ var _ = Path("/pet/findByTags", func() {
 			ResponseSchema(new([]petstore.Pet))
 			SetQueryParam("tags", "friendly")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -183,7 +183,7 @@ var _ = Path("/pet/{petId}", func() {
 			ResponseSchema(new(petstore.Pet))
 			SetParam("petId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -202,7 +202,7 @@ var _ = Path("/pet/{petId}", func() {
 			SetQueryParam("name", "doggie")
 			SetQueryParam("status", "sold")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -218,7 +218,7 @@ var _ = Path("/pet/{petId}", func() {
 			SetHeader("api_key", "demo-key")
 			SetParam("petId", "2")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -238,7 +238,7 @@ var _ = Path("/pet/{petId}/uploadImage", func() {
 			SetQueryParam("additionalMetadata", "sample")
 			SetRawBody([]byte("image-bytes"), "application/octet-stream")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -253,7 +253,7 @@ var _ = Path("/store/inventory", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(map[string]int))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -269,7 +269,7 @@ var _ = Path("/store/order", func() {
 			ResponseSchema(new(petstore.Order))
 			SetBody(&petstore.Order{ID: 1, PetID: 1, Quantity: 1, Status: "placed", Complete: false})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -285,7 +285,7 @@ var _ = Path("/store/order/{orderId}", func() {
 			ResponseSchema(new(petstore.Order))
 			SetParam("orderId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -298,7 +298,7 @@ var _ = Path("/store/order/{orderId}", func() {
 		Response(200, "order deleted", func() {
 			SetParam("orderId", "1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -314,7 +314,7 @@ var _ = Path("/user", func() {
 			ResponseSchema(new(petstore.User))
 			SetBody(&petstore.User{ID: 2, Username: "theUser", FirstName: "John", LastName: "James", Email: "john@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -330,7 +330,7 @@ var _ = Path("/user/createWithList", func() {
 			ResponseSchema(new([]petstore.User))
 			SetBody([]petstore.User{{ID: 3, Username: "user3", FirstName: "A", LastName: "B", Email: "a@b.com", Password: "123", Phone: "555", UserStatus: 1}})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -348,7 +348,7 @@ var _ = Path("/user/login", func() {
 			SetQueryParam("username", "user1")
 			SetQueryParam("password", "password")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -361,7 +361,7 @@ var _ = Path("/user/logout", func() {
 
 		Response(200, "successful operation", func() {
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -377,7 +377,7 @@ var _ = Path("/user/{username}", func() {
 			ResponseSchema(new(petstore.User))
 			SetParam("username", "user1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -392,7 +392,7 @@ var _ = Path("/user/{username}", func() {
 			SetParam("username", "user1")
 			SetBody(&petstore.User{ID: 1, Username: "user1", FirstName: "John", LastName: "James", Email: "john+new@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})
@@ -405,7 +405,7 @@ var _ = Path("/user/{username}", func() {
 		Response(200, "User deleted", func() {
 			SetParam("username", "user1")
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
 		})
 	})

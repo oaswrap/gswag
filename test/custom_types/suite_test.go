@@ -74,7 +74,7 @@ var _ = Path("/items", func() {
 		Response(200, "paginated item list", func() {
 			ResponseSchema(new(customtypes.Page[customtypes.Item]))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
 				Expect(r).To(ContainJSONKey("items"))
 				Expect(r).To(ContainJSONKey("total"))
 			})
@@ -95,15 +95,16 @@ var _ = Path("/items", func() {
 				Name:   "Widget",
 			})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
 				Expect(r).To(ContainJSONKey("id"))
 				Expect(r).To(ContainJSONKey("status"))
 			})
 		})
 
+		// Negative: empty body → 400.
 		Response(400, "invalid input", func() {
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(400))
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
 				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
@@ -121,7 +122,7 @@ var _ = Path("/nullable", func() {
 		Response(200, "nullable fields", func() {
 			ResponseSchema(new(customtypes.NullableFields))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
 				Expect(r).To(ContainJSONKey("name"))
 			})
 		})
@@ -142,14 +143,17 @@ var _ = Path("/nullable", func() {
 				"active": true,
 			})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
 				Expect(r).To(ContainJSONKey("name"))
 			})
 		})
 
+		// Negative: malformed JSON → 400.
 		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(400))
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
+				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
 	})
@@ -166,7 +170,7 @@ var _ = Path("/events", func() {
 		Response(200, "list of events", func() {
 			ResponseSchema(new([]customtypes.Event))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
 				Expect(r).To(HaveNonEmptyBody())
 			})
 		})

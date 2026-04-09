@@ -32,6 +32,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiReview'
           description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       security:
       - bearerAuth: []
       summary: Create a review
@@ -53,6 +62,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiReview'
           description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not Found
       security:
       - bearerAuth: []
       summary: Get review by ID

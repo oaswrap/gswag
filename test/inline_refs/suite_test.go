@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	. "github.com/oaswrap/gswag"
@@ -50,8 +49,8 @@ var _ = AfterSuite(func() {
 	// With InlineRefs the generated spec must not contain any $ref pointers.
 	Expect(string(yamlData)).NotTo(ContainSubstring("$ref:"))
 	// Nested field names must appear inline.
-	Expect(strings.Contains(string(yamlData), "street")).To(BeTrue())
-	Expect(strings.Contains(string(yamlData), "city")).To(BeTrue())
+	Expect(string(yamlData)).To(ContainSubstring("street"))
+	Expect(string(yamlData)).To(ContainSubstring("city"))
 
 	golden.Check(GinkgoT(), "inline_refs.yaml", yamlData)
 
@@ -70,7 +69,7 @@ var _ = Path("/customers", func() {
 		Response(200, "list of customers", func() {
 			ResponseSchema(new([]inlinerefs.Customer))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
@@ -89,8 +88,18 @@ var _ = Path("/customers", func() {
 				Contact: inlinerefs.Contact{Email: "bob@example.com", Phone: "555-0200"},
 			})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(HaveStatus(http.StatusCreated))
 				Expect(resp).To(ContainJSONKey("id"))
+				Expect(resp).To(MatchJSONSchema(&inlinerefs.Customer{}))
+			})
+		})
+
+		// Negative: malformed JSON body → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})

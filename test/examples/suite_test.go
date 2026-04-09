@@ -63,7 +63,7 @@ var _ = Path("/items", func() {
 		Response(200, "list of items", func() {
 			ResponseSchema(new([]examples.Item))
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(HaveNonEmptyBody())
 			})
 		})
@@ -78,8 +78,17 @@ var _ = Path("/items", func() {
 			ResponseSchema(new(examples.Item))
 			SetBody(&examples.Item{Name: "Sprocket", Price: 5})
 			RunTest(func(resp *http.Response) {
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp).To(HaveStatus(http.StatusCreated))
 				Expect(resp).To(ContainJSONKey("id"))
+			})
+		})
+
+		// Negative: malformed JSON body → 400.
+		Response(400, "invalid input", func() {
+			SetRawBody([]byte("not json"), "application/json")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
 	})

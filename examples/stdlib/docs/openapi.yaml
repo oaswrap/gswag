@@ -30,6 +30,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiUser'
           description: Created
+        "400":
+          description: Bad Request
       summary: Create a user
       tags:
       - users
@@ -68,29 +70,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiUser'
           description: OK
+        "404":
+          description: Not Found
       summary: Get user by ID
-      tags:
-      - users
-    patch:
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiUser'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiUser'
-          description: OK
-      summary: Update user
       tags:
       - users
 components:

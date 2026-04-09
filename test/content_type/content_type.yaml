@@ -11,10 +11,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContentTypeReport'
+                type: string
             text/csv:
               schema:
-                $ref: '#/components/schemas/ContentTypeReport'
+                type: string
           description: OK
       summary: Get report
       tags:
@@ -35,20 +35,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ContentTypeUploadResponse'
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Bad Request
       summary: Upload a file
       tags:
       - upload
 components:
   schemas:
-    ContentTypeReport:
-      properties:
-        id:
-          type: integer
-        rows:
-          type: integer
-        title:
-          type: string
-      type: object
     ContentTypeUploadResponse:
       properties:
         filename:

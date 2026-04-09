@@ -66,7 +66,8 @@ var _ = Path("/basicdata", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(basicdata.AllBasicDataTypes))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -96,20 +97,26 @@ var _ = Path("/basicdata", func() {
 				Bool:    true,
 			})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(MatchJSONSchema(&basicdata.AllBasicDataTypes{}))
 			})
 		})
+
+		// Negative: empty body → JSON decode fails → 400.
 		Response(400, "invalid input", func() {
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(400))
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
 				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
+
+		// Negative: wrong field type → JSON decode fails → 400.
 		Response(400, "invalid input", func() {
 			SetBody(map[string]any{
 				"int": "not an int",
 			})
 			RunTest(func(r *http.Response) {
+				Expect(r).To(HaveStatus(http.StatusBadRequest))
 				Expect(r).To(ContainJSONKey("error"))
 			})
 		})
@@ -124,7 +131,8 @@ var _ = Path("/basicdata-pointers", func() {
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(basicdata.AllBasicDataTypesPointers))
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(HaveNonEmptyBody())
 			})
 		})
 	})
@@ -154,7 +162,8 @@ var _ = Path("/basicdata-pointers", func() {
 				Bool:    util.Ptr(true),
 			})
 			RunTest(func(r *http.Response) {
-				Expect(r.StatusCode).To(Equal(200))
+				Expect(r).To(HaveStatus(http.StatusOK))
+				Expect(r).To(HaveNonEmptyBody())
 			})
 		})
 	})
