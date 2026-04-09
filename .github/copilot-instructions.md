@@ -77,3 +77,19 @@ var _ = Path("/users/{id}", func() {
 
 ## Link, Don't Embed
 For details on the DSL, configuration, and advanced usage, refer to [README.md](../README.md) and example projects in `examples/`.
+
+## Assistant Guidance
+- **Primary sources:** Prefer linking to [README.md](../README.md) and [ARCHITECTURE.md](../ARCHITECTURE.md) rather than embedding long docs.
+- **Run commands only when requested:** Use `make test`, `make examples`, or `go test ./...` only after confirming with the developer.
+- **Small, focused edits:** When changing code, make minimal, well-scoped patches and run unit tests for the affected package if possible.
+- **Respect golden files:** When tests reference golden fixtures, ask before regenerating them; use `UPDATE_GOLDEN=true` when the developer approves.
+- **Parallel-aware:** Be careful modifying merge/parallel logic (see [parallel.go](parallel.go)) — this affects merged spec outputs across Ginkgo nodes.
+
+## Suggested Agent Customizations
+- **Create an `AGENTS.md`** that defines applyTo patterns for `examples/*`, `test/*`, and `cmd/gswag` work so assistants can apply different behaviors per area.
+- **Add a `prompts/init.prompt.md`** with recommended starter prompts for common tasks (run tests, scaffold example, validate spec).
+- **Add a `skills/run-make-targets.md`** to document standard `make` targets and expected effects for safe automation.
+
+## Next Steps (pick one)
+- I can create the suggested agent files (`AGENTS.md`, a prompt template, or a small `skills` doc). Tell me which to add first.
+
