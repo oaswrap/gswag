@@ -1,9 +1,10 @@
-package gswag
+package output_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	outputpkg "github.com/oaswrap/gswag/internal/output"
 	"github.com/swaggest/openapi-go/openapi3"
 )
 
@@ -23,7 +24,7 @@ func TestSanitizeSpecForSerialization_FillsMissingParameterIn(t *testing.T) {
 		},
 	}}
 
-	sanitizeSpecForSerialization(spec)
+	outputpkg.SanitizeSpecForSerialization(spec)
 
 	op := spec.Paths.MapOfPathItemValues["/pets/{id}"].MapOfOperationValues["get"]
 	if len(op.Parameters) != 2 {
@@ -63,7 +64,7 @@ func TestSanitizeSpecForSerialization_DedupesParametersByNameAndLocation(t *test
 		},
 	}}
 
-	sanitizeSpecForSerialization(spec)
+	outputpkg.SanitizeSpecForSerialization(spec)
 
 	op := spec.Paths.MapOfPathItemValues["/pets"].MapOfOperationValues["get"]
 	if len(op.Parameters) != 1 {

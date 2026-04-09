@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	outputpkg "github.com/oaswrap/gswag/internal/output"
 )
 
 // WriteSpec serialises the collected spec to the path and format configured via Init.
@@ -31,7 +33,7 @@ func WriteSpecTo(path string, format OutputFormat) error {
 	var err error
 
 	globalCollector.mu.Lock()
-	sanitizeSpecForSerialization(globalCollector.reflector.Spec)
+	outputpkg.SanitizeSpecForSerialization(globalCollector.reflector.Spec)
 	spec := globalCollector.reflector.Spec
 	globalCollector.mu.Unlock()
 

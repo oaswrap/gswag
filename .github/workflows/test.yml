@@ -59,27 +59,6 @@ jobs:
           go mod download
           go test ./... -v
 
-      - name: Build CLI
-        run: go build -o gswag ./cmd/gswag
-
-      - name: Validate generated stdlib spec
-        run: ./gswag validate ./examples/stdlib/docs/openapi.yaml
-
-      - name: Validate generated Gin spec
-        run: ./gswag validate ./examples/gin/docs/openapi.yaml
-
-      - name: Validate generated Echo spec
-        run: ./gswag validate ./examples/echo/docs/openapi.yaml
-
-      - name: Validate generated Chi spec
-        run: ./gswag validate ./examples/chi/docs/openapi.yaml
-
-      - name: Validate generated Fiber spec
-        run: ./gswag validate ./examples/fiber/docs/openapi.yaml
-
-      - name: Validate generated Todo spec
-        run: ./gswag validate ./examples/todo/docs/openapi.yaml
-
   vet-and-lint:
     runs-on: ubuntu-latest
 

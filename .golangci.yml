@@ -482,6 +482,3 @@ linters:
       - path: '^spec\.go$'
         linters:
           - gochecknoglobals
-      - path: '^cmd/gswag/.*$'
-        linters:
-          - gosec

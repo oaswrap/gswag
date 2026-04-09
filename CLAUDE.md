@@ -75,7 +75,6 @@ Phase 3 — Output (AfterSuite)
 | `matchers.go` | Gomega matchers: `HaveStatus`, `HaveHeader`, `ContainJSONKey`, `MatchJSONSchema`, `HaveNonEmptyBody` |
 | `internal/schemautil` | Infer JSON schemas from raw response bytes |
 | `internal/golden` | Golden-file test helpers |
-| `cmd/gswag/` | CLI: `init`, `validate`, `diff`, `version` |
 
 ### Global DSL State (single-threaded, tree-construction phase only)
 

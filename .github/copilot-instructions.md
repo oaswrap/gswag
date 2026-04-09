@@ -30,7 +30,6 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 - **Framework-agnostic:** Works with any Go HTTP framework (see `examples/`).
 
 ## Project Structure
-- `cmd/gswag/`: CLI entrypoint and commands
 - `examples/`: Example projects for different frameworks
 - `internal/`: Internal utilities (e.g., schema inference)
 - Top-level Go files: Core library and DSL
@@ -86,7 +85,7 @@ For details on the DSL, configuration, and advanced usage, refer to [README.md](
 - **Parallel-aware:** Be careful modifying merge/parallel logic (see [parallel.go](parallel.go)) — this affects merged spec outputs across Ginkgo nodes.
 
 ## Suggested Agent Customizations
-- **Create an `AGENTS.md`** that defines applyTo patterns for `examples/*`, `test/*`, and `cmd/gswag` work so assistants can apply different behaviors per area.
+- **Create an `AGENTS.md`** that defines applyTo patterns for `examples/*`, and `test/*` work so assistants can apply different behaviors per area.
 - **Add a `prompts/init.prompt.md`** with recommended starter prompts for common tasks (run tests, scaffold example, validate spec).
 - **Add a `skills/run-make-targets.md`** to document standard `make` targets and expected effects for safe automation.
 

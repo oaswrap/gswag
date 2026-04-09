@@ -1,6 +1,4 @@
 MODULE     := github.com/oaswrap/gswag
-CMD        := ./cmd/gswag
-BIN        := bin/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
 EXAMPLES   := stdlib gin echo gorilla chi fiber todo
@@ -8,17 +6,7 @@ EXAMPLES   := stdlib gin echo gorilla chi fiber todo
 .PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help update-golden
 
-all: tidy vet fmt test build
-
-# ---------------------------------------------------------------------------
-# Build
-# ---------------------------------------------------------------------------
-
-build:
-	go build -o $(BIN) $(CMD)
-
-install:
-	go install $(CMD)
+all: tidy vet fmt test
 
 # ---------------------------------------------------------------------------
 # Test

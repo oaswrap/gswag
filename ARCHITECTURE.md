@@ -56,8 +56,6 @@ gswag/
 │   ├── schemautil/           # JSON schema inference from raw bytes
 │   └── golden/               # golden-file test helpers
 │
-├── cmd/gswag/                # CLI: init, validate, diff, version
-│
 ├── examples/                 # working example suites (stdlib, gin, echo, chi, fiber, petstore)
 └── test/                     # golden integration tests (basic_data, all_methods, petstore)
 ```
@@ -251,17 +249,6 @@ For tests that use `requestBuilder` directly (or through the legacy `Register` c
 2. **JSON Schema validation** — the generated spec is marshalled to JSON and validated against the OpenAPI 3.0 meta-schema using `gojsonschema`.
 
 `ValidationIssue` carries a severity (`"error"` or `"warning"`). `WriteAndValidateSpec` returns `ErrSpecInvalid` when any error-level issue exists.
-
----
-
-## CLI (`cmd/gswag`)
-
-| Command | Purpose |
-|---------|---------|
-| `gswag init [path]` | Scaffold a `*_suite_test.go` with BeforeSuite/AfterSuite wired up |
-| `gswag validate <file>` | Structural + schema validation; `--strict` treats warnings as errors |
-| `gswag diff <base> <head>` | Compare two spec files; exit 1 when breaking changes detected |
-| `gswag version` | Print build version |
 
 ---
 

@@ -1,4 +1,4 @@
-package gswag
+package output
 
 import (
 	"strings"
@@ -6,9 +6,9 @@ import (
 	"github.com/swaggest/openapi-go/openapi3"
 )
 
-// sanitizeSpecForSerialization normalizes operation parameters so spec marshalling
+// SanitizeSpecForSerialization normalizes operation parameters so spec marshalling
 // is resilient to edge-cases that can leave Parameter.In empty.
-func sanitizeSpecForSerialization(spec *openapi3.Spec) {
+func SanitizeSpecForSerialization(spec *openapi3.Spec) {
 	if spec == nil || spec.Paths.MapOfPathItemValues == nil {
 		return
 	}
@@ -21,14 +21,15 @@ func sanitizeSpecForSerialization(spec *openapi3.Spec) {
 			if len(op.Parameters) == 0 {
 				continue
 			}
-			op.Parameters = sanitizeOperationParameters(path, op.Parameters)
+			op.Parameters = SanitizeOperationParameters(path, op.Parameters)
 			pathItem.MapOfOperationValues[method] = op
 		}
 		spec.Paths.MapOfPathItemValues[path] = pathItem
 	}
 }
 
-func sanitizeOperationParameters(path string, params []openapi3.ParameterOrRef) []openapi3.ParameterOrRef {
+// SanitizeOperationParameters fixes missing `In` fields and deduplicates params.
+func SanitizeOperationParameters(path string, params []openapi3.ParameterOrRef) []openapi3.ParameterOrRef {
 	out := make([]openapi3.ParameterOrRef, 0, len(params))
 	seen := make(map[string]struct{}, len(params))
 
