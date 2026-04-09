@@ -32,7 +32,17 @@ gswag/
 ├── config.go                 # Config struct, Init(), global state
 ├── dsl.go                    # DSL entry points: Path, Get, Response, RunTest, ...
 ├── dsl_types.go              # ParamLocation / SchemaType constants
-├── spec.go                   # SpecCollector: thread-safe OpenAPI document accumulator
+│
+├── spec.go                   # SpecCollector struct, shared constants & vars
+├── spec_collector.go         # newSpecCollector (+ applySchemaOptions/applySpecInfo helpers), Register
+├── spec_dsl.go               # RegisterDSLOperation, isExcludedPath
+├── spec_params.go            # param builder helpers: locationToParamIn, stringParam, dslSchemaParam,
+│                             #   buildPathParamsStruct*, dslSchemaTypeToReflect, appendParams, appendDSLParams
+├── spec_schemas.go           # schema injection: injectInferredRequestSchema, injectInferredSchema,
+│                             #   injectRecordedResponseSchema, appendResponseHeaders, appendDSLResponseHeaders,
+│                             #   appendExamples, content-type helpers
+├── spec_security.go          # ensureSecurityScheme, buildSecuritySchemeOrRef
+│
 ├── builder.go                # requestBuilder: constructs and fires HTTP requests
 ├── recorder.go               # recordedResponse: captures status, headers, body
 ├── output.go                 # WriteSpec / WriteSpecTo
@@ -90,9 +100,9 @@ Key global stacks (all touched only during tree construction — effectively sin
 1. **`flushPendingDSLOps()`** — uses `sync.Once` to register all queued operations into the `SpecCollector` exactly once per Init cycle.
 2. **`dslBuildRequest`** — constructs a `requestBuilder` from the `dslRespExec` snapshot captured at tree-construction time.
 3. **`requestBuilder.do(target)`** — fires the HTTP request, records the response.
-4. **`injectInferredRequestSchema`** — if no request schema was declared, infers one from the actual request body bytes.
-5. **`injectRecordedResponseSchema`** — infers/attaches response schema from the actual response body.
-6. **`appendExamples`** — if `CaptureExamples: true`, attaches sanitised request/response bodies as OpenAPI examples.
+4. **`injectInferredRequestSchema`** (`spec_schemas.go`) — if no request schema was declared, infers one from the actual request body bytes.
+5. **`injectRecordedResponseSchema`** (`spec_schemas.go`) — infers/attaches response schema from the actual response body.
+6. **`appendExamples`** (`spec_schemas.go`) — if `CaptureExamples: true`, attaches sanitised request/response bodies as OpenAPI examples.
 
 ### Phase 3 — Output
 
@@ -135,16 +145,21 @@ dslRespExec
     bodyContentType string
 ```
 
-### `SpecCollector` (`spec.go`)
+### `SpecCollector` (`spec.go`, `spec_collector.go`)
 
 Thread-safe accumulator wrapping the `openapi3.Reflector`.
 
 ```
-SpecCollector
+SpecCollector          (struct declared in spec.go)
 ├── mu sync.Mutex          ← protects all spec mutations
 ├── reflector              ← swaggest/openapi-go reflector
 └── excludePaths []string
 ```
+
+`newSpecCollector` (in `spec_collector.go`) is decomposed into:
+- `applySchemaOptions` — wires JSON-schema reflector options (generic name shortening, inline refs, type maps)
+- `shortenGenericName` — strips package paths from generic type-argument names
+- `applySpecInfo` → `applySpecTags` / `applySpecServers` — populates the OpenAPI Info/Tags/Servers blocks
 
 Four lock points: `Register`, `RegisterDSLOperation`, `injectRecordedResponseSchema`, `appendExamplesLocked`.
 
