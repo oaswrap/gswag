@@ -75,4 +75,4 @@ jobs:
         uses: golangci/golangci-lint-action@v9.2.0
         with:
           version: latest
-          args: run --timeout 5m
+          args: --timeout 5m

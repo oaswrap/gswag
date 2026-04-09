@@ -82,7 +82,7 @@ For details on the DSL, configuration, and advanced usage, refer to [README.md](
 - **Run commands only when requested:** Use `make test`, `make examples`, or `go test ./...` only after confirming with the developer.
 - **Small, focused edits:** When changing code, make minimal, well-scoped patches and run unit tests for the affected package if possible.
 - **Respect golden files:** When tests reference golden fixtures, ask before regenerating them; use `UPDATE_GOLDEN=true` when the developer approves.
-- **Parallel-aware:** Be careful modifying merge/parallel logic (see [parallel.go](parallel.go)) — this affects merged spec outputs across Ginkgo nodes.
+- **Parallel-aware:** Be careful modifying merge/parallel logic (see [parallel.go](../parallel.go)) — this affects merged spec outputs across Ginkgo nodes.
 
 ## Suggested Agent Customizations
 - **Create an `AGENTS.md`** that defines applyTo patterns for `examples/*`, and `test/*` work so assistants can apply different behaviors per area.
