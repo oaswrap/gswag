@@ -35,8 +35,8 @@ type LicenseConfig struct {
 // TypeMapping describes a substitution between two Go types for JSON Schema reflection.
 // Provide a sample `Src` value (or a type) and a `Dst` value to map to.
 type TypeMapping struct {
-	Src interface{}
-	Dst interface{}
+	Src any
+	Dst any
 }
 
 // ExternalDocsConfig describes OpenAPI external documentation metadata.
@@ -159,4 +159,3 @@ func Init(cfg *Config) {
 	// same process) gets a fresh flush cycle.
 	dslFlushOnce = sync.Once{}
 }
-

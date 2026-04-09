@@ -26,9 +26,9 @@ var _ = BeforeSuite(func() {
 	rootOutDir = GinkgoT().TempDir()
 
 	Init(&Config{
-		Title:      "Nested Paths API",
-		Version:    "1.0.0",
-		OutputPath: filepath.Join(rootOutDir, "openapi.yaml"),
+		Title:                       "Nested Paths API",
+		Version:                     "1.0.0",
+		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
 		StripDefinitionNamePrefixes: []string{"Nestedpaths"},
 	})
 	testServer = httptest.NewServer(nestedpaths.NewRouter())

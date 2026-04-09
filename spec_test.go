@@ -104,7 +104,12 @@ var _ = Describe("SpecCollector", func() {
 // -----------------------------------------------------------------------------
 
 func TestNewSpecCollector_InitialisesSpecAndSecurity(t *testing.T) {
-	cfg := &Config{Title: "T", Version: "v", Servers: []ServerConfig{{URL: "https://api.example"}}, SecuritySchemes: map[string]SecuritySchemeConfig{"k": BearerJWT()}}
+	cfg := &Config{
+		Title:           "T",
+		Version:         "v",
+		Servers:         []ServerConfig{{URL: "https://api.example"}},
+		SecuritySchemes: map[string]SecuritySchemeConfig{"k": BearerJWT()},
+	}
 	sc := newSpecCollector(cfg)
 	if sc == nil || sc.reflector == nil || sc.reflector.Spec == nil {
 		t.Fatalf("expected reflector.spec initialised")
@@ -143,7 +148,8 @@ func TestNewSpecCollector_AppliesTopLevelMetadata(t *testing.T) {
 	if sc.reflector.Spec.Info.TermsOfService == nil || *sc.reflector.Spec.Info.TermsOfService != cfg.TermsOfService {
 		t.Fatalf("termsOfService not set")
 	}
-	if sc.reflector.Spec.Info.Contact == nil || sc.reflector.Spec.Info.Contact.Email == nil || *sc.reflector.Spec.Info.Contact.Email != cfg.Contact.Email {
+	if sc.reflector.Spec.Info.Contact == nil || sc.reflector.Spec.Info.Contact.Email == nil ||
+		*sc.reflector.Spec.Info.Contact.Email != cfg.Contact.Email {
 		t.Fatalf("contact not set")
 	}
 	if sc.reflector.Spec.Info.License == nil || sc.reflector.Spec.Info.License.Name != cfg.License.Name {
@@ -204,7 +210,11 @@ func TestRegister_ExcludePathsSkipsSpecRegistration(t *testing.T) {
 
 	b := newRequestBuilder(http.MethodGet, "/internal/users")
 	b.summary = "internal"
-	rec := &recordedResponse{StatusCode: 200, Headers: http.Header{"Content-Type": {"application/json"}}, BodyBytes: []byte(`{"ok":true}`)}
+	rec := &recordedResponse{
+		StatusCode: 200,
+		Headers:    http.Header{"Content-Type": {"application/json"}},
+		BodyBytes:  []byte(`{"ok":true}`),
+	}
 	sc.Register(b, rec)
 
 	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/internal/users"]; ok {
@@ -265,7 +275,7 @@ func TestRegister_InfersSchemaAndAppendsExamplesAndHeaders(t *testing.T) {
 	b.body = struct{ Payload int }{Payload: 1}
 
 	// declare response header schema to be attached
-	b.respHeaders[200] = map[string]interface{}{"X-Count": 5}
+	b.respHeaders[200] = map[string]any{"X-Count": 5}
 
 	// recorded response with JSON body and request body bytes
 	rec := &recordedResponse{
@@ -323,7 +333,7 @@ func TestSpecCollectorRegister_InferSchemaAndExamplesAndParams(t *testing.T) {
 	b.headers["X-Test"] = "v"
 
 	// Declare a response header schema for status 200
-	b.respHeaders = map[int]map[string]interface{}{
+	b.respHeaders = map[int]map[string]any{
 		200: {"X-Rate": "10"},
 	}
 
@@ -441,22 +451,25 @@ func TestDSLExecution_AppendsExamples(t *testing.T) {
 }
 
 func TestDslSchemaTypeToReflect(t *testing.T) {
-	if dslSchemaTypeToReflect(Integer) != reflect.TypeOf(int64(0)) {
+	if dslSchemaTypeToReflect(Integer) != reflect.TypeFor[int64]() {
 		t.Fatalf("Integer did not map to int64")
 	}
-	if dslSchemaTypeToReflect(Number) != reflect.TypeOf(float64(0)) {
+	if dslSchemaTypeToReflect(Number) != reflect.TypeFor[float64]() {
 		t.Fatalf("Number did not map to float64")
 	}
-	if dslSchemaTypeToReflect(Boolean) != reflect.TypeOf(false) {
+	if dslSchemaTypeToReflect(Boolean) != reflect.TypeFor[bool]() {
 		t.Fatalf("Boolean did not map to bool")
 	}
-	if dslSchemaTypeToReflect(String) != reflect.TypeOf("") {
+	if dslSchemaTypeToReflect(String) != reflect.TypeFor[string]() {
 		t.Fatalf("String did not map to string")
 	}
 }
 
 func TestDslSchemaParamAndStringParamJSON(t *testing.T) {
-	p := dslSchemaParam(dslParam{name: "limit", typ: Integer}, openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}})
+	p := dslSchemaParam(
+		dslParam{name: "limit", typ: Integer},
+		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+	)
 	if reflect.ValueOf(p).IsZero() {
 		t.Fatalf("expected non-zero parameter")
 	}
@@ -493,7 +506,7 @@ func TestDslSchemaParam_EnumAndDefault(t *testing.T) {
 		dslParam{
 			name:     "status",
 			typ:      String,
-			enumVals: []interface{}{"available", "pending", "sold"},
+			enumVals: []any{"available", "pending", "sold"},
 			defVal:   "available",
 			hasDef:   true,
 		},
@@ -525,7 +538,7 @@ func TestBuildPathParamsStructFromDSLAndInfer(t *testing.T) {
 		t.Fatalf("expected pointer to struct, got %v", rt.Kind())
 	}
 	f := rt.Elem().Field(0)
-	if f.Type != reflect.TypeOf(int64(0)) {
+	if f.Type != reflect.TypeFor[int64]() {
 		t.Fatalf("expected field type int64, got %v", f.Type)
 	}
 
@@ -536,7 +549,7 @@ func TestBuildPathParamsStructFromDSLAndInfer(t *testing.T) {
 	}
 	rt2 := reflect.TypeOf(v2)
 	f2 := rt2.Elem().Field(0)
-	if f2.Type != reflect.TypeOf(int64(0)) {
+	if f2.Type != reflect.TypeFor[int64]() {
 		t.Fatalf("expected inferred int64 field, got %v", f2.Type)
 	}
 }
@@ -548,23 +561,23 @@ func TestCopyDslOpAndRespExecDeepCopy(t *testing.T) {
 		tags:   []string{"a"},
 		params: []dslParam{{name: "p", location: InQuery, typ: String}},
 		responses: map[int]*dslRespSpec{
-			200: {description: "ok", headers: map[string]interface{}{"X": "v"}},
+			200: {description: "ok", headers: map[string]any{"X": "v"}},
 		},
 	}
 
-	copy := copyDslOp(op)
+	cp := copyDslOp(op)
 	// mutate original
 	op.tags[0] = "b"
 	op.params[0].name = "q"
 	op.responses[200].headers["X"] = "changed"
 
-	if copy.tags[0] != "a" {
+	if cp.tags[0] != "a" {
 		t.Fatalf("tags were not copied deeply")
 	}
-	if copy.params[0].name != "p" {
+	if cp.params[0].name != "p" {
 		t.Fatalf("params were not copied deeply")
 	}
-	if copy.responses[200].headers["X"] != "v" {
+	if cp.responses[200].headers["X"] != "v" {
 		t.Fatalf("response headers were not copied deeply")
 	}
 
@@ -598,7 +611,7 @@ func TestRegisterDSLOperation_AppendsDSLParamsAndResponseHeaders(t *testing.T) {
 			{name: "X-Req", location: InHeader, typ: String},
 		},
 		responses: map[int]*dslRespSpec{
-			200: {description: "ok", headers: map[string]interface{}{"X-Count": 1}},
+			200: {description: "ok", headers: map[string]any{"X-Count": 1}},
 		},
 	}
 
@@ -671,7 +684,7 @@ func TestTopOpTopRespExecPanics(t *testing.T) {
 	}
 }
 
-// Helper used by schema inference tests
+// Helper used by schema inference tests.
 func makeOpWithResponse(status int) openapi3.Operation {
 	op := openapi3.Operation{}
 	op.Responses = openapi3.Responses{MapOfResponseOrRefValues: map[string]openapi3.ResponseOrRef{}}
@@ -760,9 +773,11 @@ func jsonContains(b []byte, s string) bool {
 }
 
 func containsString(hay, needle string) bool {
-	return len(hay) > 0 && (func() bool { return (len(needle) > 0 && (len(hay) >= len(needle))) })() && (reflect.DeepEqual(true, true)) && (func() bool {
-		return len(needle) == 0 || (len(hay) >= len(needle) && (func() bool { return stringIndex(hay, needle) >= 0 })())
-	})()
+	return len(hay) > 0 && (func() bool { return (len(needle) > 0 && (len(hay) >= len(needle))) })() &&
+		(reflect.DeepEqual(true, true)) &&
+		(func() bool {
+			return len(needle) == 0 || (len(hay) >= len(needle) && (func() bool { return stringIndex(hay, needle) >= 0 })())
+		})()
 }
 
 func stringIndex(s, sep string) int {

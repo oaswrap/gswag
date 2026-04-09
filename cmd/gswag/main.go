@@ -17,10 +17,17 @@ import (
 
 const version = "0.1.0"
 
+const (
+	exitCodeOK    = 0
+	exitCodeUsage = 1
+	exitCodeError = 2
+	minArgs       = 2
+)
+
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) < minArgs {
 		printUsage()
-		os.Exit(1)
+		os.Exit(exitCodeUsage)
 	}
 
 	switch os.Args[1] {
@@ -31,7 +38,7 @@ func main() {
 	case "init":
 		runInit(os.Args[2:])
 	case "version", "--version", "-v":
-		fmt.Println("gswag", version)
+		fmt.Fprintln(os.Stdout, "gswag", version)
 	case "help", "--help", "-h":
 		printUsage()
 	default:
@@ -42,7 +49,7 @@ func main() {
 }
 
 // runInit scaffolds a minimal Ginkgo-style suite file.
-// Usage: gswag init [--force] [path]
+// Usage: gswag init [--force] [path].
 func runInit(args []string) {
 	code := runInitNoExit(args)
 	if code != 0 {
@@ -64,9 +71,9 @@ func runInitNoExit(args []string) int {
 	}
 
 	// Ensure target directory exists.
-	if err := os.MkdirAll(target, 0o755); err != nil {
+	if err := os.MkdirAll(target, 0o750); err != nil {
 		fmt.Fprintf(os.Stderr, "error creating target directory: %v\n", err)
-		return 2
+		return exitCodeError
 	}
 
 	// Detect package name and generate a Ginkgo-style file name:
@@ -90,19 +97,19 @@ func runInitNoExit(args []string) int {
 
 	for path, content := range files {
 		dir := filepath.Dir(path)
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			fmt.Fprintf(os.Stderr, "error creating dir %s: %v\n", dir, err)
-			return 2
+			return exitCodeError
 		}
 		if _, err := os.Stat(path); err == nil && !force {
 			fmt.Fprintf(os.Stderr, "skipping existing file %s (use --force to overwrite)\n", path)
 			continue
 		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o640); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing %s: %v\n", path, err)
-			return 2
+			return exitCodeError
 		}
-		fmt.Println("created", path)
+		fmt.Fprintln(os.Stdout, "created", path)
 	}
 	return 0
 }
@@ -122,11 +129,12 @@ func detectPackageName(dir string) string {
 			if err != nil {
 				continue
 			}
-			for _, line := range strings.Split(string(b), "\n") {
+			for line := range strings.SplitSeq(string(b), "\n") {
 				line = strings.TrimSpace(line)
 				if strings.HasPrefix(line, "package ") {
 					parts := strings.Fields(line)
-					if len(parts) >= 2 {
+					const minPackageFields = 2
+					if len(parts) >= minPackageFields {
 						return parts[1]
 					}
 				}
@@ -205,7 +213,7 @@ func runValidate(args []string) {
 func runValidateNoExit(args []string) int {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "usage: gswag validate <spec-file>")
-		return 1
+		return exitCodeUsage
 	}
 
 	path := args[len(args)-1]
@@ -214,17 +222,17 @@ func runValidateNoExit(args []string) int {
 	issues, err := gswag.ValidateSpecFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 2
+		return exitCodeError
 	}
 
 	if len(issues) == 0 {
-		fmt.Println("✓ spec is valid")
+		fmt.Fprintln(os.Stdout, "✓ spec is valid")
 		return 0
 	}
 
 	hasErrors := false
 	for _, issue := range issues {
-		fmt.Println(issue)
+		fmt.Fprintln(os.Stdout, issue)
 		if issue.Severity == "error" {
 			hasErrors = true
 		}
@@ -246,7 +254,7 @@ func hasFlag(args []string, flag string) bool {
 }
 
 func printUsage() {
-	fmt.Print(`gswag — OpenAPI spec tooling for Ginkgo test suites
+	fmt.Fprint(os.Stdout, `gswag — OpenAPI spec tooling for Ginkgo test suites
 
 Commands:
 	validate [--strict] <spec-file>   Validate an OpenAPI spec file.
@@ -255,7 +263,7 @@ Commands:
 	diff <base-spec> <new-spec>       Diff two OpenAPI spec files.
 		Exits 1 if breaking changes are detected.
 	init [--force] [path]             Scaffold a minimal Ginkgo test suite file.
-		Writes a ` + "`<package>_suite_test.go`" + ` file into the target path (default: current dir).
+		Writes a `+"`<package>_suite_test.go`"+` file into the target path (default: current dir).
 		Detects package name from existing .go files; if none, uses target directory name.
 		The generated file uses package <pkg>_test.
 		Use --force to overwrite an existing <package>_suite_test.go.

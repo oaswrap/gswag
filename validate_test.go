@@ -32,7 +32,7 @@ func TestValidateSpecFile_NotFound(t *testing.T) {
 func TestValidateSpecFile_InvalidContent(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.yaml")
-	os.WriteFile(path, []byte("%%%invalid"), 0o644) //nolint:errcheck
+	os.WriteFile(path, []byte("%%%invalid"), 0o644)
 	_, err := gswag.ValidateSpecFile(path)
 	// YAML parse may or may not fail; JSON fallback also fails — expect error.
 	// If no error, at minimum parsing did not crash.
@@ -74,7 +74,7 @@ info:
   title: ""
   version: "1.0.0"
 paths: {}`
-	os.WriteFile(path, []byte(content), 0o644) //nolint:errcheck
+	os.WriteFile(path, []byte(content), 0o644)
 
 	issues, err := gswag.ValidateSpecFile(path)
 	if err != nil {
@@ -99,7 +99,7 @@ info:
   title: "My API"
   version: "1.0.0"
 paths: {}`
-	os.WriteFile(path, []byte(content), 0o644) //nolint:errcheck
+	os.WriteFile(path, []byte(content), 0o644)
 
 	issues, err := gswag.ValidateSpecFile(path)
 	if err != nil {
@@ -134,7 +134,7 @@ paths:
       responses:
         "200":
           description: OK`
-	os.WriteFile(path, []byte(content), 0o644) //nolint:errcheck
+	os.WriteFile(path, []byte(content), 0o644)
 
 	issues, err := gswag.ValidateSpecFile(path)
 	if err != nil {

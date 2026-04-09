@@ -121,13 +121,31 @@ func TestMergeSpec_ExtendedComponents(t *testing.T) {
 		name string
 		ok   bool
 	}{
-		{"Responses.NotFound", base.Components.Responses != nil && len(base.Components.Responses.MapOfResponseOrRefValues) > 0},
-		{"Parameters.LimitParam", base.Components.Parameters != nil && len(base.Components.Parameters.MapOfParameterOrRefValues) > 0},
-		{"RequestBodies.CreateBody", base.Components.RequestBodies != nil && len(base.Components.RequestBodies.MapOfRequestBodyOrRefValues) > 0},
-		{"Headers.X-Rate-Limit", base.Components.Headers != nil && len(base.Components.Headers.MapOfHeaderOrRefValues) > 0},
-		{"Examples.FooExample", base.Components.Examples != nil && len(base.Components.Examples.MapOfExampleOrRefValues) > 0},
+		{
+			"Responses.NotFound",
+			base.Components.Responses != nil && len(base.Components.Responses.MapOfResponseOrRefValues) > 0,
+		},
+		{
+			"Parameters.LimitParam",
+			base.Components.Parameters != nil && len(base.Components.Parameters.MapOfParameterOrRefValues) > 0,
+		},
+		{
+			"RequestBodies.CreateBody",
+			base.Components.RequestBodies != nil && len(base.Components.RequestBodies.MapOfRequestBodyOrRefValues) > 0,
+		},
+		{
+			"Headers.X-Rate-Limit",
+			base.Components.Headers != nil && len(base.Components.Headers.MapOfHeaderOrRefValues) > 0,
+		},
+		{
+			"Examples.FooExample",
+			base.Components.Examples != nil && len(base.Components.Examples.MapOfExampleOrRefValues) > 0,
+		},
 		{"Links.UserLink", base.Components.Links != nil && len(base.Components.Links.MapOfLinkOrRefValues) > 0},
-		{"Callbacks.OnEvent", base.Components.Callbacks != nil && len(base.Components.Callbacks.MapOfCallbackOrRefValues) > 0},
+		{
+			"Callbacks.OnEvent",
+			base.Components.Callbacks != nil && len(base.Components.Callbacks.MapOfCallbackOrRefValues) > 0,
+		},
 	}
 	for _, c := range checks {
 		if !c.ok {

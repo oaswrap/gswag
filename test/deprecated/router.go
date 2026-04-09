@@ -1,8 +1,9 @@
 package deprecated
 
 import (
-	"github.com/oaswrap/gswag/test/util"
 	"net/http"
+
+	"github.com/oaswrap/gswag/test/util"
 )
 
 type LegacyItem struct {

@@ -9,10 +9,13 @@ const (
 	InHeader ParamLocation = "header"
 	InCookie ParamLocation = "cookie"
 
-	// Short aliases for common locations.
-	PathParam   = InPath
-	QueryParam  = InQuery
+	// PathParam is a short alias for InPath.
+	PathParam = InPath
+	// QueryParam is a short alias for InQuery.
+	QueryParam = InQuery
+	// HeaderParam is a short alias for InHeader.
 	HeaderParam = InHeader
+	// CookieParam is a short alias for InCookie.
 	CookieParam = InCookie
 )
 

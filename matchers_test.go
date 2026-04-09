@@ -20,6 +20,7 @@ func newTestResponse(status int, body string, headers http.Header) *http.Respons
 	}
 }
 
+//nolint:unparam // headers may be passed in future tests; keep parameter for flexibility
 func respWith(body string, status int, headers map[string]string) *http.Response {
 	h := http.Header{}
 	for k, v := range headers {
@@ -75,7 +76,7 @@ func TestHaveStatus_InvalidActual(t *testing.T) {
 	}
 }
 
-// extra failure-message-focused test
+// extra failure-message-focused test.
 func TestHaveStatus_FailureMessages(t *testing.T) {
 	resp := respWith("oops", 500, nil)
 	m := HaveStatus(200)
@@ -182,7 +183,7 @@ func TestHaveHeaderAndJSONMatchers_FailureMessages(t *testing.T) {
 	}
 
 	// JSON body equality failure message
-	jb := HaveJSONBody(map[string]interface{}{"a": 1})
+	jb := HaveJSONBody(map[string]any{"a": 1})
 	ok2, err := jb.Match(resp)
 	if err == nil && ok2 {
 		t.Fatalf("expected JSON match to fail")
@@ -206,7 +207,7 @@ func TestHaveHeaderAndJSONMatchers_FailureMessages(t *testing.T) {
 // --- HaveJSONBody ---
 
 func TestHaveJSONBody_Match(t *testing.T) {
-	m := HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	m := HaveJSONBody(map[string]any{"id": float64(1)})
 	ok, err := m.Match(newTestResponse(200, `{"id":1}`, nil))
 	if err != nil || !ok {
 		t.Fatalf("expected match for JSON body, err=%v ok=%v", err, ok)
@@ -214,7 +215,7 @@ func TestHaveJSONBody_Match(t *testing.T) {
 }
 
 func TestHaveJSONBody_NoMatch(t *testing.T) {
-	m := HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	m := HaveJSONBody(map[string]any{"id": float64(1)})
 	ok, _ := m.Match(newTestResponse(200, `{"id":2}`, nil))
 	if ok {
 		t.Fatal("expected no match for different JSON body")
@@ -224,7 +225,7 @@ func TestHaveJSONBody_NoMatch(t *testing.T) {
 func TestHaveJSONBody_MultipleReads(t *testing.T) {
 	// Body should be re-readable after first matcher read.
 	resp := newTestResponse(200, `{"id":1}`, nil)
-	m := HaveJSONBody(map[string]interface{}{"id": float64(1)})
+	m := HaveJSONBody(map[string]any{"id": float64(1)})
 	ok1, _ := m.Match(resp)
 	ok2, _ := m.Match(resp) // second read must also work
 	if !ok1 || !ok2 {
@@ -234,7 +235,7 @@ func TestHaveJSONBody_MultipleReads(t *testing.T) {
 
 func TestHaveJSONBody_InvalidJSON(t *testing.T) {
 	resp := &http.Response{Body: io.NopCloser(strings.NewReader("notjson"))}
-	ok, err := HaveJSONBody(map[string]interface{}{"a": 1}).Match(resp)
+	ok, err := HaveJSONBody(map[string]any{"a": 1}).Match(resp)
 	if err == nil {
 		t.Fatalf("expected error for invalid JSON, got ok=%v", ok)
 	}

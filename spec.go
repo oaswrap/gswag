@@ -3,6 +3,7 @@ package gswag
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -18,6 +19,9 @@ import (
 
 // bearerAuthSchemeName is the conventional component key for Bearer JWT schemes.
 const bearerAuthSchemeName = "bearerAuth"
+
+// applicationJSON is the default JSON media type used across the package.
+const applicationJSON = "application/json"
 
 var pathParamRe = regexp.MustCompile(`\{(\w+)\}`)
 
@@ -53,22 +57,26 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 			}
 			args := strings.Split(m[2], ", ")
 			result := m[1]
+			var resultSb56 strings.Builder
 			for _, arg := range args {
 				arg = strings.TrimPrefix(arg, "*")
 				// Preserve slice nesting as a "List" suffix so that
 				// Response[Todo] → "ResponseTodo" and
 				// Response[[]Todo] → "ResponseTodoList" stay distinct.
 				suffix := ""
+				var suffixSb62 strings.Builder
 				for strings.HasPrefix(arg, "[]") {
-					suffix += "List"
+					suffixSb62.WriteString("List")
 					arg = arg[2:]
 				}
+				suffix += suffixSb62.String()
 				arg = strings.TrimPrefix(arg, "*")
 				if i := strings.LastIndex(arg, "."); i >= 0 {
 					arg = arg[i+1:]
 				}
-				result += arg + suffix
+				resultSb56.WriteString(arg + suffix)
 			}
+			result += resultSb56.String()
 			return result
 		}),
 	)
@@ -178,7 +186,7 @@ func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 
 	op, err := sc.reflector.NewOperationContext(b.method, b.path)
 	if err != nil {
-		fmt.Printf("gswag: NewOperationContext error for %s %s: %v\n", b.method, b.path, err)
+		fmt.Fprintf(os.Stderr, "gswag: NewOperationContext error for %s %s: %v\n", b.method, b.path, err)
 		return
 	}
 
@@ -246,7 +254,7 @@ func (sc *SpecCollector) Register(b *requestBuilder, res *recordedResponse) {
 	}
 
 	if err := sc.reflector.AddOperation(op); err != nil {
-		fmt.Printf("gswag: AddOperation error for %s %s: %v\n", b.method, b.path, err)
+		fmt.Fprintf(os.Stderr, "gswag: AddOperation error for %s %s: %v\n", b.method, b.path, err)
 		return
 	}
 
@@ -294,7 +302,7 @@ func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *rec
 	}
 	if ct == "" {
 		if b.body != nil {
-			ct = "application/json"
+			ct = applicationJSON
 		} else {
 			ct = "application/octet-stream"
 		}
@@ -375,12 +383,12 @@ func (sc *SpecCollector) injectInferredSchema(b *requestBuilder, res *recordedRe
 
 	resp := respOrRef.Response
 	if resp.Content == nil {
-		ct := "application/json"
+		ct := applicationJSON
 		resp.Content = map[string]openapi3.MediaType{
 			ct: {Schema: inferred},
 		}
 	} else {
-		ct := "application/json"
+		ct := applicationJSON
 		mt := resp.Content[ct]
 		if mt.Schema == nil {
 			mt.Schema = inferred
@@ -594,7 +602,7 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 		if rb.Content != nil {
 			if mt, found := rb.Content[ct]; found {
 				bts := sanitize(res.RequestBodyBytes)
-				var ex interface{}
+				var ex any
 				if err := json.Unmarshal(bts, &ex); err != nil {
 					ex = string(bts)
 				}
@@ -614,7 +622,7 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 			if resp.Content != nil {
 				if mt, found := resp.Content[ct]; found {
 					bts := sanitize(res.BodyBytes)
-					var ex interface{}
+					var ex any
 					if err := json.Unmarshal(bts, &ex); err != nil {
 						ex = string(bts)
 					}
@@ -637,10 +645,10 @@ func requestExampleContentType(b *requestBuilder, res *recordedResponse) string 
 			return ct
 		}
 		if b.body != nil || len(res.RequestBodyBytes) > 0 {
-			return "application/json"
+			return applicationJSON
 		}
 	}
-	return "application/json"
+	return applicationJSON
 }
 
 func responseExampleContentType(res *recordedResponse) string {
@@ -649,7 +657,7 @@ func responseExampleContentType(res *recordedResponse) string {
 			return ct
 		}
 	}
-	return "application/json"
+	return applicationJSON
 }
 
 func normalizeContentType(ct string) string {
@@ -666,7 +674,7 @@ func normalizeContentType(ct string) string {
 // buildPathParamsStruct creates a dynamic struct with typed fields tagged as
 // `path:"name"` for each {name} placeholder found in pathTemplate.
 // When a value is provided in pathParamValues and looks like an integer, the field type is int64.
-func buildPathParamsStruct(pathTemplate string, pathParamValues map[string]string) interface{} {
+func buildPathParamsStruct(pathTemplate string, pathParamValues map[string]string) any {
 	matches := pathParamRe.FindAllStringSubmatch(pathTemplate, -1)
 	if len(matches) == 0 {
 		return nil
@@ -677,10 +685,10 @@ func buildPathParamsStruct(pathTemplate string, pathParamValues map[string]strin
 		name := m[1]
 
 		// Infer field type from the concrete value when available.
-		fieldType := reflect.TypeOf("")
+		fieldType := reflect.TypeFor[string]()
 		if val, ok := pathParamValues[name]; ok {
 			if _, err := strconv.ParseInt(val, 10, 64); err == nil {
-				fieldType = reflect.TypeOf(int64(0))
+				fieldType = reflect.TypeFor[int64]()
 			}
 		}
 
@@ -790,7 +798,7 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 
 	opCtx, err := sc.reflector.NewOperationContext(op.method, op.path)
 	if err != nil {
-		fmt.Printf("gswag DSL: NewOperationContext error for %s %s: %v\n", op.method, op.path, err)
+		fmt.Fprintf(os.Stderr, "gswag DSL: NewOperationContext error for %s %s: %v\n", op.method, op.path, err)
 		return
 	}
 
@@ -838,7 +846,7 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 	if len(op.responses) > 0 {
 		for status, resp := range op.responses {
 			s := status
-			var model interface{}
+			var model any
 			if resp != nil {
 				model = resp.bodyModel
 			}
@@ -869,7 +877,7 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 	}
 
 	if err := sc.reflector.AddOperation(opCtx); err != nil {
-		fmt.Printf("gswag DSL: AddOperation error for %s %s: %v\n", op.method, op.path, err)
+		fmt.Fprintf(os.Stderr, "gswag DSL: AddOperation error for %s %s: %v\n", op.method, op.path, err)
 		return
 	}
 
@@ -893,8 +901,8 @@ func (sc *SpecCollector) isExcludedPath(path string) bool {
 		if pattern == path {
 			return true
 		}
-		if strings.HasSuffix(pattern, "*") {
-			prefix := strings.TrimSuffix(pattern, "*")
+		if before, ok := strings.CutSuffix(pattern, "*"); ok {
+			prefix := before
 			if strings.HasPrefix(path, prefix) {
 				return true
 			}
@@ -935,7 +943,7 @@ func (sc *SpecCollector) injectRecordedResponseSchema(method, path string, res *
 
 	// Skip if a schema is already present.
 	resp := ror.Response
-	ct := "application/json"
+	ct := applicationJSON
 	if resp.Content != nil {
 		if mt, found := resp.Content[ct]; found && mt.Schema != nil {
 			return
@@ -977,6 +985,8 @@ func (sc *SpecCollector) appendDSLParams(op *dslOp) {
 			queryParams = append(queryParams, p)
 		case InHeader:
 			headerParams = append(headerParams, p)
+		case InPath, InCookie:
+			// intentionally ignored here
 		}
 	}
 	if len(queryParams) == 0 && len(headerParams) == 0 {
@@ -1078,7 +1088,7 @@ func (sc *SpecCollector) appendDSLResponseHeaders(op *dslOp) {
 // buildPathParamsStructFromDSL creates a dynamic struct for the path parameters
 // declared via Parameter(name, InPath, schemaType). Falls back to string for any
 // path placeholder not explicitly declared.
-func buildPathParamsStructFromDSL(pathTemplate string, params []dslParam) interface{} {
+func buildPathParamsStructFromDSL(pathTemplate string, params []dslParam) any {
 	matches := pathParamRe.FindAllStringSubmatch(pathTemplate, -1)
 	if len(matches) == 0 {
 		return nil
@@ -1116,13 +1126,19 @@ func buildPathParamsStructFromDSL(pathTemplate string, params []dslParam) interf
 func dslSchemaTypeToReflect(typ SchemaType) reflect.Type {
 	switch typ {
 	case Integer:
-		return reflect.TypeOf(int64(0))
+		return reflect.TypeFor[int64]()
 	case Number:
-		return reflect.TypeOf(float64(0))
+		return reflect.TypeFor[float64]()
 	case Boolean:
-		return reflect.TypeOf(false)
+		return reflect.TypeFor[bool]()
+	case String:
+		return reflect.TypeFor[string]()
+	case Object:
+		return reflect.TypeFor[map[string]any]()
+	case Array:
+		return reflect.TypeFor[[]string]()
 	default:
-		return reflect.TypeOf("")
+		return reflect.TypeFor[string]()
 	}
 }
 

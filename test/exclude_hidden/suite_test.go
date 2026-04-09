@@ -26,8 +26,8 @@ var _ = BeforeSuite(func() {
 	rootOutDir = GinkgoT().TempDir()
 
 	Init(&Config{
-		Title:   "Exclude Hidden API",
-		Version: "1.0.0",
+		Title:      "Exclude Hidden API",
+		Version:    "1.0.0",
 		OutputPath: filepath.Join(rootOutDir, "openapi.yaml"),
 		// /internal and /admin/* are excluded from the spec entirely.
 		ExcludePaths: []string{"/internal", "/admin/*"},

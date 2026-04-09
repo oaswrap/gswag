@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
@@ -12,7 +13,7 @@ import (
 )
 
 // dslServer is the HTTP test target set by SetTestServer.
-var dslServer interface{}
+var dslServer any
 
 // dslPathStack tracks nested path prefixes during Ginkgo tree construction.
 var dslPathStack []string
@@ -39,8 +40,8 @@ type dslOp struct {
 	hidden       bool
 	security     []map[string][]string
 	params       []dslParam
-	reqBodyModel interface{}
-	queryStruct  interface{}
+	reqBodyModel any
+	queryStruct  any
 	responses    map[int]*dslRespSpec
 	consumes     string   // explicit request content-type (default: application/json)
 	produces     []string // explicit response content-types (default: application/json)
@@ -53,8 +54,8 @@ type dslParam struct {
 	typ      SchemaType
 	required *bool
 	explode  *bool
-	enumVals []interface{}
-	defVal   interface{}
+	enumVals []any
+	defVal   any
 	hasDef   bool
 }
 
@@ -76,14 +77,14 @@ func ParamExplode(explode bool) ParameterOption {
 }
 
 // ParamEnum constrains parameter values to the provided enum values.
-func ParamEnum(values ...interface{}) ParameterOption {
+func ParamEnum(values ...any) ParameterOption {
 	return func(p *dslParam) {
-		p.enumVals = append([]interface{}(nil), values...)
+		p.enumVals = append([]any(nil), values...)
 	}
 }
 
 // ParamDefault sets the parameter default value in the generated schema.
-func ParamDefault(value interface{}) ParameterOption {
+func ParamDefault(value any) ParameterOption {
 	return func(p *dslParam) {
 		p.defVal = value
 		p.hasDef = true
@@ -93,8 +94,8 @@ func ParamDefault(value interface{}) ParameterOption {
 // dslRespSpec holds spec-side response metadata for one status code.
 type dslRespSpec struct {
 	description string
-	bodyModel   interface{}
-	headers     map[string]interface{}
+	bodyModel   any
+	headers     map[string]any
 }
 
 // dslRespExec holds test-execution values for one Response block.
@@ -103,13 +104,13 @@ type dslRespExec struct {
 	pathParams      map[string]string
 	queryParams     map[string]string
 	headers         map[string]string
-	body            interface{}
+	body            any
 	bodyRaw         []byte
 	bodyContentType string
 }
 
 // SetTestServer registers the HTTP target used by RunTest.
-func SetTestServer(target interface{}) {
+func SetTestServer(target any) {
 	dslServer = target
 }
 
@@ -239,12 +240,12 @@ func Parameter(name string, in ParamLocation, typ SchemaType, opts ...ParameterO
 }
 
 // RequestBody sets a typed struct as the request body schema for the current operation.
-func RequestBody(model interface{}) {
+func RequestBody(model any) {
 	topOp().reqBodyModel = model
 }
 
 // QueryParamStruct registers a struct with query tags as query parameter schemas.
-func QueryParamStruct(v interface{}) {
+func QueryParamStruct(v any) {
 	topOp().queryStruct = v
 }
 
@@ -270,7 +271,7 @@ func Response(status int, description string, fn func()) {
 }
 
 // ResponseSchema sets the expected response body schema model for the current response.
-func ResponseSchema(model interface{}) {
+func ResponseSchema(model any) {
 	re := topRespExec()
 	op := topOp()
 	if op.responses[re.status] == nil {
@@ -280,14 +281,14 @@ func ResponseSchema(model interface{}) {
 }
 
 // ResponseHeader declares a response header schema for the current response.
-func ResponseHeader(name string, model interface{}) {
+func ResponseHeader(name string, model any) {
 	re := topRespExec()
 	op := topOp()
 	if op.responses[re.status] == nil {
 		op.responses[re.status] = &dslRespSpec{}
 	}
 	if op.responses[re.status].headers == nil {
-		op.responses[re.status].headers = make(map[string]interface{})
+		op.responses[re.status].headers = make(map[string]any)
 	}
 	op.responses[re.status].headers[name] = model
 }
@@ -308,7 +309,7 @@ func SetHeader(name, value string) {
 }
 
 // SetBody sets a typed request body for the current test case.
-func SetBody(body interface{}) {
+func SetBody(body any) {
 	topRespExec().body = body
 }
 
@@ -344,7 +345,9 @@ func RunTest(fn ...func(*http.Response)) {
 		}
 
 		if len(fn) > 0 && fn[0] != nil {
-			fn[0](recordedToHTTPResponse(recorded))
+			resp := recordedToHTTPResponse(recorded)
+			fn[0](resp)
+			_ = resp.Body.Close()
 		}
 	})
 }
@@ -352,15 +355,9 @@ func RunTest(fn ...func(*http.Response)) {
 // dslBuildRequest constructs a requestBuilder from execution-side snapshot only.
 func dslBuildRequest(method, path string, re *dslRespExec) *requestBuilder {
 	b := newRequestBuilder(method, path)
-	for k, v := range re.pathParams {
-		b.pathParams[k] = v
-	}
-	for k, v := range re.queryParams {
-		b.queryParams[k] = v
-	}
-	for k, v := range re.headers {
-		b.headers[k] = v
-	}
+	maps.Copy(b.pathParams, re.pathParams)
+	maps.Copy(b.queryParams, re.queryParams)
+	maps.Copy(b.headers, re.headers)
 	if re.body != nil {
 		b.body = re.body
 	}
@@ -382,14 +379,18 @@ func recordedToHTTPResponse(r *recordedResponse) *http.Response {
 
 func topOp() *dslOp {
 	if len(dslOpStack) == 0 {
-		panic("gswag: Tag/Parameter/RequestBody/QueryParamStruct/Response must be called inside Get/Post/Put/Patch/Delete")
+		panic(
+			"gswag: Tag/Parameter/RequestBody/QueryParamStruct/Response must be called inside Get/Post/Put/Patch/Delete",
+		)
 	}
 	return dslOpStack[len(dslOpStack)-1]
 }
 
 func topRespExec() *dslRespExec {
 	if len(dslRespExecStack) == 0 {
-		panic("gswag: SetParam/SetQueryParam/SetHeader/SetBody/SetRawBody/ResponseSchema/RunTest must be called inside Response")
+		panic(
+			"gswag: SetParam/SetQueryParam/SetHeader/SetBody/SetRawBody/ResponseSchema/RunTest must be called inside Response",
+		)
 	}
 	return dslRespExecStack[len(dslRespExecStack)-1]
 }
@@ -402,7 +403,7 @@ func copyDslOp(op *dslOp) *dslOp {
 	for i := range cp.params {
 		cp.params[i].required = cloneBoolPtr(op.params[i].required)
 		cp.params[i].explode = cloneBoolPtr(op.params[i].explode)
-		cp.params[i].enumVals = append([]interface{}(nil), op.params[i].enumVals...)
+		cp.params[i].enumVals = append([]any(nil), op.params[i].enumVals...)
 		cp.params[i].defVal = op.params[i].defVal
 		cp.params[i].hasDef = op.params[i].hasDef
 	}
@@ -418,10 +419,8 @@ func copyDslOp(op *dslOp) *dslOp {
 	for k, v := range op.responses {
 		c := *v
 		if v.headers != nil {
-			c.headers = make(map[string]interface{}, len(v.headers))
-			for hk, hv := range v.headers {
-				c.headers[hk] = hv
-			}
+			c.headers = make(map[string]any, len(v.headers))
+			maps.Copy(c.headers, v.headers)
 		}
 		cp.responses[k] = &c
 	}
@@ -439,17 +438,11 @@ func cloneBoolPtr(v *bool) *bool {
 func copyDslRespExec(r *dslRespExec) *dslRespExec {
 	cp := *r
 	cp.pathParams = make(map[string]string, len(r.pathParams))
-	for k, v := range r.pathParams {
-		cp.pathParams[k] = v
-	}
+	maps.Copy(cp.pathParams, r.pathParams)
 	cp.queryParams = make(map[string]string, len(r.queryParams))
-	for k, v := range r.queryParams {
-		cp.queryParams[k] = v
-	}
+	maps.Copy(cp.queryParams, r.queryParams)
 	cp.headers = make(map[string]string, len(r.headers))
-	for k, v := range r.headers {
-		cp.headers[k] = v
-	}
+	maps.Copy(cp.headers, r.headers)
 	cp.bodyRaw = append([]byte(nil), r.bodyRaw...)
 	return &cp
 }

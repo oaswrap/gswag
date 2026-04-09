@@ -33,8 +33,8 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("GET /customers", func(w http.ResponseWriter, r *http.Request) {
 		util.WriteJSON(w, http.StatusOK, []Customer{
 			{
-				ID:   1,
-				Name: "Alice",
+				ID:      1,
+				Name:    "Alice",
 				Address: Address{Street: "123 Main St", City: "Springfield", Country: "US"},
 				Contact: Contact{Email: "alice@example.com", Phone: "555-0100"},
 			},

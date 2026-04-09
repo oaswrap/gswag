@@ -58,8 +58,8 @@ func buildMultipart() ([]byte, string) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	fw, _ := w.CreateFormFile("file", "hello.txt")
-	fw.Write([]byte("hello world")) //nolint:errcheck
-	w.Close()
+	fw.Write([]byte("hello world"))
+	_ = w.Close()
 	return buf.Bytes(), w.FormDataContentType()
 }
 

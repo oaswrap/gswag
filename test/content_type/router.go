@@ -71,7 +71,7 @@ func NewRouter() *http.ServeMux {
 		if strings.Contains(accept, "text/csv") {
 			w.Header().Set("Content-Type", "text/csv")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, "id,title,rows\n1,Monthly Report,42\n")
+			_, _ = fmt.Fprint(w, "id,title,rows\n1,Monthly Report,42\n")
 			return
 		}
 		util.WriteJSON(w, http.StatusOK, Report{ID: 1, Title: "Monthly Report", Rows: 42})

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/swaggest/openapi-go/openapi3"
@@ -45,7 +46,7 @@ func ValidateSpecFile(path string) ([]ValidationIssue, error) {
 	if err := spec.UnmarshalYAML(data); err != nil {
 		// Try JSON fallback.
 		if err2 := json.Unmarshal(data, spec); err2 != nil {
-			return nil, fmt.Errorf("parsing spec: yaml: %v; json: %v", err, err2)
+			return nil, fmt.Errorf("parsing spec: yaml: %w; json: %w", err, err2)
 		}
 	}
 	return validateSpec(spec), nil
@@ -94,7 +95,11 @@ func validateSpec(spec *openapi3.Spec) []ValidationIssue {
 			for _, secReq := range op.Security {
 				for name := range secReq {
 					if !declaredSchemes[name] {
-						add("error", loc, fmt.Sprintf("security scheme %q is not declared in components/securitySchemes", name))
+						add(
+							"error",
+							loc,
+							fmt.Sprintf("security scheme %q is not declared in components/securitySchemes", name),
+						)
 					}
 				}
 			}
@@ -132,7 +137,7 @@ func WriteAndValidateSpec() error {
 // validation generated from the collected spec using gojsonschema.
 func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) ([]string, error) {
 	if b == nil {
-		return nil, fmt.Errorf("nil requestBuilder")
+		return nil, errors.New("nil requestBuilder")
 	}
 
 	// If the builder declared a typed response model for this status code,
@@ -146,14 +151,17 @@ func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) 
 			target = reflect.New(mt)
 		}
 		if err := json.Unmarshal(res.BodyBytes, target.Interface()); err != nil {
-			return []string{err.Error()}, nil
+			// Report unmarshal failures as validation issues rather than returning
+			// an error to the caller. Tests expect unmarshalling problems to be
+			// returned in the issues slice.
+			return []string{fmt.Sprintf("unmarshal typed model: %v", err)}, nil
 		}
 		return nil, nil
 	}
 
 	// No declared typed model — attempt full JSON Schema validation
 	if globalCollector == nil || globalCollector.reflector == nil {
-		return nil, fmt.Errorf("spec not initialised")
+		return nil, errors.New("spec not initialised")
 	}
 
 	globalCollector.mu.Lock()
@@ -172,7 +180,7 @@ func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) 
 		return nil, nil
 	}
 
-	statusKey := fmt.Sprintf("%d", res.StatusCode)
+	statusKey := strconv.Itoa(res.StatusCode)
 
 	var resp *openapi3.Response
 	if op.Responses.MapOfResponseOrRefValues != nil {

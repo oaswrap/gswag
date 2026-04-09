@@ -24,7 +24,12 @@ import (
 // Using an environment variable avoids the need to register a flag in every
 // test binary in the module — packages that don't import golden would fail
 // with "flag provided but not defined" if a -flag approach were used.
-var update = os.Getenv("UPDATE_GOLDEN") != ""
+// updateGolden reports whether golden files should be updated.
+// It reads the `UPDATE_GOLDEN` environment variable on demand to avoid
+// introducing package-level mutable state.
+func updateGolden() bool {
+	return os.Getenv("UPDATE_GOLDEN") != ""
+}
 
 // TB is the subset of testing.TB and ginkgo.FullGinkgoTInterface used by
 // Check.  Both *testing.T and the value returned by GinkgoT() satisfy it.
@@ -40,12 +45,12 @@ type TB interface {
 func Check(t TB, goldenPath string, actual []byte) {
 	t.Helper()
 
-	if update {
+	if updateGolden() {
 		dir := filepath.Dir(goldenPath)
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			t.Fatalf("golden: create directory %s: %v", dir, err)
 		}
-		if err := os.WriteFile(goldenPath, actual, 0o644); err != nil {
+		if err := os.WriteFile(goldenPath, actual, 0o600); err != nil {
 			t.Fatalf("golden: write %s: %v", goldenPath, err)
 		}
 		t.Logf("golden: updated %s", goldenPath)

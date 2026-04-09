@@ -15,7 +15,12 @@ func TestDSLFunctions_UpdateOpAndRespExec(t *testing.T) {
 	op := &dslOp{method: "PUT", path: "/p", responses: make(map[int]*dslRespSpec)}
 	dslOpStack = append(dslOpStack, op)
 
-	re := &dslRespExec{status: 200, pathParams: make(map[string]string), queryParams: make(map[string]string), headers: make(map[string]string)}
+	re := &dslRespExec{
+		status:      200,
+		pathParams:  make(map[string]string),
+		queryParams: make(map[string]string),
+		headers:     make(map[string]string),
+	}
 	dslRespExecStack = append(dslRespExecStack, re)
 
 	// call various DSL helpers
@@ -35,7 +40,7 @@ func TestDSLFunctions_UpdateOpAndRespExec(t *testing.T) {
 	SetParam("id", "1")
 	SetQueryParam("q", "v")
 	SetHeader("H", "v")
-	SetBody(map[string]interface{}{"a": 1})
+	SetBody(map[string]any{"a": 1})
 	SetRawBody([]byte("raw"), "text/plain")
 
 	// verify op updated

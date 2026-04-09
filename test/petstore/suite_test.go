@@ -109,7 +109,14 @@ var _ = Path("/pet", func() {
 
 		Response(200, "Successful operation", func() {
 			ResponseSchema(new(petstore.Pet))
-			SetBody(&petstore.Pet{ID: 1, Name: "doggie", Status: "available", PhotoURLs: []string{"https://example.com/dog.jpg"}})
+			SetBody(
+				&petstore.Pet{
+					ID:        1,
+					Name:      "doggie",
+					Status:    "available",
+					PhotoURLs: []string{"https://example.com/dog.jpg"},
+				},
+			)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
@@ -124,7 +131,14 @@ var _ = Path("/pet", func() {
 
 		Response(200, "Successful operation", func() {
 			ResponseSchema(new(petstore.Pet))
-			SetBody(&petstore.Pet{ID: 2, Name: "cat", Status: "available", PhotoURLs: []string{"https://example.com/cat.jpg"}})
+			SetBody(
+				&petstore.Pet{
+					ID:        2,
+					Name:      "cat",
+					Status:    "available",
+					PhotoURLs: []string{"https://example.com/cat.jpg"},
+				},
+			)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
@@ -312,7 +326,18 @@ var _ = Path("/user", func() {
 
 		Response(200, "successful operation", func() {
 			ResponseSchema(new(petstore.User))
-			SetBody(&petstore.User{ID: 2, Username: "theUser", FirstName: "John", LastName: "James", Email: "john@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
+			SetBody(
+				&petstore.User{
+					ID:         2,
+					Username:   "theUser",
+					FirstName:  "John",
+					LastName:   "James",
+					Email:      "john@email.com",
+					Password:   "12345",
+					Phone:      "12345",
+					UserStatus: 1,
+				},
+			)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
@@ -328,7 +353,20 @@ var _ = Path("/user/createWithList", func() {
 
 		Response(200, "Successful operation", func() {
 			ResponseSchema(new([]petstore.User))
-			SetBody([]petstore.User{{ID: 3, Username: "user3", FirstName: "A", LastName: "B", Email: "a@b.com", Password: "123", Phone: "555", UserStatus: 1}})
+			SetBody(
+				[]petstore.User{
+					{
+						ID:         3,
+						Username:   "user3",
+						FirstName:  "A",
+						LastName:   "B",
+						Email:      "a@b.com",
+						Password:   "123",
+						Phone:      "555",
+						UserStatus: 1,
+					},
+				},
+			)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 			})
@@ -390,7 +428,18 @@ var _ = Path("/user/{username}", func() {
 
 		Response(200, "successful operation", func() {
 			SetParam("username", "user1")
-			SetBody(&petstore.User{ID: 1, Username: "user1", FirstName: "John", LastName: "James", Email: "john+new@email.com", Password: "12345", Phone: "12345", UserStatus: 1})
+			SetBody(
+				&petstore.User{
+					ID:         1,
+					Username:   "user1",
+					FirstName:  "John",
+					LastName:   "James",
+					Email:      "john+new@email.com",
+					Password:   "12345",
+					Phone:      "12345",
+					UserStatus: 1,
+				},
+			)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 			})

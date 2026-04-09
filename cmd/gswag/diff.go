@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/swaggest/openapi-go/openapi3"
 )
@@ -15,9 +16,9 @@ type diffResult struct {
 }
 
 func runDiff(args []string) {
-	if len(args) < 2 {
+	if len(args) < minArgs {
 		fmt.Fprintln(os.Stderr, "usage: gswag diff [--json] [--no-fail] <base-spec> <new-spec>")
-		os.Exit(1)
+		os.Exit(exitCodeUsage)
 	}
 
 	jsonOut := hasFlag(args, "--json") || hasFlag(args, "--format=json")
@@ -26,12 +27,12 @@ func runDiff(args []string) {
 	base, err := loadSpec(args[0])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error loading base spec: %v\n", err)
-		os.Exit(2)
+		os.Exit(exitCodeError)
 	}
 	next, err := loadSpec(args[1])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error loading new spec: %v\n", err)
-		os.Exit(2)
+		os.Exit(exitCodeError)
 	}
 
 	result := diffSpecs(base, next)
@@ -48,7 +49,7 @@ func runDiff(args []string) {
 			Breaking: containsBreakingResult(result),
 		}
 		b, _ := json.MarshalIndent(out, "", "  ")
-		fmt.Println(string(b))
+		fmt.Fprintln(os.Stdout, string(b))
 		if out.Breaking && failOnBreaking {
 			os.Exit(1)
 		}
@@ -65,12 +66,7 @@ func containsBreakingResult(r diffResult) bool {
 	if len(r.removed) > 0 {
 		return true
 	}
-	for _, m := range r.modified {
-		if containsBreaking(m) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(r.modified, containsBreaking)
 }
 
 func loadSpec(path string) (*openapi3.Spec, error) {
@@ -82,7 +78,7 @@ func loadSpec(path string) (*openapi3.Spec, error) {
 	// Try YAML first, then JSON.
 	if err := spec.UnmarshalYAML(data); err != nil {
 		if err2 := json.Unmarshal(data, spec); err2 != nil {
-			return nil, fmt.Errorf("yaml: %v; json: %v", err, err2)
+			return nil, fmt.Errorf("yaml: %w; json: %w", err, err2)
 		}
 	}
 	return spec, nil
@@ -203,21 +199,22 @@ func statusSet(op openapi3.Operation) map[string]bool {
 	return m
 }
 
-func printDiff(r diffResult) (hasBreaking bool) {
+func printDiff(r diffResult) bool {
 	if len(r.added) == 0 && len(r.removed) == 0 && len(r.modified) == 0 {
-		fmt.Println("No differences found.")
+		fmt.Fprintln(os.Stdout, "No differences found.")
 		return false
 	}
 
+	var hasBreaking bool
 	for _, a := range r.added {
-		fmt.Println("  +added    ", a)
+		fmt.Fprintln(os.Stdout, "  +added    ", a)
 	}
 	for _, rm := range r.removed {
-		fmt.Println("  -BREAKING  removed", rm)
+		fmt.Fprintln(os.Stdout, "  -BREAKING  removed", rm)
 		hasBreaking = true
 	}
 	for _, m := range r.modified {
-		fmt.Println(m)
+		fmt.Fprintln(os.Stdout, m)
 		if containsBreaking(m) {
 			hasBreaking = true
 		}

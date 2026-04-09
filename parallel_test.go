@@ -19,8 +19,8 @@ func makeEchoServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		w.Write([]byte(`{"ok":true}`)) //nolint:errcheck
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"ok":true}`))
 	}))
 	t.Cleanup(srv.Close)
 	return srv

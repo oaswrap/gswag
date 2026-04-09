@@ -2,6 +2,7 @@ package gswag
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 )
 
 const defaultMergeTimeout = 30 * time.Second
+const mergePollInterval = 50 * time.Millisecond
 
 // WritePartialSpec serialises the current collector's spec to a file inside dir.
 // The file is named after nodeIndex (1-based) so that the merge step can discover
@@ -26,7 +28,7 @@ const defaultMergeTimeout = 30 * time.Second
 //	    }
 //	})
 func WritePartialSpec(nodeIndex int, dir string) error {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return err
 	}
 	path := partialSpecPath(dir, nodeIndex)
@@ -42,7 +44,7 @@ func WritePartialSpec(nodeIndex int, dir string) error {
 // guarantee all nodes have finished writing before this is called.
 func MergeAndWriteSpec(totalNodes int, dir string) error {
 	if globalConfig == nil {
-		return fmt.Errorf("gswag: not initialised — call Init() first")
+		return errors.New("gswag: not initialised — call Init() first")
 	}
 
 	timeout := globalConfig.MergeTimeout
@@ -56,9 +58,9 @@ func MergeAndWriteSpec(totalNodes int, dir string) error {
 	}
 
 	for i := 2; i <= totalNodes; i++ {
-		partial, err := waitAndReadPartialSpec(dir, i, timeout)
-		if err != nil {
-			return fmt.Errorf("gswag: reading node %d partial: %w", i, err)
+		partial, perr := waitAndReadPartialSpec(dir, i, timeout)
+		if perr != nil {
+			return fmt.Errorf("gswag: reading node %d partial: %w", i, perr)
 		}
 		mergeSpec(base, partial)
 	}
@@ -68,17 +70,19 @@ func MergeAndWriteSpec(totalNodes int, dir string) error {
 	switch globalConfig.OutputFormat {
 	case JSON:
 		data, err = json.MarshalIndent(base, "", "  ")
-	default: // YAML
+	case YAML:
 		data, err = base.MarshalYAML()
+	default:
+		return fmt.Errorf("unknown output format: %v", globalConfig.OutputFormat)
 	}
 	if err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(globalConfig.OutputPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(globalConfig.OutputPath), 0o750); err != nil {
 		return err
 	}
-	return os.WriteFile(globalConfig.OutputPath, data, 0o644)
+	return os.WriteFile(globalConfig.OutputPath, data, 0o600)
 }
 
 func partialSpecPath(dir string, nodeIndex int) string {
@@ -104,7 +108,7 @@ func waitAndReadPartialSpec(dir string, nodeIndex int, timeout time.Duration) (*
 		if time.Now().After(deadline) {
 			return nil, fmt.Errorf("timeout waiting for node %d partial spec at %s", nodeIndex, path)
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(mergePollInterval)
 	}
 }
 

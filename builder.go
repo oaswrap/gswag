@@ -2,6 +2,7 @@ package gswag
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,12 +21,12 @@ type requestBuilder struct {
 	pathParams      map[string]string
 	queryParams     map[string]string
 	headers         map[string]string
-	body            interface{} // typed struct → schema inference
-	bodyRaw         []byte      // raw JSON body fallback
-	bodyContentType string      // for raw body
-	respBodies      map[int]interface{}
-	respHeaders     map[int]map[string]interface{}
-	queryStruct     interface{} // typed struct with `query` tags → query param schemas
+	body            any    // typed struct → schema inference
+	bodyRaw         []byte // raw JSON body fallback
+	bodyContentType string // for raw body
+	respBodies      map[int]any
+	respHeaders     map[int]map[string]any
+	queryStruct     any // typed struct with `query` tags → query param schemas
 	tags            []string
 	summary         string
 	description     string
@@ -41,15 +42,15 @@ func newRequestBuilder(method, path string) *requestBuilder {
 		pathParams:  make(map[string]string),
 		queryParams: make(map[string]string),
 		headers:     make(map[string]string),
-		respBodies:  make(map[int]interface{}),
-		respHeaders: make(map[int]map[string]interface{}),
+		respBodies:  make(map[int]any),
+		respHeaders: make(map[int]map[string]any),
 	}
 }
 
 // do executes the HTTP request against target (*httptest.Server or base URL string)
 // and records the response. The caller decides whether to register the result with
 // the spec collector.
-func (b *requestBuilder) do(target interface{}) *recordedResponse {
+func (b *requestBuilder) do(target any) *recordedResponse {
 	baseURL := resolveBaseURL(target)
 	url := baseURL + b.resolvedPath()
 
@@ -64,7 +65,7 @@ func (b *requestBuilder) do(target interface{}) *recordedResponse {
 	if err != nil {
 		panic("gswag: HTTP request failed: " + err.Error())
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -118,7 +119,7 @@ func (b *requestBuilder) buildRequest(url string) (*http.Request, []byte, error)
 	var bodyReader io.Reader
 	var data []byte
 
-	contentType := "application/json"
+	contentType := applicationJSON
 	if b.body != nil {
 		d, err := json.Marshal(b.body)
 		if err != nil {
@@ -134,7 +135,7 @@ func (b *requestBuilder) buildRequest(url string) (*http.Request, []byte, error)
 		}
 	}
 
-	req, err := http.NewRequest(b.method, url, bodyReader)
+	req, err := http.NewRequestWithContext(context.Background(), b.method, url, bodyReader)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -158,7 +159,7 @@ func (b *requestBuilder) buildRequest(url string) (*http.Request, []byte, error)
 	return req, data, nil
 }
 
-func resolveBaseURL(target interface{}) string {
+func resolveBaseURL(target any) string {
 	switch t := target.(type) {
 	case *httptest.Server:
 		return t.URL

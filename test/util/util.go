@@ -16,7 +16,7 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 func WriteErrorJSON(w http.ResponseWriter, status int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	fmt.Fprintf(w, `{"error":%q}`, msg)
+	_, _ = fmt.Fprintf(w, `{"error":%q}`, msg)
 }
 
 func Ptr[T any](v T) *T {

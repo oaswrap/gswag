@@ -26,9 +26,9 @@ var _ = BeforeSuite(func() {
 	rootOutDir = GinkgoT().TempDir()
 
 	Init(&Config{
-		Title:   "Versioned API",
-		Version: "2.0.0",
-		Description: "API demonstrating deprecated operations, descriptions, and operationIds.",
+		Title:                       "Versioned API",
+		Version:                     "2.0.0",
+		Description:                 "API demonstrating deprecated operations, descriptions, and operationIds.",
 		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
 		StripDefinitionNamePrefixes: []string{"Deprecated"},
 		Tags: []TagConfig{

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/swaggest/openapi-go/openapi3"
@@ -26,12 +27,15 @@ func TestHasFlag(t *testing.T) {
 func captureStdout(f func()) string {
 	old := os.Stdout
 	r, w, _ := os.Pipe()
+	// Redirect stdout for the duration of the call.
+	//nolint:reassign // test redirects Stdout intentionally
 	os.Stdout = w
+	//nolint:reassign // restore Stdout after test
 	defer func() { os.Stdout = old }()
 	outC := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r) //nolint:errcheck
+		io.Copy(&buf, r)
 		outC <- buf.String()
 	}()
 	f()
@@ -47,7 +51,7 @@ func TestPrintUsage(t *testing.T) {
 	if out == "" {
 		t.Fatalf("expected usage output")
 	}
-	if !bytes.Contains([]byte(out), []byte("Commands:")) {
+	if !strings.Contains(out, "Commands:") {
 		t.Fatalf("usage missing Commands section")
 	}
 }
@@ -61,9 +65,13 @@ func TestPathMethodSetAndParamStatusAndOpChanges(t *testing.T) {
 	// base GET with one required query param and responses 200,201
 	getOp := openapi3.Operation{}
 	req := true
-	por := openapi3.ParameterOrRef{Parameter: &openapi3.Parameter{Name: "q", In: openapi3.ParameterIn("query"), Required: &req}}
+	por := openapi3.ParameterOrRef{
+		Parameter: &openapi3.Parameter{Name: "q", In: openapi3.ParameterIn("query"), Required: &req},
+	}
 	getOp.Parameters = []openapi3.ParameterOrRef{por}
-	getOp.Responses = openapi3.Responses{MapOfResponseOrRefValues: map[string]openapi3.ResponseOrRef{"200": {}, "201": {}}}
+	getOp.Responses = openapi3.Responses{
+		MapOfResponseOrRefValues: map[string]openapi3.ResponseOrRef{"200": {}, "201": {}},
+	}
 	pi.MapOfOperationValues["get"] = getOp
 
 	// next spec: GET /p without param and only 200; and added POST /p with required param
@@ -76,7 +84,9 @@ func TestPathMethodSetAndParamStatusAndOpChanges(t *testing.T) {
 	// POST with new required param 'x'
 	post := openapi3.Operation{}
 	r2 := true
-	por2 := openapi3.ParameterOrRef{Parameter: &openapi3.Parameter{Name: "x", In: openapi3.ParameterIn("query"), Required: &r2}}
+	por2 := openapi3.ParameterOrRef{
+		Parameter: &openapi3.Parameter{Name: "x", In: openapi3.ParameterIn("query"), Required: &r2},
+	}
 	post.Parameters = []openapi3.ParameterOrRef{por2}
 	post.Responses = openapi3.Responses{MapOfResponseOrRefValues: map[string]openapi3.ResponseOrRef{"200": {}}}
 	npi.MapOfOperationValues["post"] = post
@@ -109,10 +119,10 @@ func TestPathMethodSetAndParamStatusAndOpChanges(t *testing.T) {
 	foundRemovedStatus := false
 	for _, c := range changes {
 		if containsBreaking(c) && (len(c) > 0) {
-			if bytes.Contains([]byte(c), []byte("removed parameter")) {
+			if strings.Contains(c, "removed parameter") {
 				foundBreakingParam = true
 			}
-			if bytes.Contains([]byte(c), []byte("removed response status")) {
+			if strings.Contains(c, "removed response status") {
 				foundRemovedStatus = true
 			}
 		}
@@ -152,7 +162,7 @@ info:
 paths: {}
 `
 	vp := filepath.Join(dir, "valid.yaml")
-	os.WriteFile(vp, []byte(valid), 0o644) //nolint:errcheck
+	os.WriteFile(vp, []byte(valid), 0o644)
 	if code := runValidateNoExit([]string{vp}); code != 0 {
 		t.Fatalf("expected valid spec to return 0, got %d", code)
 	}
@@ -163,7 +173,7 @@ info:
   version: v1
 paths: {}/n`
 	bp := filepath.Join(dir, "bad.yaml")
-	os.WriteFile(bp, []byte(bad), 0o644) //nolint:errcheck
+	os.WriteFile(bp, []byte(bad), 0o644)
 	if code := runValidateNoExit([]string{bp}); code == 0 {
 		t.Fatalf("expected invalid spec to return non-zero")
 	}

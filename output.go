@@ -2,6 +2,7 @@ package gswag
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -22,7 +23,7 @@ func WriteSpecTo(path string, format OutputFormat) error {
 
 	flushPendingDSLOps()
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return err
 	}
 
@@ -37,12 +38,14 @@ func WriteSpecTo(path string, format OutputFormat) error {
 	switch format {
 	case JSON:
 		data, err = json.MarshalIndent(spec, "", "  ")
-	default: // YAML
+	case YAML:
 		data, err = spec.MarshalYAML()
+	default:
+		return fmt.Errorf("unknown output format: %v", format)
 	}
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600)
 }

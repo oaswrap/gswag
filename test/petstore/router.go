@@ -70,7 +70,16 @@ var orders = []Order{
 }
 
 var users = []User{
-	{ID: 1, Username: "user1", FirstName: "John", LastName: "James", Email: "john@email.com", Password: "12345", Phone: "12345", UserStatus: 1},
+	{
+		ID:         1,
+		Username:   "user1",
+		FirstName:  "John",
+		LastName:   "James",
+		Email:      "john@email.com",
+		Password:   "12345",
+		Phone:      "12345",
+		UserStatus: 1,
+	},
 }
 
 func NewRouter() *http.ServeMux {

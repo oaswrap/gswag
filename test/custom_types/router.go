@@ -28,7 +28,7 @@ type Page[T any] struct {
 	PageSize int `json:"page_size"`
 }
 
-// Nullable[T] is a generic nullable wrapper that marshals to/from a plain JSON value
+// Nullable is a generic nullable wrapper that marshals to/from a plain JSON value
 // (or null), rather than the struct encoding used by database/sql Null* types.
 type Nullable[T any] struct {
 	Value T

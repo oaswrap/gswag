@@ -1,7 +1,6 @@
 package querystruct
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -52,9 +51,9 @@ func NewRouter() *http.ServeMux {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("X-Total-Count", fmt.Sprintf("%d", len(result)))
-		w.Header().Set("X-Page", fmt.Sprintf("%d", page))
-		w.Header().Set("X-Page-Size", fmt.Sprintf("%d", pageSize))
+		w.Header().Set("X-Total-Count", strconv.Itoa(len(result)))
+		w.Header().Set("X-Page", strconv.Itoa(page))
+		w.Header().Set("X-Page-Size", strconv.Itoa(pageSize))
 		w.WriteHeader(http.StatusOK)
 		util.WriteJSON(w, http.StatusOK, result)
 	})

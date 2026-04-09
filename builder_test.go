@@ -64,7 +64,7 @@ func TestRequestBuilder_Do_SuccessRegisters(t *testing.T) {
 	// setup server
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte(`{"id":1}`)); err != nil {
 			t.Fatalf("failed to write response body: %v", err)
 		}
@@ -84,7 +84,7 @@ func TestRequestBuilder_Do_SuccessRegisters(t *testing.T) {
 	b.summary = "ok"
 
 	rec := b.do(srv)
-	if rec.StatusCode != 200 {
+	if rec.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 got %d", rec.StatusCode)
 	}
 
@@ -97,7 +97,7 @@ func TestRequestBuilder_Do_SuccessRegisters(t *testing.T) {
 func TestRequestBuilder_Do_ValidationWarnAndFail(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("notjson")); err != nil {
 			t.Fatalf("failed to write response body: %v", err)
 		}
@@ -131,7 +131,8 @@ func TestRequestBuilder_Do_ValidationWarnAndFail(t *testing.T) {
 			if r := recover(); r != nil {
 				// recovered value might be string
 				if s, ok := r.(string); ok {
-					if strings.Contains(s, "response does not match declared schema") || strings.Contains(s, "response validation error") {
+					if strings.Contains(s, "response does not match declared schema") ||
+						strings.Contains(s, "response validation error") {
 						didPanic = true
 					}
 				}
@@ -189,7 +190,7 @@ func TestResolveBaseURLAndBuildRequest(t *testing.T) {
 
 	// buildRequest with body, headers, query
 	b := newRequestBuilder("POST", "/path")
-	b.body = map[string]interface{}{"a": 1}
+	b.body = map[string]any{"a": 1}
 	b.headers["X-Req"] = "v"
 	b.queryParams["q"] = "1"
 

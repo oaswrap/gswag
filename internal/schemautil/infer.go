@@ -14,7 +14,7 @@ func InferSchema(data []byte) *openapi3.SchemaOrRef {
 	if len(data) == 0 {
 		return nil
 	}
-	var v interface{}
+	var v any
 	if err := json.Unmarshal(data, &v); err != nil {
 		return nil
 	}
@@ -27,11 +27,11 @@ func InferSchema(data []byte) *openapi3.SchemaOrRef {
 	return sor
 }
 
-func inferValue(v interface{}) *openapi3.Schema {
+func inferValue(v any) *openapi3.Schema {
 	switch val := v.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return inferObject(val)
-	case []interface{}:
+	case []any:
 		return inferArray(val)
 	case string:
 		t := openapi3.SchemaTypeString
@@ -52,7 +52,7 @@ func inferValue(v interface{}) *openapi3.Schema {
 	}
 }
 
-func inferObject(m map[string]interface{}) *openapi3.Schema {
+func inferObject(m map[string]any) *openapi3.Schema {
 	t := openapi3.SchemaTypeObject
 	s := (&openapi3.Schema{}).WithType(t)
 
@@ -74,7 +74,7 @@ func inferObject(m map[string]interface{}) *openapi3.Schema {
 	return s
 }
 
-func inferArray(arr []interface{}) *openapi3.Schema {
+func inferArray(arr []any) *openapi3.Schema {
 	t := openapi3.SchemaTypeArray
 	s := (&openapi3.Schema{}).WithType(t)
 
