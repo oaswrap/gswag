@@ -35,12 +35,6 @@ go test -run TestName ./...
 cd test/basic_data && go test ./...   # single golden suite
 cd examples/gin && go test ./...      # single example suite
 
-# CLI usage
-gswag init [dir]                       # scaffold suite file
-gswag validate [--strict] <spec.yaml>
-gswag diff [--json] [--no-fail] base.yaml head.yaml
-```
-
 ## Architecture
 
 ### Three-Phase Model

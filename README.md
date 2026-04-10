@@ -30,8 +30,6 @@ Requires Go 1.24+.
 
 ### 1. Configure suite and server
 
-Scaffold a suite file with `gswag init`, or write it manually:
-
 ```go
 // suite_test.go
 package api_test
