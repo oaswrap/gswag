@@ -62,8 +62,15 @@ func shortenGenericName(t reflect.Type, defaultDefName string) string {
 	if m == nil {
 		return defaultDefName
 	}
+	// Use the container name from defaultDefName, which already has the package
+	// prefix applied and StripDefinitionNamePrefix already run — so the result
+	// is consistent with how non-generic struct names are generated.
+	containerName := m[1]
+	if before, _, found := strings.Cut(defaultDefName, "["); found {
+		containerName = before
+	}
 	args := strings.Split(m[2], ", ")
-	result := m[1]
+	result := containerName
 	var sb strings.Builder
 	for _, arg := range args {
 		arg = strings.TrimPrefix(arg, "*")

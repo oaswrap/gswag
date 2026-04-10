@@ -5,12 +5,11 @@ go 1.24.0
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/oaswrap/gswag v0.0.0
+	github.com/oaswrap/spec-ui v0.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	modernc.org/sqlite v1.35.0
 )
-
-require github.com/oaswrap/spec-ui v0.2.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
