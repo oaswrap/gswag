@@ -1,5 +1,10 @@
 # gswag
 
+[![CI](https://github.com/oaswrap/gswag/actions/workflows/test.yml/badge.svg)](https://github.com/oaswrap/gswag/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oaswrap/gswag)](https://goreportcard.com/report/github.com/oaswrap/gswag)
+[![Go Reference](https://pkg.go.dev/badge/github.com/oaswrap/gswag.svg)](https://pkg.go.dev/github.com/oaswrap/gswag)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Generate OpenAPI 3.0 specs directly from your [Ginkgo](https://github.com/onsi/ginkgo) integration tests.
 
 Inspired by [rswag](https://github.com/rswag/rswag): define API docs alongside executable tests using a nested DSL.

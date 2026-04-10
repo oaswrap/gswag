@@ -324,7 +324,8 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 
 	// Request body example — only captured for successful responses so that
 	// error-triggering payloads (e.g. invalid JSON) are not used as examples.
-	if res.StatusCode/100 == 2 && op.RequestBody != nil && op.RequestBody.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
+	if res.StatusCode/100 == 2 && op.RequestBody != nil && op.RequestBody.RequestBody != nil &&
+		len(res.RequestBodyBytes) > 0 {
 		rb := op.RequestBody.RequestBody
 		ct := requestExampleContentType(b, res)
 		if rb.Content != nil {
