@@ -23,9 +23,14 @@ func TestAPI(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	Init(&Config{
-		Title:      "Todo API",
-		Version:    "1.0.0",
-		OutputPath: "../docs/openapi.yaml",
+		Title:                     "Todo API",
+		Version:                   "1.0.0",
+		OutputPath:                "../docs/openapi.yaml",
+		EnforceResponseValidation: true,
+		CaptureExamples:           true,
+		SecuritySchemes: map[string]SecuritySchemeConfig{
+			"apiKey": APIKeyHeader("X-API-Key"),
+		},
 	})
 })
 

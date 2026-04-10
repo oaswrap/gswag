@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	. "github.com/oaswrap/gswag"
+	"github.com/oaswrap/gswag/examples/todo/api"
 	"github.com/oaswrap/gswag/examples/todo/internal/model"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,6 +13,7 @@ import (
 var _ = Path("/todos", func() {
 	Get("List all todos", func() {
 		Tag("todos")
+		Security("apiKey")
 
 		BeforeEach(func() {
 			DeferCleanup(newTestEnv())
@@ -19,16 +21,25 @@ var _ = Path("/todos", func() {
 
 		Response(200, "list of todos", func() {
 			ResponseSchema(new(model.Response[[]model.Todo]))
+			SetHeader("X-API-Key", api.APIKey)
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
 				Expect(resp).To(ContainJSONKey("data"))
 				Expect(resp).To(ContainJSONKey("message"))
 			})
 		})
+
+		Response(401, "missing or invalid api key", func() {
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
 	})
 
 	Post("Create a todo", func() {
 		Tag("todos")
+		Security("apiKey")
 		RequestBody(new(model.CreateTodoRequest))
 
 		BeforeEach(func() {
@@ -37,6 +48,7 @@ var _ = Path("/todos", func() {
 
 		Response(201, "todo created", func() {
 			ResponseSchema(new(model.Response[model.Todo]))
+			SetHeader("X-API-Key", api.APIKey)
 			SetBody(&model.CreateTodoRequest{
 				Title:       "Buy groceries",
 				Description: "Milk, eggs, bread",
@@ -50,9 +62,17 @@ var _ = Path("/todos", func() {
 		})
 
 		Response(400, "missing or invalid body", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetRawBody([]byte("not-json"), "application/json")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusBadRequest))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
+		Response(401, "missing or invalid api key", func() {
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
 				Expect(resp).To(ContainJSONKey("error"))
 			})
 		})
@@ -62,6 +82,7 @@ var _ = Path("/todos", func() {
 var _ = Path("/todos/{id}", func() {
 	Get("Get a todo by ID", func() {
 		Tag("todos")
+		Security("apiKey")
 		Parameter("id", PathParam, Integer)
 
 		BeforeEach(func() {
@@ -73,6 +94,7 @@ var _ = Path("/todos/{id}", func() {
 
 		Response(200, "todo found", func() {
 			ResponseSchema(new(model.Response[model.Todo]))
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
@@ -81,7 +103,16 @@ var _ = Path("/todos/{id}", func() {
 			})
 		})
 
+		Response(401, "missing or invalid api key", func() {
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
 		Response(404, "todo not found", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "99999")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusNotFound))
@@ -92,6 +123,7 @@ var _ = Path("/todos/{id}", func() {
 
 	Put("Update a todo", func() {
 		Tag("todos")
+		Security("apiKey")
 		Parameter("id", PathParam, Integer)
 		RequestBody(new(model.UpdateTodoRequest))
 
@@ -104,6 +136,7 @@ var _ = Path("/todos/{id}", func() {
 
 		Response(200, "todo updated", func() {
 			ResponseSchema(new(model.Response[model.Todo]))
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "1")
 			SetBody(&model.UpdateTodoRequest{
 				Title:       "Write tests (revised)",
@@ -118,6 +151,7 @@ var _ = Path("/todos/{id}", func() {
 		})
 
 		Response(400, "missing or invalid body", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "1")
 			SetRawBody([]byte("not-json"), "application/json")
 			RunTest(func(resp *http.Response) {
@@ -126,7 +160,16 @@ var _ = Path("/todos/{id}", func() {
 			})
 		})
 
+		Response(401, "missing or invalid api key", func() {
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
 		Response(404, "todo not found", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "99999")
 			SetBody(&model.UpdateTodoRequest{Title: "ghost"})
 			RunTest(func(resp *http.Response) {
@@ -138,6 +181,7 @@ var _ = Path("/todos/{id}", func() {
 
 	Delete("Delete a todo", func() {
 		Tag("todos")
+		Security("apiKey")
 		Parameter("id", PathParam, Integer)
 
 		BeforeEach(func() {
@@ -148,13 +192,23 @@ var _ = Path("/todos/{id}", func() {
 		})
 
 		Response(204, "todo deleted", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusNoContent))
 			})
 		})
 
+		Response(401, "missing or invalid api key", func() {
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
 		Response(404, "todo not found", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "99999")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusNotFound))
@@ -167,6 +221,7 @@ var _ = Path("/todos/{id}", func() {
 var _ = Path("/todos/{id}/done", func() {
 	Patch("Mark a todo as done", func() {
 		Tag("todos")
+		Security("apiKey")
 		Parameter("id", PathParam, Integer)
 
 		BeforeEach(func() {
@@ -178,6 +233,7 @@ var _ = Path("/todos/{id}/done", func() {
 
 		Response(200, "todo marked as done", func() {
 			ResponseSchema(new(model.Response[model.Todo]))
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "1")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusOK))
@@ -186,7 +242,16 @@ var _ = Path("/todos/{id}/done", func() {
 			})
 		})
 
+		Response(401, "missing or invalid api key", func() {
+			SetParam("id", "1")
+			RunTest(func(resp *http.Response) {
+				Expect(resp).To(HaveStatus(http.StatusUnauthorized))
+				Expect(resp).To(ContainJSONKey("error"))
+			})
+		})
+
 		Response(404, "todo not found", func() {
+			SetHeader("X-API-Key", api.APIKey)
 			SetParam("id", "99999")
 			RunTest(func(resp *http.Response) {
 				Expect(resp).To(HaveStatus(http.StatusNotFound))

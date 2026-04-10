@@ -322,20 +322,20 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 		return
 	}
 
-	// Request body example.
-	if op.RequestBody != nil && op.RequestBody.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
+	// Request body example — only captured for successful responses so that
+	// error-triggering payloads (e.g. invalid JSON) are not used as examples.
+	if res.StatusCode/100 == 2 && op.RequestBody != nil && op.RequestBody.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
 		rb := op.RequestBody.RequestBody
 		ct := requestExampleContentType(b, res)
 		if rb.Content != nil {
 			if mt, found := rb.Content[ct]; found {
 				bts := sanitize(res.RequestBodyBytes)
 				var ex any
-				if err := json.Unmarshal(bts, &ex); err != nil {
-					ex = string(bts)
+				if err := json.Unmarshal(bts, &ex); err == nil {
+					mt.Example = &ex
+					rb.Content[ct] = mt
+					op.RequestBody.RequestBody = rb
 				}
-				mt.Example = &ex
-				rb.Content[ct] = mt
-				op.RequestBody.RequestBody = rb
 			}
 		}
 	}
@@ -350,13 +350,12 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 				if mt, found := resp.Content[ct]; found {
 					bts := sanitize(res.BodyBytes)
 					var ex any
-					if err := json.Unmarshal(bts, &ex); err != nil {
-						ex = string(bts)
+					if err := json.Unmarshal(bts, &ex); err == nil {
+						mt.Example = &ex
+						resp.Content[ct] = mt
+						ror.Response = resp
+						op.Responses.MapOfResponseOrRefValues[statusKey] = ror
 					}
-					mt.Example = &ex
-					resp.Content[ct] = mt
-					ror.Response = resp
-					op.Responses.MapOfResponseOrRefValues[statusKey] = ror
 				}
 			}
 		}

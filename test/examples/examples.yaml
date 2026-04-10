@@ -30,7 +30,10 @@ paths:
       requestBody:
         content:
           application/json:
-            example: not json
+            example:
+              id: 0
+              name: Sprocket
+              price: 5
             schema:
               $ref: '#/components/schemas/ExamplesItem'
       responses:

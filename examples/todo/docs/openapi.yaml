@@ -9,9 +9,25 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                data: []
+                message: ok
               schema:
                 $ref: '#/components/schemas/ModelResponseTodoList'
           description: OK
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
+      security:
+      - apiKey: []
       summary: List all todos
       tags:
       - todos
@@ -19,24 +35,51 @@ paths:
       requestBody:
         content:
           application/json:
+            example:
+              description: Milk, eggs, bread
+              title: Buy groceries
             schema:
               $ref: '#/components/schemas/ModelCreateTodoRequest'
       responses:
         "201":
           content:
             application/json:
+              example:
+                data:
+                  created_at: "2026-04-10T02:05:15.278387Z"
+                  description: Milk, eggs, bread
+                  done: false
+                  id: 1
+                  title: Buy groceries
+                  updated_at: "2026-04-10T02:05:15.278387Z"
+                message: created
               schema:
                 $ref: '#/components/schemas/ModelResponseTodo'
           description: Created
         "400":
           content:
             application/json:
+              example:
+                error: invalid character 'o' in literal null (expecting 'u')
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Bad Request
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
+      security:
+      - apiKey: []
       summary: Create a todo
       tags:
       - todos
@@ -52,15 +95,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
         "404":
           content:
             application/json:
+              example:
+                error: todo not found
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Not Found
+      security:
+      - apiKey: []
       summary: Delete a todo
       tags:
       - todos
@@ -76,18 +134,42 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                data:
+                  created_at: "2026-04-10T02:05:15.28183Z"
+                  description: Milk and eggs
+                  done: false
+                  id: 1
+                  title: Buy groceries
+                  updated_at: "2026-04-10T02:05:15.28183Z"
+                message: ok
               schema:
                 $ref: '#/components/schemas/ModelResponseTodo'
           description: OK
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
         "404":
           content:
             application/json:
+              example:
+                error: todo not found
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Not Found
+      security:
+      - apiKey: []
       summary: Get a todo by ID
       tags:
       - todos
@@ -102,33 +184,63 @@ paths:
       requestBody:
         content:
           application/json:
+            example:
+              description: Cover all endpoints and edge cases
+              done: false
+              title: Write tests (revised)
             schema:
               $ref: '#/components/schemas/ModelUpdateTodoRequest'
       responses:
         "200":
           content:
             application/json:
+              example:
+                data:
+                  created_at: "2026-04-10T02:05:15.283853Z"
+                  description: Cover all endpoints and edge cases
+                  done: false
+                  id: 1
+                  title: Write tests (revised)
+                  updated_at: "2026-04-10T02:05:15.284155Z"
+                message: ok
               schema:
                 $ref: '#/components/schemas/ModelResponseTodo'
           description: OK
         "400":
           content:
             application/json:
+              example:
+                error: invalid character 'o' in literal null (expecting 'u')
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Bad Request
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
         "404":
           content:
             application/json:
+              example:
+                error: todo not found
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Not Found
+      security:
+      - apiKey: []
       summary: Update a todo
       tags:
       - todos
@@ -145,18 +257,42 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                data:
+                  created_at: "2026-04-10T02:05:15.286037Z"
+                  description: Push to production
+                  done: true
+                  id: 1
+                  title: Deploy service
+                  updated_at: "2026-04-10T02:05:15.28634Z"
+                message: ok
               schema:
                 $ref: '#/components/schemas/ModelResponseTodo'
           description: OK
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Unauthorized
         "404":
           content:
             application/json:
+              example:
+                error: todo not found
               schema:
                 properties:
                   error:
                     type: string
                 type: object
           description: Not Found
+      security:
+      - apiKey: []
       summary: Mark a todo as done
       tags:
       - todos
@@ -213,3 +349,8 @@ components:
         title:
           type: string
       type: object
+  securitySchemes:
+    apiKey:
+      in: header
+      name: X-API-Key
+      type: apiKey
