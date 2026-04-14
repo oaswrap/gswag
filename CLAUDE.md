@@ -13,9 +13,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 make test           # go test ./... (all unit + golden tests)
 make test-verbose   # with -v
 make test-race      # with race detector
-make cover          # coverage report
+make cover          # coverage summary
+make cover-html     # HTML coverage report
 make examples       # build and run all 7 example suites
-make validate-examples  # run examples + validate generated specs
 
 # Code quality
 make vet

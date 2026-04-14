@@ -15,20 +15,14 @@ make examples
 
 ## Development workflow
 
-### Building
-
-```sh
-make build     # compile binary to bin/gswag
-make install   # go install
-```
-
 ### Testing
 
 ```sh
 make test           # unit + golden tests
 make test-verbose   # with -v
 make test-race      # race detector
-make cover          # HTML coverage report
+make cover          # coverage summary
+make cover-html     # HTML coverage report
 make examples       # build and run all example suites
 ```
 

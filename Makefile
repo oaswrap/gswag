@@ -1,10 +1,9 @@
-MODULE     := github.com/oaswrap/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
 EXAMPLES   := stdlib gin echo gorilla chi fiber todo parallel
 
-.PHONY: all build test cover lint vet tidy clean fmt \
-        examples validate-examples install help update-golden
+.PHONY: all test test-verbose test-race cover cover-html lint vet tidy fmt \
+	examples help update-golden
 
 all: tidy vet fmt test
 
@@ -77,5 +76,4 @@ help:
 	@echo "  lint               Run golangci-lint (must be installed)"
 	@echo "  tidy               Run go mod tidy"
 	@echo "  examples           Build and test all examples"
-	@echo "  clean              Remove build artefacts"
 	@echo "  update-golden      Regenerate golden test fixtures"

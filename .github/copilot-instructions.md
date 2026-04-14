@@ -11,13 +11,9 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 
 ## Build & Test Commands
 - **Run all tests:** `make test` or `go test ./...`
-- **Test with coverage:** `make cover` (see `coverage.html`)
+- **Test with coverage:** `make cover` or `make cover-html` (see `coverage.html`)
 - **Lint:** `make lint` (requires `golangci-lint`)
 - **Test all examples:** `make examples`
-- **Validate example specs:** `make validate-examples`
-- **Validate a spec:** `make validate SPEC=path/to/openapi.yaml`
-- **Diff two specs:** `make diff BASE=base.yaml HEAD=head.yaml`
-- **Clean build artifacts:** `make clean`
 
 ## Key Conventions
 - **No code annotations:** Specs are generated from test behavior, not code comments.
