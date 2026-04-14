@@ -70,20 +70,6 @@ var _ = AfterSuite(func() {
 })
 ```
 
-Or use the `RegisterSuiteHandlers` helper (single-process suites):
-
-```go
-func TestAPI(t *testing.T) {
-    gswag.RegisterSuiteHandlers(&gswag.Config{
-        Title:      "My API",
-        Version:    "1.0.0",
-        OutputPath: "./docs/openapi.yaml",
-    })
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "API Suite")
-}
-```
-
 ### 2. Write API specs with the DSL
 
 ```go
@@ -378,27 +364,20 @@ Validation highlights:
 
 For `ginkgo -p`, each parallel process writes a partial spec and process 1 merges them all.
 
-### Option A — helper (recommended)
-
 ```go
-func TestAPI(t *testing.T) {
-    gswag.RegisterParallelSuiteHandlers(&gswag.Config{
+var _ = BeforeSuite(func() {
+    gswag.Init(&gswag.Config{
         Title:      "My API",
         Version:    "1.0.0",
         OutputPath: "./docs/openapi.yaml",
-    }, "./tmp/gswag") // partialDir shared by all nodes
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "API Suite")
-}
-```
+    })
+    testServer = httptest.NewServer(api.NewRouter())
+    gswag.SetTestServer(testServer)
+})
 
-`RegisterParallelSuiteHandlers` uses Ginkgo's `SynchronizedAfterSuite` internally, which guarantees that node 1 only merges *after* all other nodes have finished writing their partial files.
-
-### Option B — manual `SynchronizedAfterSuite`
-
-```go
 var _ = SynchronizedAfterSuite(func() {
-    // Runs on every node — write this node's partial spec.
+    // Runs on every node — close server and write this node's partial spec.
+    testServer.Close()
     Expect(gswag.WritePartialSpec(GinkgoParallelProcess(), "./tmp/gswag")).To(Succeed())
 }, func() {
     // Runs only on node 1, after all other nodes finish the block above.
@@ -408,4 +387,15 @@ var _ = SynchronizedAfterSuite(func() {
 ```
 
 Partial files are written as `./tmp/gswag/node-N.json`. `MergeAndWriteSpec` polls for each file with a configurable timeout (default 30 s, override via `Config.MergeTimeout`).
+
+### How the merge works
+
+Every Ginkgo process builds the full spec tree during package init, so every partial spec contains all path skeletons. The per-node difference is runtime-inferred data:
+
+- **Response schemas** — inferred from the live HTTP response only on the node that ran that test.
+- **Request body schemas** — inferred from `SetBody` only on the node that ran the POST/PUT/PATCH test.
+
+`MergeAndWriteSpec` merges partial specs so that runtime-inferred content from any node fills in gaps in the base (node 1): missing response status codes are added, empty responses are replaced with schema-carrying ones from other nodes, and missing `requestBody` is copied over.
+
+See [`examples/parallel`](examples/parallel) for a working end-to-end demo using schema inference across parallel nodes.
 

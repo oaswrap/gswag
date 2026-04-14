@@ -64,7 +64,7 @@ Phase 3 — Output (AfterSuite)
 | `recorder.go` | `recordedResponse` — captures status, headers, body from HTTP responses |
 | `output.go` | `WriteSpec`/`WriteSpecTo` — serialize to YAML or JSON |
 | `parallel.go` | `WritePartialSpec`, `MergeAndWriteSpec` — parallel Ginkgo node orchestration |
-| `suite.go` | `RegisterSuiteHandlers`, `RegisterParallelSuiteHandlers` |
+| `suite.go` | *(removed)* — suite setup is done manually with `BeforeSuite` / `SynchronizedAfterSuite` |
 | `validate.go` | Structural checks + JSON Schema validation against OpenAPI 3.0 |
 | `matchers.go` | Gomega matchers: `HaveStatus`, `HaveHeader`, `ContainJSONKey`, `MatchJSONSchema`, `HaveNonEmptyBody` |
 | `internal/schemautil` | Infer JSON schemas from raw response bytes |
@@ -79,7 +79,7 @@ Phase 3 — Output (AfterSuite)
 
 ### Parallel Process Model
 
-Each Ginkgo process has isolated global state (no cross-process races). Each writes `node-N.json` partial files. Node 1 uses `SynchronizedAfterSuite` to merge all partials via `MergeAndWriteSpec` (last-write-loses, no-clobber strategy for components).
+Each Ginkgo process has isolated global state (no cross-process races). Every process rebuilds the full spec tree during package init (so all path skeletons appear in every partial), but only injects runtime schemas for the tests it actually ran. Node 1 uses `SynchronizedAfterSuite` to merge all partials via `MergeAndWriteSpec`. Merge strategy: response-level merge for paths (fills in missing/empty schemas from other nodes, copies missing `requestBody`), first-seen wins for components.
 
 ### Content-Type Precedence (highest → lowest)
 
@@ -92,7 +92,7 @@ Each Ginkgo process has isolated global state (no cross-process races). Each wri
 
 - **Unit tests** — `*_test.go` in root package (`dsl_test.go`, `spec_test.go`, `builder_test.go`, `matchers_test.go`, etc.)
 - **Golden integration tests** — `test/*/` — full Ginkgo suite execution compared against golden files. Regenerate with `make update-golden`.
-- **Example suites** — `examples/*/` — real `httptest.Server` instances for stdlib, gin, echo, chi, fiber, gorilla, petstore
+- **Example suites** — `examples/*/` — real `httptest.Server` instances for stdlib, gin, echo, chi, fiber, gorilla, petstore, parallel
 - **Parallel tests** — `parallel_merge_test.go`, `parallel_components_test.go`, `parallel_test.go`
 
 ## Conventions

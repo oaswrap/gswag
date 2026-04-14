@@ -1,7 +1,7 @@
 MODULE     := github.com/oaswrap/gswag
 COVER_OUT  := coverage.out
 COVER_HTML := coverage.html
-EXAMPLES   := stdlib gin echo gorilla chi fiber todo
+EXAMPLES   := stdlib gin echo gorilla chi fiber todo parallel
 
 .PHONY: all build test cover lint vet tidy clean fmt \
         examples validate-examples install help update-golden
