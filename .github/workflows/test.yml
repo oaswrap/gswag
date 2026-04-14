@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.22", "1.23", "1.24", "1.25"]
+        go: ["1.24", "1.25", "1.26"]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,37 +27,24 @@ jobs:
         run: go build ./...
 
       - name: Run core tests
-        run: go test ./... -v
+        if: matrix.go != '1.24'
+        run: make test-verbose
 
-      - name: Run Gin example tests
-        working-directory: examples/gin
-        run: |
-          go mod download
-          go test ./... -v
+      - name: Run coverage
+        if: matrix.go == '1.24'
+        run: make cover
 
-      - name: Run Echo example tests
-        working-directory: examples/echo
-        run: |
-          go mod download
-          go test ./... -v
-      
-      - name: Run Chi example tests
-        working-directory: examples/chi
-        run: |
-          go mod download
-          go test ./... -v
-      
-      - name: Run Fiber example tests
-        working-directory: examples/fiber
-        run: |
-          go mod download
-          go test ./... -v
+      - name: Run example tests
+        run: make examples
 
-      - name: Run Todo example tests
-        working-directory: examples/todo
-        run: |
-          go mod download
-          go test ./... -v
+      - name: Upload coverage to Codecov
+        if: matrix.go == '1.24'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
+          fail_ci_if_error: false
+          verbose: true
 
   vet-and-lint:
     runs-on: ubuntu-latest
@@ -69,10 +56,10 @@ jobs:
           go-version: "1.24"
 
       - name: go vet
-        run: go vet ./...
+        run: make vet
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9.2.0
         with:
-          version: latest
+          version: v2.11.4
           args: --timeout 5m

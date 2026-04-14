@@ -25,7 +25,7 @@ test-race:
 	go test -race ./...
 
 cover:
-	GOCOVERDIR=coverage go test -coverprofile=$(COVER_OUT) -covermode=atomic -coverpkg=./... ./...
+	go test -coverprofile=$(COVER_OUT) -covermode=atomic -coverpkg=./... ./...
 	go tool cover -func=$(COVER_OUT)
 
 cover-html: cover
@@ -44,7 +44,7 @@ fmt:
 	go fmt ./...
 
 lint:
-	@which golangci-lint > /dev/null || (echo "golangci-lint not found; run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+	@which golangci-lint > /dev/null || (echo "golangci-lint not found; run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.11.4" && exit 1)
 	golangci-lint run ./...
 
 tidy:
