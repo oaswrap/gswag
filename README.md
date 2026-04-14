@@ -1,8 +1,9 @@
 # gswag
 
 [![CI](https://github.com/oaswrap/gswag/actions/workflows/test.yml/badge.svg)](https://github.com/oaswrap/gswag/actions/workflows/test.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/oaswrap/gswag)](https://goreportcard.com/report/github.com/oaswrap/gswag)
 [![Go Reference](https://pkg.go.dev/badge/github.com/oaswrap/gswag.svg)](https://pkg.go.dev/github.com/oaswrap/gswag)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oaswrap/gswag)](https://goreportcard.com/report/github.com/oaswrap/gswag)
+[![codecov](https://codecov.io/gh/oaswrap/gswag/graph/badge.svg?token=X8zEVtNy5e)](https://codecov.io/gh/oaswrap/gswag)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Generate OpenAPI 3.0 specs directly from your [Ginkgo](https://github.com/onsi/ginkgo) integration tests.
@@ -398,4 +399,3 @@ Every Ginkgo process builds the full spec tree during package init, so every par
 `MergeAndWriteSpec` merges partial specs so that runtime-inferred content from any node fills in gaps in the base (node 1): missing response status codes are added, empty responses are replaced with schema-carrying ones from other nodes, and missing `requestBody` is copied over.
 
 See [`examples/parallel`](examples/parallel) for a working end-to-end demo using schema inference across parallel nodes.
-
