@@ -9,10 +9,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Build
-make build          # Build CLI binary to bin/gswag
-make install        # go install
-
 # Test
 make test           # go test ./... (all unit + golden tests)
 make test-verbose   # with -v
@@ -101,7 +97,6 @@ Each Ginkgo process has isolated global state (no cross-process races). Every pr
 - Internal DSL types use snake_case: `dslOp`, `dslRespExec`, `dslParam`, `dslRespSpec`
 - Public DSL API uses PascalCase: `Path()`, `Response()`, `ResponseSchema()`
 - DSL entry points wrap Ginkgo `Describe`/`Context` nodes
-- CLI commands use `*NoExit` variants returning exit codes for testability
 
 ## Key Design Notes
 

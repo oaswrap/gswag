@@ -64,39 +64,9 @@ examples:
 		(cd examples/$$name && go mod tidy && go test ./... -v) || exit 1; \
 	done
 
-validate-examples: examples
-	@which $(BIN) > /dev/null || $(MAKE) build
-	@for name in $(EXAMPLES); do \
-		spec=examples/$$name/docs/openapi.yaml; \
-		if [ -f "$$spec" ]; then \
-			echo "==> validating $$spec"; \
-			$(BIN) validate "$$spec" || exit 1; \
-		fi; \
-	done
-
-# ---------------------------------------------------------------------------
-# CLI helpers
-# ---------------------------------------------------------------------------
-
-validate: build
-	$(BIN) validate $(SPEC)
-
-diff: build
-	$(BIN) diff $(BASE) $(HEAD)
-
-# ---------------------------------------------------------------------------
-# Maintenance
-# ---------------------------------------------------------------------------
-
-clean:
-	rm -f $(BIN) $(COVER_OUT) $(COVER_HTML)
-	rm -rf bin/
-
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  build              Build the gswag CLI binary to $(BIN)"
-	@echo "  install            Install the gswag CLI via go install"
 	@echo "  test               Run all unit tests"
 	@echo "  test-verbose       Run tests with -v"
 	@echo "  test-race          Run tests with race detector"
@@ -107,8 +77,5 @@ help:
 	@echo "  lint               Run golangci-lint (must be installed)"
 	@echo "  tidy               Run go mod tidy"
 	@echo "  examples           Build and test all examples"
-	@echo "  validate-examples  Test examples and validate their generated specs"
-	@echo "  validate SPEC=<f>  Validate a spec file (requires SPEC=)"
-	@echo "  diff BASE=<f> HEAD=<f>  Diff two spec files"
 	@echo "  clean              Remove build artefacts"
 	@echo "  update-golden      Regenerate golden test fixtures"
