@@ -19,9 +19,9 @@ require (
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/swaggest/jsonschema-go v0.3.74 // indirect
+	github.com/swaggest/jsonschema-go v0.3.79 // indirect
 	github.com/swaggest/openapi-go v0.2.60 // indirect
-	github.com/swaggest/refl v1.3.1 // indirect
+	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect

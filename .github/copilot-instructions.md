@@ -10,8 +10,6 @@ This workspace is for `gswag`, a tool to generate OpenAPI 3.0 specifications fro
 - `RunTest(func(resp *http.Response) { ... })`
 
 ## Build & Test Commands
-- **Build CLI:** `make build` (outputs to `bin/gswag`)
-- **Install CLI:** `make install`
 - **Run all tests:** `make test` or `go test ./...`
 - **Test with coverage:** `make cover` (see `coverage.html`)
 - **Lint:** `make lint` (requires `golangci-lint`)

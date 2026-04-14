@@ -126,9 +126,14 @@ func mergeSpec(dst, src *openapi3.Spec) {
 					if existing.MapOfOperationValues == nil {
 						existing.MapOfOperationValues = make(map[string]openapi3.Operation)
 					}
-					for method, op := range srcItem.MapOfOperationValues {
-						if _, alreadyDefined := existing.MapOfOperationValues[method]; !alreadyDefined {
-							existing.MapOfOperationValues[method] = op
+					for method, srcOp := range srcItem.MapOfOperationValues {
+						if existingOp, alreadyDefined := existing.MapOfOperationValues[method]; !alreadyDefined {
+							existing.MapOfOperationValues[method] = srcOp
+						} else {
+							// Operation exists in both: merge at the response level so
+							// each node contributes the schemas it inferred at runtime.
+							mergeOperationResponses(&existingOp, &srcOp)
+							existing.MapOfOperationValues[method] = existingOp
 						}
 					}
 				}
@@ -215,6 +220,38 @@ func mergeSpec(dst, src *openapi3.Spec) {
 			if _, exists := dst.Components.Callbacks.MapOfCallbackOrRefValues[name]; !exists {
 				dst.Components.Callbacks.WithMapOfCallbackOrRefValuesItem(name, v)
 			}
+		}
+	}
+}
+
+// mergeOperationResponses merges response entries from src into dst at the
+// status-code level. A response from src is applied when:
+//   - dst has no entry for that status code, OR
+//   - dst has the status but no content schema (the node ran zero tests for it)
+//     while src does have a content schema (inferred from a live response).
+//
+// It also copies over other runtime-inferred fields (RequestBody) that only
+// the node which actually ran the test will have populated.
+func mergeOperationResponses(dst, src *openapi3.Operation) {
+	// Copy requestBody when the base node never ran this operation's test.
+	if dst.RequestBody == nil && src.RequestBody != nil {
+		dst.RequestBody = src.RequestBody
+	}
+
+	if src.Responses.MapOfResponseOrRefValues == nil {
+		return
+	}
+	for status, srcROR := range src.Responses.MapOfResponseOrRefValues {
+		dstROR, exists := dst.Responses.MapOfResponseOrRefValues[status]
+		if !exists {
+			dst.Responses.WithMapOfResponseOrRefValuesItem(status, srcROR)
+			continue
+		}
+		// Prefer src when dst has no content but src does (e.g. dst came from a
+		// node that ran zero tests, src came from a node that inferred the schema).
+		if dstROR.Response != nil && len(dstROR.Response.Content) == 0 &&
+			srcROR.Response != nil && len(srcROR.Response.Content) > 0 {
+			dst.Responses.WithMapOfResponseOrRefValuesItem(status, srcROR)
 		}
 	}
 }

@@ -47,7 +47,6 @@ gswag/
 ├── recorder.go               # recordedResponse: captures status, headers, body
 ├── output.go                 # WriteSpec / WriteSpecTo
 ├── parallel.go               # WritePartialSpec / MergeAndWriteSpec / mergeSpec
-├── suite.go                  # RegisterSuiteHandlers / RegisterParallelSuiteHandlers
 ├── validate.go               # ValidateSpec / ValidateSpecFile / WriteAndValidateSpec
 ├── matchers.go               # Gomega matchers: HaveStatus, ContainJSONKey, ...
 ├── output_sanitize.go        # example body sanitisation helpers
@@ -191,13 +190,22 @@ MergeAndWriteSpec
  mergeSpec() → openapi.yaml
 ```
 
-`mergeSpec` is a last-write-loses, no-clobber merge:
-- Paths: operations are added for methods not already present; same-path, same-method keeps the first.
-- Components (Schemas, SecuritySchemes, Responses, Parameters, RequestBodies, Headers, Examples, Links, Callbacks): first-seen wins.
+### Tree construction on every node
+
+Every Ginkgo process re-runs all `var _ = Path(...)` blocks during tree construction to build the full spec tree — this is how Ginkgo knows which specs exist before distributing them. As a result, `dslPendingOps` is populated with all declared operations on every node. `flushPendingDSLOps` (called by the first `RunTest` or by `WriteSpecTo`) registers these into the collector, so every partial spec contains all path skeletons.
+
+The per-node difference is in runtime-enriched fields:
+- **Inferred response schemas** — set by `injectRecordedResponseSchema` only on the node that ran that `It` block.
+- **Inferred request body schemas** — set by `injectInferredRequestSchema` only on the node that ran the `It` block with `SetBody`.
+
+### mergeSpec rules
+
+- **Paths / operations**: if two nodes recorded the same path+method, their responses are merged at the status-code level. A response from a later node fills in a status code that is missing from the base, or replaces an empty (no-content) response with one that has a schema inferred from a live HTTP call. `RequestBody` is also copied from a later node when the base node never ran that test.
+- **Components** (Schemas, SecuritySchemes, Responses, Parameters, RequestBodies, Headers, Examples, Links, Callbacks): first-seen wins — no-clobber.
 
 `MergeAndWriteSpec` polls for each partial file with a configurable timeout (`Config.MergeTimeout`, default 30 s) to tolerate slow nodes.
 
-**Recommended pattern** — use `SynchronizedAfterSuite` (or `RegisterParallelSuiteHandlers`) so Ginkgo guarantees all per-node `SynchronizedAfterSuite` bodies finish before node 1 runs the merge:
+**Recommended pattern** — use `SynchronizedAfterSuite` so Ginkgo guarantees all per-node `SynchronizedAfterSuite` bodies finish before node 1 runs the merge:
 
 ```go
 SynchronizedAfterSuite(func() {
@@ -208,6 +216,8 @@ SynchronizedAfterSuite(func() {
     MergeAndWriteSpec(suiteConfig.ParallelTotal, "./tmp/gswag")
 })
 ```
+
+See `examples/parallel` for a working end-to-end example using schema inference across parallel nodes.
 
 ---
 
