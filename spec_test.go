@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/oaswrap/spec/openapi"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/swaggest/openapi-go/openapi3"
 )
 
 // -----------------------------------------------------------------------------
@@ -111,16 +111,16 @@ func TestNewSpecCollector_InitialisesSpecAndSecurity(t *testing.T) {
 		SecuritySchemes: map[string]SecuritySchemeConfig{"k": BearerJWT()},
 	}
 	sc := newSpecCollector(cfg)
-	if sc == nil || sc.reflector == nil || sc.reflector.Spec == nil {
+	if sc == nil || sc.doc == nil {
 		t.Fatalf("expected reflector.spec initialised")
 	}
-	if sc.reflector.Spec.Info.Title != "T" || sc.reflector.Spec.Info.Version != "v" {
+	if sc.doc.Info.Title != "T" || sc.doc.Info.Version != "v" {
 		t.Fatalf("spec info not set")
 	}
-	if len(sc.reflector.Spec.Servers) == 0 {
+	if len(sc.doc.Servers) == 0 {
 		t.Fatalf("servers not set")
 	}
-	if sc.reflector.Spec.Components == nil || sc.reflector.Spec.Components.SecuritySchemes == nil {
+	if sc.doc.Components == nil || sc.doc.Components.SecuritySchemes == nil {
 		t.Fatalf("components.securityschemes not initialised")
 	}
 }
@@ -145,20 +145,19 @@ func TestNewSpecCollector_AppliesTopLevelMetadata(t *testing.T) {
 	}
 
 	sc := newSpecCollector(cfg)
-	if sc.reflector.Spec.Info.TermsOfService == nil || *sc.reflector.Spec.Info.TermsOfService != cfg.TermsOfService {
+	if sc.doc.Info.TermsOfService == nil || *sc.doc.Info.TermsOfService != cfg.TermsOfService {
 		t.Fatalf("termsOfService not set")
 	}
-	if sc.reflector.Spec.Info.Contact == nil || sc.reflector.Spec.Info.Contact.Email == nil ||
-		*sc.reflector.Spec.Info.Contact.Email != cfg.Contact.Email {
+	if sc.doc.Info.Contact == nil || sc.doc.Info.Contact.Email != cfg.Contact.Email {
 		t.Fatalf("contact not set")
 	}
-	if sc.reflector.Spec.Info.License == nil || sc.reflector.Spec.Info.License.Name != cfg.License.Name {
+	if sc.doc.Info.License == nil || sc.doc.Info.License.Name != cfg.License.Name {
 		t.Fatalf("license not set")
 	}
-	if sc.reflector.Spec.ExternalDocs == nil || sc.reflector.Spec.ExternalDocs.URL != cfg.ExternalDocs.URL {
+	if sc.doc.ExternalDocs == nil || sc.doc.ExternalDocs.URL != cfg.ExternalDocs.URL {
 		t.Fatalf("external docs not set")
 	}
-	if len(sc.reflector.Spec.Tags) != 1 || sc.reflector.Spec.Tags[0].Name != "pets" {
+	if len(sc.doc.Tags) != 1 || sc.doc.Tags[0].Name != "pets" {
 		t.Fatalf("tags metadata not set")
 	}
 }
@@ -173,10 +172,10 @@ func TestBuildSecuritySchemeOrRef_OAuth2Implicit(t *testing.T) {
 		},
 	})
 
-	if sor.SecurityScheme == nil || sor.SecurityScheme.OAuth2SecurityScheme == nil {
+	if sor == nil || sor.Flows == nil {
 		t.Fatalf("expected oauth2 security scheme")
 	}
-	flows := sor.SecurityScheme.OAuth2SecurityScheme.Flows
+	flows := sor.Flows
 	if flows.Implicit == nil {
 		t.Fatalf("expected implicit oauth flow")
 	}
@@ -200,7 +199,7 @@ func TestRegisterDSLOperation_HiddenSkipsSpecRegistration(t *testing.T) {
 		},
 	})
 
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/hidden"]; ok {
+	if _, ok := sc.doc.Paths["/hidden"]; ok {
 		t.Fatalf("expected hidden operation to be excluded from spec")
 	}
 }
@@ -217,14 +216,14 @@ func TestRegister_ExcludePathsSkipsSpecRegistration(t *testing.T) {
 	}
 	sc.Register(b, rec)
 
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/internal/users"]; ok {
+	if _, ok := sc.doc.Paths["/internal/users"]; ok {
 		t.Fatalf("expected excluded builder path to be skipped")
 	}
 
 	b2 := newRequestBuilder(http.MethodGet, "/public/users")
 	b2.summary = "public"
 	sc.Register(b2, rec)
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/public/users"]; !ok {
+	if _, ok := sc.doc.Paths["/public/users"]; !ok {
 		t.Fatalf("expected non-excluded builder path to be registered")
 	}
 }
@@ -241,7 +240,7 @@ func TestRegisterDSLOperation_ExcludePathsSkipsSpecRegistration(t *testing.T) {
 		},
 	})
 
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/admin/health"]; ok {
+	if _, ok := sc.doc.Paths["/admin/health"]; ok {
 		t.Fatalf("expected excluded DSL path to be skipped")
 	}
 
@@ -254,7 +253,7 @@ func TestRegisterDSLOperation_ExcludePathsSkipsSpecRegistration(t *testing.T) {
 		},
 	})
 
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/public/health"]; !ok {
+	if _, ok := sc.doc.Paths["/public/health"]; !ok {
 		t.Fatalf("expected non-excluded DSL path to be registered")
 	}
 }
@@ -288,34 +287,34 @@ func TestRegister_InfersSchemaAndAppendsExamplesAndHeaders(t *testing.T) {
 
 	sc.Register(b, rec)
 
-	pi, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
+	pi, ok := sc.doc.Paths[b.path]
 	if !ok {
 		t.Fatalf("path not registered")
 	}
-	op, ok := pi.MapOfOperationValues["get"]
+	op, ok := pathItemOperation(pi, "GET")
 	if !ok {
 		t.Fatalf("get operation not found")
 	}
 
 	// response schema should be inferred and attached
-	ror, ok := op.Responses.MapOfResponseOrRefValues["200"]
-	if !ok || ror.Response == nil || ror.Response.Content == nil {
+	ror, ok := op.Responses["200"]
+	if !ok || ror == nil || ror.Content == nil {
 		t.Fatalf("response content not present")
 	}
-	if _, found := ror.Response.Content["application/json"]; !found {
+	if _, found := ror.Content["application/json"]; !found {
 		t.Fatalf("application/json content not attached")
 	}
 
 	// response example should be attached
-	if mt, found := ror.Response.Content["application/json"]; !found || mt.Example == nil {
+	if mt, found := ror.Content["application/json"]; !found || mt.Example == nil {
 		t.Fatalf("response example not attached")
 	}
 
 	// response header should have been appended
-	if ror.Response.Headers == nil {
+	if ror.Headers == nil {
 		t.Fatalf("response headers not present")
 	}
-	if _, ok := ror.Response.Headers["X-Count"]; !ok {
+	if _, ok := ror.Headers["X-Count"]; !ok {
 		t.Fatalf("expected X-Count header to be present")
 	}
 }
@@ -352,15 +351,18 @@ func TestSpecCollectorRegister_InferSchemaAndExamplesAndParams(t *testing.T) {
 	globalCollector.Register(b, res)
 
 	// Check that the spec contains the operation and inferred schema/example.
-	si := globalCollector.reflector.Spec.Paths.MapOfPathItemValues["/pets/{id}"]
-	if si.MapOfOperationValues == nil {
+	si := globalCollector.doc.Paths["/pets/{id}"]
+	if si == nil {
 		t.Fatalf("no operations for path")
 	}
-	op := si.MapOfOperationValues["get"]
-	if len(op.Responses.MapOfResponseOrRefValues) == 0 {
+	op, ok := pathItemOperation(si, "GET")
+	if !ok {
+		t.Fatalf("operation missing")
+	}
+	if len(op.Responses) == 0 {
 		t.Fatalf("operation missing or has no responses")
 	}
-	if op.Summary == nil || *op.Summary != "Get pet" {
+	if op.Summary != "Get pet" {
 		t.Fatalf("unexpected summary: %v", op.Summary)
 	}
 
@@ -368,10 +370,10 @@ func TestSpecCollectorRegister_InferSchemaAndExamplesAndParams(t *testing.T) {
 	foundQ := false
 	foundH := false
 	for _, p := range op.Parameters {
-		if p.Parameter.Name == "q" {
+		if p.Name == "q" {
 			foundQ = true
 		}
-		if p.Parameter.Name == "X-Test" {
+		if p.Name == "X-Test" {
 			foundH = true
 		}
 	}
@@ -380,11 +382,11 @@ func TestSpecCollectorRegister_InferSchemaAndExamplesAndParams(t *testing.T) {
 	}
 
 	// Ensure response for 200 has an example and a schema
-	ror := op.Responses.MapOfResponseOrRefValues["200"]
-	if ror.Response == nil {
+	ror := op.Responses["200"]
+	if ror == nil {
 		t.Fatalf("response for 200 missing")
 	}
-	mt, ok := ror.Response.Content["application/json"]
+	mt, ok := ror.Content["application/json"]
 	if !ok {
 		t.Fatalf("application/json content missing")
 	}
@@ -436,15 +438,18 @@ func TestDSLExecution_AppendsExamples(t *testing.T) {
 	globalCollector.injectRecordedResponseSchema(http.MethodPost, "/dsl-capture", recorded)
 	globalCollector.appendExamples(b, recorded)
 
-	opItem := globalCollector.reflector.Spec.Paths.MapOfPathItemValues["/dsl-capture"].MapOfOperationValues["post"]
-	if opItem.RequestBody == nil || opItem.RequestBody.RequestBody == nil {
+	opItem, ok := pathItemOperation(globalCollector.doc.Paths["/dsl-capture"], "POST")
+	if !ok {
+		t.Fatalf("post operation not found")
+	}
+	if opItem.RequestBody == nil {
 		t.Fatalf("expected request body")
 	}
-	requestMT := opItem.RequestBody.RequestBody.Content["application/json"]
+	requestMT := opItem.RequestBody.Content["application/json"]
 	if requestMT.Example == nil {
 		t.Fatalf("expected request example to be set")
 	}
-	responseMT := opItem.Responses.MapOfResponseOrRefValues["200"].Response.Content["application/json"]
+	responseMT := opItem.Responses["200"].Content["application/json"]
 	if responseMT.Example == nil {
 		t.Fatalf("expected response example to be set")
 	}
@@ -468,13 +473,13 @@ func TestDslSchemaTypeToReflect(t *testing.T) {
 func TestDslSchemaParamAndStringParamJSON(t *testing.T) {
 	p := dslSchemaParam(
 		dslParam{name: "limit", typ: Integer},
-		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+		InQuery,
 	)
 	if reflect.ValueOf(p).IsZero() {
 		t.Fatalf("expected non-zero parameter")
 	}
 
-	sp := stringParam("q", openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}})
+	sp := stringParam("q", InQuery)
 	if reflect.ValueOf(sp).IsZero() {
 		t.Fatalf("expected non-zero string param")
 	}
@@ -485,18 +490,18 @@ func TestDslSchemaParam_RequiredAndExplode(t *testing.T) {
 	explode := true
 	p := dslSchemaParam(
 		dslParam{name: "tags", typ: Array, required: &req, explode: &explode},
-		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+		InQuery,
 	)
-	if p.Parameter == nil {
+	if p == nil {
 		t.Fatalf("expected parameter")
 	}
-	if p.Parameter.Required == nil || !*p.Parameter.Required {
+	if !p.Required {
 		t.Fatalf("expected required=true")
 	}
-	if p.Parameter.Explode == nil || !*p.Parameter.Explode {
+	if p.Explode == nil || !*p.Explode {
 		t.Fatalf("expected explode=true")
 	}
-	if p.Parameter.Schema == nil || p.Parameter.Schema.Schema == nil || p.Parameter.Schema.Schema.Items == nil {
+	if p.Schema == nil || p.Schema.Items == nil {
 		t.Fatalf("expected array items schema")
 	}
 }
@@ -510,20 +515,20 @@ func TestDslSchemaParam_EnumAndDefault(t *testing.T) {
 			defVal:   "available",
 			hasDef:   true,
 		},
-		openapi3.ParameterLocation{QueryParameter: &openapi3.QueryParameter{}},
+		InQuery,
 	)
-	if p.Parameter == nil || p.Parameter.Schema == nil || p.Parameter.Schema.Schema == nil {
+	if p == nil || p.Schema == nil {
 		t.Fatalf("expected parameter schema")
 	}
-	s := p.Parameter.Schema.Schema
+	s := p.Schema
 	if len(s.Enum) != 3 {
 		t.Fatalf("expected enum length 3, got %d", len(s.Enum))
 	}
 	if s.Default == nil {
 		t.Fatalf("expected default value")
 	}
-	if dv, ok := (*s.Default).(string); !ok || dv != "available" {
-		t.Fatalf("unexpected default value: %#v", *s.Default)
+	if dv, ok := s.Default.(string); !ok || dv != "available" {
+		t.Fatalf("unexpected default value: %#v", s.Default)
 	}
 }
 
@@ -617,11 +622,11 @@ func TestRegisterDSLOperation_AppendsDSLParamsAndResponseHeaders(t *testing.T) {
 
 	sc.RegisterDSLOperation(op)
 
-	pi, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/things/{id}"]
+	pi, ok := sc.doc.Paths["/things/{id}"]
 	if !ok {
 		t.Fatalf("path not registered")
 	}
-	oper, ok := pi.MapOfOperationValues["get"]
+	oper, ok := pathItemOperation(pi, "GET")
 	if !ok {
 		t.Fatalf("get operation not found")
 	}
@@ -630,10 +635,10 @@ func TestRegisterDSLOperation_AppendsDSLParamsAndResponseHeaders(t *testing.T) {
 	foundQ := false
 	foundH := false
 	for _, p := range oper.Parameters {
-		if p.Parameter.Name == "q" {
+		if p.Name == "q" {
 			foundQ = true
 		}
-		if p.Parameter.Name == "X-Req" {
+		if p.Name == "X-Req" {
 			foundH = true
 		}
 	}
@@ -642,7 +647,7 @@ func TestRegisterDSLOperation_AppendsDSLParamsAndResponseHeaders(t *testing.T) {
 	}
 
 	// check response header present
-	r := oper.Responses.MapOfResponseOrRefValues["200"].Response
+	r := oper.Responses["200"]
 	if r == nil || r.Headers == nil {
 		t.Fatalf("response or headers missing")
 	}
@@ -685,15 +690,12 @@ func TestTopOpTopRespExecPanics(t *testing.T) {
 }
 
 // Helper used by schema inference tests.
-func makeOpWithResponse(status int) openapi3.Operation {
-	op := openapi3.Operation{}
-	op.Responses = openapi3.Responses{MapOfResponseOrRefValues: map[string]openapi3.ResponseOrRef{}}
-	ror := openapi3.ResponseOrRef{}
-	r := openapi3.Response{}
-	r.Content = map[string]openapi3.MediaType{}
-	ror.WithResponse(r)
-	op.Responses.MapOfResponseOrRefValues[strconv.Itoa(status)] = ror
-	return op
+func makeOpWithResponse(status int) *openapi.Operation {
+	return &openapi.Operation{
+		Responses: map[string]*openapi.Response{
+			strconv.Itoa(status): &openapi.Response{Content: map[string]openapi.MediaType{}},
+		},
+	}
 }
 
 func TestInjectInferredSchema_Array(t *testing.T) {
@@ -702,11 +704,7 @@ func TestInjectInferredSchema_Array(t *testing.T) {
 
 	// prepare path and operation slot
 	path := "/arr"
-	pi := openapi3.PathItem{MapOfOperationValues: map[string]openapi3.Operation{"get": makeOpWithResponse(200)}}
-	if sc.reflector.Spec.Paths.MapOfPathItemValues == nil {
-		sc.reflector.Spec.Paths.MapOfPathItemValues = map[string]openapi3.PathItem{}
-	}
-	sc.reflector.Spec.Paths.MapOfPathItemValues[path] = pi
+	sc.doc.Paths[path] = &openapi.PathItem{Get: makeOpWithResponse(200)}
 
 	b := newRequestBuilder("GET", path)
 
@@ -714,19 +712,19 @@ func TestInjectInferredSchema_Array(t *testing.T) {
 
 	sc.injectInferredSchema(b, rec)
 
-	pi2, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[path]
+	pi2, ok := sc.doc.Paths[path]
 	if !ok {
 		t.Fatalf("path missing after injection")
 	}
-	op, ok := pi2.MapOfOperationValues["get"]
+	op, ok := pathItemOperation(pi2, "GET")
 	if !ok {
 		t.Fatalf("operation missing")
 	}
-	ror, ok := op.Responses.MapOfResponseOrRefValues["200"]
-	if !ok || ror.Response == nil || ror.Response.Content == nil {
+	ror, ok := op.Responses["200"]
+	if !ok || ror == nil || ror.Content == nil {
 		t.Fatalf("response content not set")
 	}
-	if _, found := ror.Response.Content["application/json"]; !found {
+	if _, found := ror.Content["application/json"]; !found {
 		t.Fatalf("expected application/json content for array response")
 	}
 }
@@ -736,30 +734,26 @@ func TestInjectInferredSchema_NestedObject(t *testing.T) {
 	sc := newSpecCollector(cfg)
 
 	path := "/nested"
-	pi := openapi3.PathItem{MapOfOperationValues: map[string]openapi3.Operation{"get": makeOpWithResponse(200)}}
-	if sc.reflector.Spec.Paths.MapOfPathItemValues == nil {
-		sc.reflector.Spec.Paths.MapOfPathItemValues = map[string]openapi3.PathItem{}
-	}
-	sc.reflector.Spec.Paths.MapOfPathItemValues[path] = pi
+	sc.doc.Paths[path] = &openapi.PathItem{Get: makeOpWithResponse(200)}
 
 	b := newRequestBuilder("GET", path)
 	rec := &recordedResponse{StatusCode: 200, BodyBytes: []byte(`{"user":{"id":1,"name":"x"},"tags":["a","b"]}`)}
 
 	sc.injectInferredSchema(b, rec)
 
-	pi2, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[path]
+	pi2, ok := sc.doc.Paths[path]
 	if !ok {
 		t.Fatalf("path missing after injection")
 	}
-	op, ok := pi2.MapOfOperationValues["get"]
+	op, ok := pathItemOperation(pi2, "GET")
 	if !ok {
 		t.Fatalf("operation missing")
 	}
-	ror, ok := op.Responses.MapOfResponseOrRefValues["200"]
-	if !ok || ror.Response == nil || ror.Response.Content == nil {
+	ror, ok := op.Responses["200"]
+	if !ok || ror == nil || ror.Content == nil {
 		t.Fatalf("response content not set")
 	}
-	if _, found := ror.Response.Content["application/json"]; !found {
+	if _, found := ror.Content["application/json"]; !found {
 		t.Fatalf("expected application/json content for nested response")
 	}
 }

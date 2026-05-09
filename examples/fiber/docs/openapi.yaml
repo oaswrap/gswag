@@ -5,80 +5,84 @@ info:
 paths:
   /reviews:
     get:
+      tags:
+        - reviews
+      summary: List all reviews
+      description: List all reviews
       responses:
         "200":
+          description: list of reviews
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ApiReview'
                 type: array
-          description: OK
+                items:
+                  $ref: "#/components/schemas/ApiReview"
       security:
-      - bearerAuth: []
-      summary: List all reviews
-      tags:
-      - reviews
+        - bearerAuth: []
     post:
+      tags:
+        - reviews
+      summary: Create a review
+      description: Create a review
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApiCreateReviewRequest'
+              $ref: "#/components/schemas/ApiCreateReviewRequest"
       responses:
         "201":
+          description: review created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiReview'
-          description: Created
+                $ref: "#/components/schemas/ApiReview"
         "400":
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
       security:
-      - bearerAuth: []
-      summary: Create a review
-      tags:
-      - reviews
+        - bearerAuth: []
   /reviews/{id}:
     get:
+      tags:
+        - reviews
+      summary: Get review by ID
+      description: Get review by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
+          description: review found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiReview'
-          description: OK
+                $ref: "#/components/schemas/ApiReview"
         "404":
+          description: review not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
       security:
-      - bearerAuth: []
-      summary: Get review by ID
-      tags:
-      - reviews
+        - bearerAuth: []
 components:
   schemas:
     ApiCreateReviewRequest:
+      type: object
       properties:
         author:
           type: string
@@ -86,8 +90,9 @@ components:
           type: string
         rating:
           type: integer
-      type: object
+          format: int32
     ApiReview:
+      type: object
       properties:
         author:
           type: string
@@ -95,11 +100,12 @@ components:
           type: string
         id:
           type: integer
+          format: int32
         rating:
           type: integer
-      type: object
+          format: int32
   securitySchemes:
     bearerAuth:
-      bearerFormat: JWT
-      scheme: bearer
       type: http
+      scheme: bearer
+      bearerFormat: JWT

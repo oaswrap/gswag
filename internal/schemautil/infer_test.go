@@ -8,12 +8,11 @@ import (
 
 func TestInferSchema_Object(t *testing.T) {
 	data := []byte(`{"id":1,"name":"Alice","active":true,"score":9.5}`)
-	sor := schemautil.InferSchema(data)
-	if sor == nil || sor.Schema == nil {
+	s := schemautil.InferSchema(data)
+	if s == nil {
 		t.Fatal("expected non-nil schema")
 	}
-	s := sor.Schema
-	if s.Type == nil || string(*s.Type) != "object" {
+	if s.Type != "object" {
 		t.Fatalf("expected type object, got %v", s.Type)
 	}
 	if len(s.Properties) != 4 {
@@ -23,12 +22,12 @@ func TestInferSchema_Object(t *testing.T) {
 
 func TestInferSchema_Array(t *testing.T) {
 	data := []byte(`[{"id":1},{"id":2}]`)
-	sor := schemautil.InferSchema(data)
-	if sor == nil || sor.Schema == nil {
+	s := schemautil.InferSchema(data)
+	if s == nil {
 		t.Fatal("expected non-nil schema")
 	}
-	if string(*sor.Schema.Type) != "array" {
-		t.Fatalf("expected type array, got %v", sor.Schema.Type)
+	if s.Type != "array" {
+		t.Fatalf("expected type array, got %v", s.Type)
 	}
 }
 
@@ -49,18 +48,18 @@ func TestInferSchema_InvalidJSON(t *testing.T) {
 
 func TestInferSchema_Integer(t *testing.T) {
 	data := []byte(`{"count":42}`)
-	sor := schemautil.InferSchema(data)
-	prop := sor.Schema.Properties["count"]
-	if string(*prop.Schema.Type) != "integer" {
-		t.Fatalf("expected integer, got %v", prop.Schema.Type)
+	s := schemautil.InferSchema(data)
+	prop := s.Properties["count"]
+	if prop.Type != "integer" {
+		t.Fatalf("expected integer, got %v", prop.Type)
 	}
 }
 
 func TestInferSchema_Number(t *testing.T) {
 	data := []byte(`{"price":9.99}`)
-	sor := schemautil.InferSchema(data)
-	prop := sor.Schema.Properties["price"]
-	if string(*prop.Schema.Type) != "number" {
-		t.Fatalf("expected number, got %v", prop.Schema.Type)
+	s := schemautil.InferSchema(data)
+	prop := s.Properties["price"]
+	if prop.Type != "number" {
+		t.Fatalf("expected number, got %v", prop.Type)
 	}
 }

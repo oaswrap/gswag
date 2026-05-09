@@ -11,14 +11,15 @@
           "public"
         ],
         "summary": "Get public resource",
+        "description": "Get public resource",
         "operationId": "getPublic",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "public resource",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExcludeHiddenPublicResource"
+                  "$ref": "#/components/schemas/Exclude_hiddenPublicResource"
                 }
               }
             }
@@ -29,11 +30,12 @@
   },
   "components": {
     "schemas": {
-      "ExcludeHiddenPublicResource": {
+      "Exclude_hiddenPublicResource": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "name": {
             "type": "string"

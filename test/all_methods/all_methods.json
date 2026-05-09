@@ -6,27 +6,16 @@
   },
   "paths": {
     "/allmethods": {
-      "delete": {
-        "tags": [
-          "allmethods"
-        ],
-        "summary": "delete allmethods",
-        "operationId": "delete_allmethods",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
       "get": {
         "tags": [
           "allmethods"
         ],
         "summary": "get allmethods",
+        "description": "get allmethods",
         "operationId": "get_allmethods",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -40,34 +29,35 @@
           }
         }
       },
-      "patch": {
+      "put": {
         "tags": [
           "allmethods"
         ],
-        "summary": "patch allmethods",
-        "operationId": "patch_allmethods",
+        "summary": "put allmethods",
+        "description": "put allmethods",
+        "operationId": "put_allmethods",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AllMethodsModel"
+                "$ref": "#/components/schemas/All_methodsAllMethodsModel"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllMethodsModel"
+                  "$ref": "#/components/schemas/All_methodsAllMethodsModel"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -88,29 +78,30 @@
           "allmethods"
         ],
         "summary": "post allmethods",
+        "description": "post allmethods",
         "operationId": "post_allmethods",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AllMethodsModel"
+                "$ref": "#/components/schemas/All_methodsAllMethodsModel"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllMethodsModel"
+                  "$ref": "#/components/schemas/All_methodsAllMethodsModel"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -126,34 +117,48 @@
           }
         }
       },
-      "put": {
+      "delete": {
         "tags": [
           "allmethods"
         ],
-        "summary": "put allmethods",
-        "operationId": "put_allmethods",
+        "summary": "delete allmethods",
+        "description": "delete allmethods",
+        "operationId": "delete_allmethods",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "allmethods"
+        ],
+        "summary": "patch allmethods",
+        "description": "patch allmethods",
+        "operationId": "patch_allmethods",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AllMethodsModel"
+                "$ref": "#/components/schemas/All_methodsAllMethodsModel"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllMethodsModel"
+                  "$ref": "#/components/schemas/All_methodsAllMethodsModel"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -173,11 +178,12 @@
   },
   "components": {
     "schemas": {
-      "AllMethodsModel": {
+      "All_methodsAllMethodsModel": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "name": {
             "type": "string"

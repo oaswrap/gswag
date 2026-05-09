@@ -5,121 +5,128 @@ info:
 paths:
   /api/v1/users:
     get:
+      tags:
+        - users
+      summary: List users
+      description: List users
       operationId: listUsers
       responses:
         "200":
+          description: list of users
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/NestedPathsUser'
                 type: array
-          description: OK
-      summary: List users
-      tags:
-      - users
+                items:
+                  $ref: "#/components/schemas/Nested_pathsUser"
   /api/v1/users/{id}:
     get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Get user by ID
       operationId: getUser
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
+          description: user found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NestedPathsUser'
-          description: OK
-      summary: Get user by ID
-      tags:
-      - users
+                $ref: "#/components/schemas/Nested_pathsUser"
   /api/v1/users/{id}/orders:
     get:
+      tags:
+        - orders
+      summary: List orders for user
+      description: List orders for user
       operationId: listUserOrders
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
+          description: list of orders
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/NestedPathsOrder'
                 type: array
-          description: OK
-      summary: List orders for user
-      tags:
-      - orders
+                items:
+                  $ref: "#/components/schemas/Nested_pathsOrder"
   /api/v1/users/{id}/orders/{orderId}:
     get:
+      tags:
+        - orders
+      summary: Get order
+      description: Get order
       operationId: getOrder
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      - in: path
-        name: orderId
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
+          description: order found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NestedPathsOrder'
-          description: OK
-      summary: Get order
-      tags:
-      - orders
+                $ref: "#/components/schemas/Nested_pathsOrder"
   /api/v1/users/{id}/orders/{orderId}/items:
     get:
+      tags:
+        - orders
+      summary: List order items
+      description: List order items
       operationId: listOrderItems
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      - in: path
-        name: orderId
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
+          description: order items
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/NestedPathsOrderItem'
                 type: array
-          description: OK
-      summary: List order items
-      tags:
-      - orders
+                items:
+                  $ref: "#/components/schemas/Nested_pathsOrderItem"
 components:
   schemas:
-    NestedPathsOrder:
+    Nested_pathsOrder:
+      type: object
       properties:
         id:
           type: string
         total:
           type: integer
+          format: int32
         user_id:
           type: string
+    Nested_pathsOrderItem:
       type: object
-    NestedPathsOrderItem:
       properties:
         id:
           type: string
@@ -129,11 +136,11 @@ components:
           type: string
         qty:
           type: integer
+          format: int32
+    Nested_pathsUser:
       type: object
-    NestedPathsUser:
       properties:
         id:
           type: string
         name:
           type: string
-      type: object

@@ -5,111 +5,118 @@ info:
 paths:
   /orders:
     get:
+      tags:
+        - orders
+      summary: List all orders
+      description: List all orders
       parameters:
-      - in: query
-        name: status
-        schema:
-          type: string
-      - in: query
-        name: limit
-        schema:
-          type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
       responses:
         "200":
+          description: list of orders
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ApiOrder'
                 type: array
-          description: OK
+                items:
+                  $ref: "#/components/schemas/ApiOrder"
       security:
-      - apiKey: []
-      summary: List all orders
-      tags:
-      - orders
+        - apiKey: []
     post:
+      tags:
+        - orders
+      summary: Place an order
+      description: Place an order
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApiCreateOrderRequest'
+              $ref: "#/components/schemas/ApiCreateOrderRequest"
       responses:
         "201":
+          description: order placed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiOrder'
-          description: Created
+                $ref: "#/components/schemas/ApiOrder"
         "400":
+          description: bad request
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
       security:
-      - apiKey: []
-      summary: Place an order
-      tags:
-      - orders
+        - apiKey: []
   /orders/{id}:
-    delete:
-      deprecated: true
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        "204":
-          description: No Content
-      security:
-      - apiKey: []
-      summary: Cancel an order
-      tags:
-      - orders
     get:
+      tags:
+        - orders
+      summary: Get order by ID
+      description: Get order by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
+          description: order found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiOrder'
-          description: OK
+                $ref: "#/components/schemas/ApiOrder"
         "404":
+          description: order not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
       security:
-      - apiKey: []
-      summary: Get order by ID
+        - apiKey: []
+    delete:
       tags:
-      - orders
+        - orders
+      summary: Cancel an order
+      description: Cancel an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: order cancelled
+      deprecated: true
+      security:
+        - apiKey: []
 components:
   schemas:
     ApiCreateOrderRequest:
+      type: object
       properties:
         product:
           type: string
         quantity:
           type: integer
-      type: object
+          format: int32
     ApiOrder:
+      type: object
       properties:
         id:
           type: string
@@ -117,12 +124,12 @@ components:
           type: string
         quantity:
           type: integer
+          format: int32
         total:
-          format: double
           type: number
-      type: object
+          format: double
   securitySchemes:
     apiKey:
-      in: header
-      name: X-API-Key
       type: apiKey
+      name: X-API-Key
+      in: header

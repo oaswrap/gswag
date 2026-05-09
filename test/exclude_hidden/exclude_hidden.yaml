@@ -5,23 +5,25 @@ info:
 paths:
   /public:
     get:
+      tags:
+        - public
+      summary: Get public resource
+      description: Get public resource
       operationId: getPublic
       responses:
         "200":
+          description: public resource
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExcludeHiddenPublicResource'
-          description: OK
-      summary: Get public resource
-      tags:
-      - public
+                $ref: "#/components/schemas/Exclude_hiddenPublicResource"
 components:
   schemas:
-    ExcludeHiddenPublicResource:
+    Exclude_hiddenPublicResource:
+      type: object
       properties:
         id:
           type: integer
+          format: int32
         name:
           type: string
-      type: object

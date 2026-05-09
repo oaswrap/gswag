@@ -1,395 +1,452 @@
 openapi: 3.0.3
 info:
+  title: "Swagger Petstore - OpenAPI 3.0"
+  description: "This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!\nYou can now help us improve the API whether it's by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)"
+  termsOfService: https://swagger.io/terms/
   contact:
     email: apiteam@swagger.io
-  description: |-
-    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
-
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: https://swagger.io/terms/
-  title: Swagger Petstore - OpenAPI 3.0
   version: 1.0.27
+servers:
+  - url: /api/v3
 externalDocs:
   description: Find out more about Swagger
   url: https://swagger.io
-servers:
-- url: /api/v3
 tags:
-- description: Everything about your Pets
-  externalDocs:
-    description: Find out more
-    url: https://swagger.io
-  name: pet
-- description: Access to Petstore orders
-  externalDocs:
-    description: Find out more about our store
-    url: https://swagger.io
-  name: store
-- description: Operations about user
-  name: user
+  - name: pet
+    description: Everything about your Pets
+    externalDocs:
+      description: Find out more
+      url: https://swagger.io
+  - name: store
+    description: Access to Petstore orders
+    externalDocs:
+      description: Find out more about our store
+      url: https://swagger.io
+  - name: user
+    description: Operations about user
 paths:
   /pet:
-    post:
-      operationId: addPet
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Pet'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-          description: OK
-      security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Add a new pet to the store
-      tags:
-      - pet
     put:
+      tags:
+        - pet
+      summary: Update an existing pet
+      description: Update an existing pet
       operationId: updatePet
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: "#/components/schemas/Pet"
       responses:
         "200":
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-          description: OK
+                $ref: "#/components/schemas/Pet"
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Update an existing pet
+        - petstore_auth:
+            - write:pets
+            - read:pets
+    post:
       tags:
-      - pet
-  /pet/{petId}:
-    delete:
-      operationId: deletePet
-      parameters:
-      - in: path
-        name: petId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: header
-        name: api_key
-        schema:
-          type: string
+        - pet
+      summary: Add a new pet to the store
+      description: Add a new pet to the store
+      operationId: addPet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Pet"
       responses:
         "200":
-          description: OK
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Deletes a pet
-      tags:
-      - pet
+        - petstore_auth:
+            - write:pets
+            - read:pets
+  /pet/findByStatus:
     get:
+      tags:
+        - pet
+      summary: Finds Pets by status
+      description: Finds Pets by status
+      operationId: findPetsByStatus
+      parameters:
+        - name: status
+          in: query
+          required: true
+          explode: true
+          schema:
+            type: string
+            default: available
+            enum:
+              - available
+              - pending
+              - sold
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+  /pet/findByTags:
+    get:
+      tags:
+        - pet
+      summary: Finds Pets by tags
+      description: Finds Pets by tags
+      operationId: findPetsByTags
+      parameters:
+        - name: tags
+          in: query
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+  /pet/{petId}:
+    get:
+      tags:
+        - pet
+      summary: Find pet by ID
+      description: Find pet by ID
       operationId: getPetById
       parameters:
-      - in: path
-        name: petId
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-          description: OK
+                $ref: "#/components/schemas/Pet"
       security:
-      - api_key: []
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Find pet by ID
-      tags:
-      - pet
+        - api_key: []
+        - petstore_auth:
+            - write:pets
+            - read:pets
     post:
+      tags:
+        - pet
+      summary: Updates a pet in the store with form data
+      description: Updates a pet in the store with form data
       operationId: updatePetWithForm
       parameters:
-      - in: path
-        name: petId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: name
-        schema:
-          type: string
-      - in: query
-        name: status
-        schema:
-          type: string
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-          description: OK
+                $ref: "#/components/schemas/Pet"
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Updates a pet in the store with form data
+        - petstore_auth:
+            - write:pets
+            - read:pets
+    delete:
       tags:
-      - pet
+        - pet
+      summary: Deletes a pet
+      description: Deletes a pet
+      operationId: deletePet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: api_key
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pet deleted
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
   /pet/{petId}/uploadImage:
     post:
+      tags:
+        - pet
+      summary: Uploads an image
+      description: Uploads an image
       operationId: uploadFile
       parameters:
-      - in: path
-        name: petId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: additionalMetadata
-        schema:
-          type: string
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: additionalMetadata
+          in: query
+          schema:
+            type: string
       requestBody:
         content:
           application/octet-stream:
             schema:
-              format: binary
               type: string
+              format: binary
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/APIResponse'
-          description: OK
+                $ref: "#/components/schemas/APIResponse"
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Uploads an image
-      tags:
-      - pet
-  /pet/findByStatus:
-    get:
-      operationId: findPetsByStatus
-      parameters:
-      - explode: true
-        in: query
-        name: status
-        required: true
-        schema:
-          default: available
-          enum:
-          - available
-          - pending
-          - sold
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Pet'
-                type: array
-          description: OK
-      security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Finds Pets by status
-      tags:
-      - pet
-  /pet/findByTags:
-    get:
-      operationId: findPetsByTags
-      parameters:
-      - explode: true
-        in: query
-        name: tags
-        required: true
-        schema:
-          items:
-            type: string
-          type: array
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Pet'
-                type: array
-          description: OK
-      security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-      summary: Finds Pets by tags
-      tags:
-      - pet
+        - petstore_auth:
+            - write:pets
+            - read:pets
   /store/inventory:
     get:
+      tags:
+        - store
+      summary: Returns pet inventories by status
+      description: Returns pet inventories by status
       operationId: getInventory
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
+                type: object
                 additionalProperties:
                   type: integer
-                type: object
-          description: OK
+                  format: int32
       security:
-      - api_key: []
-      summary: Returns pet inventories by status
-      tags:
-      - store
+        - api_key: []
   /store/order:
     post:
+      tags:
+        - store
+      summary: Place an order for a pet
+      description: Place an order for a pet
       operationId: placeOrder
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Order'
+              $ref: "#/components/schemas/Order"
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
-          description: OK
-      summary: Place an order for a pet
-      tags:
-      - store
+                $ref: "#/components/schemas/Order"
   /store/order/{orderId}:
-    delete:
-      operationId: deleteOrder
-      parameters:
-      - in: path
-        name: orderId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        "200":
-          description: OK
-      summary: Delete purchase order by identifier
-      tags:
-      - store
     get:
+      tags:
+        - store
+      summary: Find purchase order by ID
+      description: Find purchase order by ID
       operationId: getOrderById
       parameters:
-      - in: path
-        name: orderId
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
-          description: OK
-      summary: Find purchase order by ID
+                $ref: "#/components/schemas/Order"
+    delete:
       tags:
-      - store
+        - store
+      summary: Delete purchase order by identifier
+      description: Delete purchase order by identifier
+      operationId: deleteOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: order deleted
   /user:
     post:
+      tags:
+        - user
+      summary: Create user
+      description: Create user
       operationId: createUser
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: "#/components/schemas/User"
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-          description: OK
-      summary: Create user
+                $ref: "#/components/schemas/User"
+  /user/createWithList:
+    post:
       tags:
-      - user
-  /user/{username}:
-    delete:
-      operationId: deleteUser
-      parameters:
-      - in: path
-        name: username
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-      summary: Delete user resource
-      tags:
-      - user
-    get:
-      operationId: getUserByName
-      parameters:
-      - in: path
-        name: username
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: OK
-      summary: Get user by user name
-      tags:
-      - user
-    put:
-      operationId: updateUser
-      parameters:
-      - in: path
-        name: username
-        required: true
-        schema:
-          type: string
+        - user
+      summary: Creates list of users with given input array
+      description: Creates list of users with given input array
+      operationId: createUsersWithListInput
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
       responses:
         "200":
+          description: Successful operation
           content:
             application/json:
               schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  /user/login:
+    get:
+      tags:
+        - user
+      summary: Logs user into the system
+      description: Logs user into the system
+      operationId: loginUser
+      parameters:
+        - name: username
+          in: query
+          schema:
+            type: string
+        - name: password
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /user/logout:
+    get:
+      tags:
+        - user
+      summary: Logs out current logged in user session
+      description: Logs out current logged in user session
+      operationId: logoutUser
+      responses:
+        "200":
+          description: successful operation
+  /user/{username}:
+    get:
+      tags:
+        - user
+      summary: Get user by user name
+      description: Get user by user name
+      operationId: getUserByName
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      tags:
+        - user
+      summary: Update user resource
+      description: Update user resource
+      operationId: updateUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
                 properties:
                   email:
                     type: string
@@ -407,142 +464,95 @@ paths:
                     type: integer
                   username:
                     type: string
-                type: object
-          description: OK
-      summary: Update user resource
+    delete:
       tags:
-      - user
-  /user/createWithList:
-    post:
-      operationId: createUsersWithListInput
-      requestBody:
-        content:
-          application/json:
-            schema:
-              items:
-                $ref: '#/components/schemas/User'
-              nullable: true
-              type: array
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/User'
-                type: array
-          description: OK
-      summary: Creates list of users with given input array
-      tags:
-      - user
-  /user/login:
-    get:
-      operationId: loginUser
+        - user
+      summary: Delete user resource
+      description: Delete user resource
+      operationId: deleteUser
       parameters:
-      - in: query
-        name: username
-        schema:
-          type: string
-      - in: query
-        name: password
-        schema:
-          type: string
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  type: string
-                type: object
-          description: OK
-      summary: Logs user into the system
-      tags:
-      - user
-  /user/logout:
-    get:
-      operationId: logoutUser
-      responses:
-        "200":
-          description: OK
-      summary: Logs out current logged in user session
-      tags:
-      - user
+          description: User deleted
 components:
   schemas:
     APIResponse:
+      type: object
       properties:
         code:
           type: integer
+          format: int32
         message:
           type: string
         type:
           type: string
-      type: object
-    Category:
-      properties:
-        id:
-          format: int64
-          type: integer
-        name:
-          type: string
-      type: object
     Order:
+      type: object
       properties:
         complete:
           type: boolean
         id:
-          format: int64
           type: integer
+          format: int64
         petId:
-          format: int64
           type: integer
+          format: int64
         quantity:
           type: integer
+          format: int32
         shipDate:
           type: string
         status:
           type: string
-      type: object
     Pet:
+      type: object
       properties:
         category:
-          $ref: '#/components/schemas/Category'
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            name:
+              type: string
         id:
-          format: int64
           type: integer
+          format: int64
         name:
           type: string
         photoUrls:
+          type: array
           items:
             type: string
-          nullable: true
-          type: array
         status:
           type: string
         tags:
-          items:
-            $ref: '#/components/schemas/Tag'
-          nullable: true
           type: array
-      type: object
+          items:
+            $ref: "#/components/schemas/Tag"
     Tag:
+      type: object
       properties:
         id:
-          format: int64
           type: integer
+          format: int64
         name:
           type: string
-      type: object
     User:
+      type: object
       properties:
         email:
           type: string
         firstName:
           type: string
         id:
-          format: int64
           type: integer
+          format: int64
         lastName:
           type: string
         password:
@@ -551,19 +561,19 @@ components:
           type: string
         userStatus:
           type: integer
+          format: int32
         username:
           type: string
-      type: object
   securitySchemes:
     api_key:
-      in: header
-      name: api_key
       type: apiKey
+      name: api_key
+      in: header
     petstore_auth:
+      type: oauth2
       flows:
         implicit:
           authorizationUrl: https://petstore3.swagger.io/oauth/authorize
           scopes:
             read:pets: read your pets
             write:pets: modify pets in your account
-      type: oauth2

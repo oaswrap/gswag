@@ -6,27 +6,18 @@ import (
 	"strings"
 
 	"github.com/oaswrap/gswag/internal/schemautil"
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
-// injectInferredRequestSchema attaches an inferred request-body schema from the
-// actual request bytes when no explicit schema has been declared.
+// injectInferredRequestSchema attaches an inferred request-body schema from actual request bytes.
 func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *recordedResponse) {
 	if len(res.RequestBodyBytes) == 0 {
 		return
 	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-
-	methodKey := strings.ToLower(b.method)
-	op, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(b.method, b.path)
 	if !ok {
 		return
 	}
-
 	ct := normalizeContentType(b.bodyContentType)
 	if ct == "" {
 		if b.body != nil {
@@ -35,134 +26,83 @@ func (sc *SpecCollector) injectInferredRequestSchema(b *requestBuilder, res *rec
 			ct = "application/octet-stream"
 		}
 	}
-
-	var schema *openapi3.SchemaOrRef
+	var schema *openapi.Schema
 	if strings.Contains(strings.ToLower(ct), "json") {
 		schema = schemautil.InferSchema(res.RequestBodyBytes)
 	}
 	if schema == nil {
-		s := openapi3.Schema{}
-		s.WithType(openapi3.SchemaTypeString)
-		s.WithFormat("binary")
-		sor := openapi3.SchemaOrRef{}
-		sor.WithSchema(s)
-		schema = &sor
+		schema = &openapi.Schema{Type: string(String), Format: "binary"}
 	}
-
-	or := op.RequestBodyEns()
-	rb := or.RequestBodyEns()
-	if rb.Content == nil {
-		rb.Content = map[string]openapi3.MediaType{}
+	if op.RequestBody == nil {
+		op.RequestBody = &openapi.RequestBody{Content: map[string]openapi.MediaType{}}
 	}
-
-	// If any existing content-type key already has a schema, skip injection to
-	// avoid conflicting entries (e.g., from Consumes + RequestBody DSL).
-	for _, existingMT := range rb.Content {
+	if op.RequestBody.Content == nil {
+		op.RequestBody.Content = map[string]openapi.MediaType{}
+	}
+	for _, existingMT := range op.RequestBody.Content {
 		if existingMT.Schema != nil {
-			pathItem.MapOfOperationValues[methodKey] = op
-			sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 			return
 		}
 	}
-
-	mt := rb.Content[ct]
+	mt := op.RequestBody.Content[ct]
 	if mt.Schema == nil {
 		mt.Schema = schema
-		rb.Content[ct] = mt
+		op.RequestBody.Content[ct] = mt
 	}
-
-	pathItem.MapOfOperationValues[methodKey] = op
-	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
-// injectInferredSchema parses the response body and attaches a best-effort schema
-// to the already-registered fallback response slot.
+// injectInferredSchema attaches a best-effort response schema to an existing response slot.
 func (sc *SpecCollector) injectInferredSchema(b *requestBuilder, res *recordedResponse) {
 	inferred := schemautil.InferSchema(res.BodyBytes)
 	if inferred == nil {
 		return
 	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-
-	methodKey := strings.ToLower(b.method)
-	operation, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(b.method, b.path)
 	if !ok {
 		return
 	}
-
 	statusKey := strconv.Itoa(res.StatusCode)
-	if operation.Responses.MapOfResponseOrRefValues == nil {
+	resp := op.Responses[statusKey]
+	if resp == nil {
 		return
 	}
-
-	respOrRef, ok := operation.Responses.MapOfResponseOrRefValues[statusKey]
-	if !ok || respOrRef.Response == nil {
-		return
-	}
-
-	resp := respOrRef.Response
 	ct := applicationJSON
 	if resp.Content == nil {
-		resp.Content = map[string]openapi3.MediaType{ct: {Schema: inferred}}
-	} else {
-		mt := resp.Content[ct]
-		if mt.Schema == nil {
-			mt.Schema = inferred
-			resp.Content[ct] = mt
-		}
+		resp.Content = map[string]openapi.MediaType{ct: {Schema: inferred}}
+		return
 	}
-
-	respOrRef.Response = resp
-	operation.Responses.MapOfResponseOrRefValues[statusKey] = respOrRef
-	pathItem.MapOfOperationValues[methodKey] = operation
-	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
+	mt := resp.Content[ct]
+	if mt.Schema == nil {
+		mt.Schema = inferred
+		resp.Content[ct] = mt
+	}
 }
 
-// injectRecordedResponseSchema injects an inferred schema from the actual response body
-// into an existing operation response slot that has no explicit schema.
-// Called from RunTest after the HTTP request fires.
+// injectRecordedResponseSchema injects an inferred schema from the actual response body.
 func (sc *SpecCollector) injectRecordedResponseSchema(method, path string, res *recordedResponse) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-	methodKey := strings.ToLower(method)
-	op, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(method, path)
 	if !ok {
 		return
 	}
-
 	statusKey := strconv.Itoa(res.StatusCode)
-	if op.Responses.MapOfResponseOrRefValues == nil {
+	resp := op.Responses[statusKey]
+	if resp == nil {
 		return
 	}
-	ror, ok := op.Responses.MapOfResponseOrRefValues[statusKey]
-	if !ok || ror.Response == nil {
-		return
-	}
-
-	resp := ror.Response
 	ct := applicationJSON
 	if resp.Content != nil {
 		if mt, found := resp.Content[ct]; found && mt.Schema != nil {
 			return
 		}
 	}
-
 	inferred := schemautil.InferSchema(res.BodyBytes)
 	if inferred == nil {
 		return
 	}
-
 	if resp.Content == nil {
-		resp.Content = map[string]openapi3.MediaType{ct: {Schema: inferred}}
+		resp.Content = map[string]openapi.MediaType{ct: {Schema: inferred}}
 	} else {
 		mt := resp.Content[ct]
 		if mt.Schema == nil {
@@ -170,11 +110,6 @@ func (sc *SpecCollector) injectRecordedResponseSchema(method, path string, res *
 			resp.Content[ct] = mt
 		}
 	}
-
-	ror.Response = resp
-	op.Responses.MapOfResponseOrRefValues[statusKey] = ror
-	pathItem.MapOfOperationValues[methodKey] = op
-	sc.reflector.Spec.Paths.MapOfPathItemValues[path] = pathItem
 }
 
 // appendResponseHeaders attaches declared response header schemas from requestBuilder.
@@ -182,87 +117,52 @@ func (sc *SpecCollector) appendResponseHeaders(b *requestBuilder) {
 	if len(b.respHeaders) == 0 {
 		return
 	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-
-	methodKey := strings.ToLower(b.method)
-	op, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(b.method, b.path)
 	if !ok {
 		return
 	}
-
 	for status, headers := range b.respHeaders {
-		statusKey := strconv.Itoa(status)
-		respOrRef, ok := op.Responses.MapOfResponseOrRefValues[statusKey]
-		if !ok || respOrRef.Response == nil {
+		resp := op.Responses[strconv.Itoa(status)]
+		if resp == nil {
 			continue
 		}
-		resp := respOrRef.Response
 		if resp.Headers == nil {
-			resp.Headers = make(map[string]openapi3.HeaderOrRef)
+			resp.Headers = make(map[string]*openapi.Header)
 		}
 		for name, model := range headers {
 			resp.Headers[name] = buildHeaderOrRef(model)
 		}
-		respOrRef.Response = resp
-		op.Responses.MapOfResponseOrRefValues[statusKey] = respOrRef
 	}
-
-	pathItem.MapOfOperationValues[methodKey] = op
-	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
-// appendDSLResponseHeaders attaches response header schemas declared via ResponseHeader()
-// for a DSL operation.
+// appendDSLResponseHeaders attaches response header schemas declared via ResponseHeader().
 func (sc *SpecCollector) appendDSLResponseHeaders(op *dslOp) {
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[op.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-	methodKey := strings.ToLower(op.method)
-	operation, ok := pathItem.MapOfOperationValues[methodKey]
+	operation, ok := sc.operation(op.method, op.path)
 	if !ok {
 		return
 	}
-
 	for status, resp := range op.responses {
 		if resp == nil || len(resp.headers) == 0 {
 			continue
 		}
-		statusKey := strconv.Itoa(status)
-		respOrRef, found := operation.Responses.MapOfResponseOrRefValues[statusKey]
-		if !found || respOrRef.Response == nil {
+		r := operation.Responses[strconv.Itoa(status)]
+		if r == nil {
 			continue
 		}
-		r := respOrRef.Response
 		if r.Headers == nil {
-			r.Headers = make(map[string]openapi3.HeaderOrRef)
+			r.Headers = make(map[string]*openapi.Header)
 		}
 		for name, model := range resp.headers {
 			r.Headers[name] = buildHeaderOrRef(model)
 		}
-		respOrRef.Response = r
-		operation.Responses.MapOfResponseOrRefValues[statusKey] = respOrRef
 	}
-
-	pathItem.MapOfOperationValues[methodKey] = operation
-	sc.reflector.Spec.Paths.MapOfPathItemValues[op.path] = pathItem
 }
 
-// buildHeaderOrRef converts a model value to an openapi3.HeaderOrRef with an inferred schema.
-func buildHeaderOrRef(model any) openapi3.HeaderOrRef {
-	sor := inferHeaderSchema(model)
-	h := openapi3.Header{}
-	h.WithSchema(*sor)
-	har := openapi3.HeaderOrRef{}
-	har.WithHeader(h)
-	return har
+func buildHeaderOrRef(model any) *openapi.Header {
+	return &openapi.Header{Schema: inferHeaderSchema(model)}
 }
 
-func inferHeaderSchema(model any) *openapi3.SchemaOrRef {
+func inferHeaderSchema(model any) *openapi.Schema {
 	if model == nil {
 		return stringSchemaOrRef()
 	}
@@ -277,15 +177,11 @@ func inferHeaderSchema(model any) *openapi3.SchemaOrRef {
 	return inferred
 }
 
-func stringSchemaOrRef() *openapi3.SchemaOrRef {
-	s := openapi3.Schema{}
-	s.WithType(openapi3.SchemaTypeString)
-	so := openapi3.SchemaOrRef{}
-	so.WithSchema(s)
-	return &so
+func stringSchemaOrRef() *openapi.Schema {
+	return &openapi.Schema{Type: string(String)}
 }
 
-// appendExamples attaches captured request/response examples to the spec (public entry point).
+// appendExamples attaches captured request/response examples to the spec.
 func (sc *SpecCollector) appendExamples(b *requestBuilder, res *recordedResponse) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
@@ -296,7 +192,6 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 	if globalConfig == nil || !globalConfig.CaptureExamples {
 		return
 	}
-
 	sanitize := func(in []byte) []byte {
 		if in == nil {
 			return nil
@@ -310,63 +205,39 @@ func (sc *SpecCollector) appendExamplesLocked(b *requestBuilder, res *recordedRe
 		}
 		return out
 	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-
-	methodKey := strings.ToLower(b.method)
-	op, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(b.method, b.path)
 	if !ok {
 		return
 	}
-
-	// Request body example — only captured for successful responses so that
-	// error-triggering payloads (e.g. invalid JSON) are not used as examples.
-	if res.StatusCode/100 == 2 && op.RequestBody != nil && op.RequestBody.RequestBody != nil &&
-		len(res.RequestBodyBytes) > 0 {
-		rb := op.RequestBody.RequestBody
+	if res.StatusCode/100 == 2 && op.RequestBody != nil && len(res.RequestBodyBytes) > 0 {
 		ct := requestExampleContentType(b, res)
-		if rb.Content != nil {
-			if mt, found := rb.Content[ct]; found {
+		if op.RequestBody.Content != nil {
+			if mt, found := op.RequestBody.Content[ct]; found {
 				bts := sanitize(res.RequestBodyBytes)
 				var ex any
 				if err := json.Unmarshal(bts, &ex); err == nil {
-					mt.Example = &ex
-					rb.Content[ct] = mt
-					op.RequestBody.RequestBody = rb
+					mt.Example = ex
+					op.RequestBody.Content[ct] = mt
 				}
 			}
 		}
 	}
-
-	// Response body example for the actual status code.
 	statusKey := strconv.Itoa(res.StatusCode)
-	if op.Responses.MapOfResponseOrRefValues != nil {
-		if ror, found := op.Responses.MapOfResponseOrRefValues[statusKey]; found && ror.Response != nil {
-			resp := ror.Response
-			ct := responseExampleContentType(res)
-			if resp.Content != nil {
-				if mt, found := resp.Content[ct]; found {
-					bts := sanitize(res.BodyBytes)
-					var ex any
-					if err := json.Unmarshal(bts, &ex); err == nil {
-						mt.Example = &ex
-						resp.Content[ct] = mt
-						ror.Response = resp
-						op.Responses.MapOfResponseOrRefValues[statusKey] = ror
-					}
+	if resp := op.Responses[statusKey]; resp != nil {
+		ct := responseExampleContentType(res)
+		if resp.Content != nil {
+			if mt, found := resp.Content[ct]; found {
+				bts := sanitize(res.BodyBytes)
+				var ex any
+				if err := json.Unmarshal(bts, &ex); err == nil {
+					mt.Example = ex
+					resp.Content[ct] = mt
 				}
 			}
 		}
 	}
-
-	pathItem.MapOfOperationValues[methodKey] = op
-	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
 }
 
-// requestExampleContentType returns the content-type key to use for request examples.
 func requestExampleContentType(b *requestBuilder, res *recordedResponse) string {
 	if b != nil {
 		if ct := normalizeContentType(b.bodyContentType); ct != "" {
@@ -379,7 +250,6 @@ func requestExampleContentType(b *requestBuilder, res *recordedResponse) string 
 	return applicationJSON
 }
 
-// responseExampleContentType returns the content-type key to use for response examples.
 func responseExampleContentType(res *recordedResponse) string {
 	if res != nil && res.Headers != nil {
 		if ct := normalizeContentType(res.Headers.Get("Content-Type")); ct != "" {
@@ -389,7 +259,6 @@ func responseExampleContentType(res *recordedResponse) string {
 	return applicationJSON
 }
 
-// normalizeContentType strips parameters (e.g. charset, boundary) from a content-type string.
 func normalizeContentType(ct string) string {
 	ct = strings.TrimSpace(ct)
 	if ct == "" {

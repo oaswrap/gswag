@@ -65,29 +65,36 @@ type SecuritySchemeConfig struct {
 	Scopes           map[string]string // scope -> description
 }
 
+// Security scheme type constants.
+const (
+	SecurityTypeHTTP   = "http"
+	SecurityTypeAPIKey = "apiKey"
+	SecurityTypeOAuth2 = "oauth2"
+)
+
 // BearerJWT returns a SecuritySchemeConfig for an HTTP Bearer JWT scheme.
 func BearerJWT() SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "http", Scheme: "bearer", BearerFormat: "JWT"}
+	return SecuritySchemeConfig{Type: SecurityTypeHTTP, Scheme: "bearer", BearerFormat: "JWT"}
 }
 
 // APIKeyHeader returns a SecuritySchemeConfig for an API key passed in a header.
 func APIKeyHeader(headerName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "header", Name: headerName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "header", Name: headerName}
 }
 
 // APIKeyQuery returns a SecuritySchemeConfig for an API key passed in a query param.
 func APIKeyQuery(paramName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "query", Name: paramName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "query", Name: paramName}
 }
 
 // APIKeyCookie returns a SecuritySchemeConfig for an API key passed in a cookie.
 func APIKeyCookie(cookieName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "cookie", Name: cookieName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "cookie", Name: cookieName}
 }
 
 // OAuth2Implicit returns a SecuritySchemeConfig for an OAuth2 implicit flow.
 func OAuth2Implicit(authURL string, scopes map[string]string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "oauth2", AuthorizationURL: authURL, Scopes: scopes}
+	return SecuritySchemeConfig{Type: SecurityTypeOAuth2, AuthorizationURL: authURL, Scopes: scopes}
 }
 
 // Config holds global settings for gswag.

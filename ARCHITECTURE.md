@@ -103,7 +103,7 @@ Key global stacks (all touched only during tree construction — effectively sin
 
 ### Phase 3 — Output
 
-`WriteSpec()` locks the `SpecCollector`, serialises the `openapi3.Spec` to YAML or JSON, and writes the file.
+`WriteSpec()` locks the `SpecCollector`, serialises the `openapi.Document` to YAML or JSON, and writes the file.
 
 ---
 
@@ -144,19 +144,20 @@ dslRespExec
 
 ### `SpecCollector` (`spec.go`, `spec_collector.go`)
 
-Thread-safe accumulator wrapping the `openapi3.Reflector`.
+Thread-safe accumulator wrapping a persistent `oaswrap/spec/openapi.Document`.
 
 ```
 SpecCollector          (struct declared in spec.go)
 ├── mu sync.Mutex          ← protects all spec mutations
-├── reflector              ← swaggest/openapi-go reflector
+├── doc                    ← generated OpenAPI document
+├── openapiOpts            ← oaswrap/spec generator options
 └── excludePaths []string
 ```
 
 `newSpecCollector` (in `spec_collector.go`) is decomposed into:
-- `applySchemaOptions` — wires JSON-schema reflector options (generic name shortening, inline refs, type maps)
+- `buildOpenAPIOptions` — wires root metadata, security schemes, and reflector options for `oaswrap/spec`
 - `shortenGenericName` — strips package paths from generic type-argument names
-- `applySpecInfo` → `applySpecTags` / `applySpecServers` — populates the OpenAPI Info/Tags/Servers blocks
+- per-operation registration reflects through a temporary `spec.Router`, then merges the generated document into the collector
 
 Four lock points: `Register`, `RegisterDSLOperation`, `injectRecordedResponseSchema`, `appendExamplesLocked`.
 
@@ -226,15 +227,15 @@ See `examples/parallel` for a working end-to-end example using schema inference 
 ### DSL path (recommended)
 
 1. `Path` / `Get` / `Response` / `RequestBody` / `ResponseSchema` declare metadata during tree construction.
-2. `flushPendingDSLOps` (first `RunTest`) calls `RegisterDSLOperation` which drives the `openapi3.Reflector` directly.
-3. `injectInferredRequestSchema` is **skipped** if the reflector already placed a schema for any content-type key in `requestBody.content` — preventing conflict when `Consumes` and `SetRawBody` use different content-type strings.
+2. `flushPendingDSLOps` (first `RunTest`) calls `RegisterDSLOperation`, which reflects a temporary `oaswrap/spec` route and merges the generated operation into the collector document.
+3. `injectInferredRequestSchema` is **skipped** if registration already placed a schema for any content-type key in `requestBody.content` — preventing conflict when `Consumes` and `SetRawBody` use different content-type strings.
 
 ### Runtime-only path (no DSL)
 
 For tests that use `requestBuilder` directly (or through the legacy `Register` codepath):
 
 1. `Register` is called with the builder and recorded response.
-2. `AddReqStructure` / `AddRespStructure` drive the reflector from the builder's typed fields.
+2. `option.Request` / `option.Response` drive `oaswrap/spec` reflection from the builder's typed fields.
 3. `injectInferredRequestSchema` fills any gaps from actual request bytes.
 4. `injectInferredSchema` fills response schema from actual response bytes when none was declared.
 

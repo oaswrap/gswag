@@ -89,7 +89,7 @@ func TestRequestBuilder_Do_SuccessRegisters(t *testing.T) {
 	}
 
 	// spec should have registered path
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/test"]; !ok {
+	if _, ok := sc.doc.Paths["/test"]; !ok {
 		t.Fatalf("expected spec to contain /test")
 	}
 }

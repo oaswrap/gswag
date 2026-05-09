@@ -11,20 +11,17 @@
           "report"
         ],
         "summary": "Get report",
+        "description": "Get report",
         "operationId": "getReport",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "report data (CSV)",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "string"
-                }
+                "schema": {}
               },
               "text/csv": {
-                "schema": {
-                  "type": "string"
-                }
+                "schema": {}
               }
             }
           }
@@ -37,30 +34,30 @@
           "upload"
         ],
         "summary": "Upload a file",
+        "description": "Upload a file",
         "operationId": "uploadFile",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "string",
-                "format": "binary"
+                "$ref": "#/components/schemas/Content_typeUploadRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "upload successful",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentTypeUploadResponse"
+                  "$ref": "#/components/schemas/Content_typeUploadResponse"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid content type",
             "content": {
               "application/json": {
                 "schema": {
@@ -80,7 +77,19 @@
   },
   "components": {
     "schemas": {
-      "ContentTypeUploadResponse": {
+      "Content_typeUploadRequest": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Content_typeUploadResponse": {
         "type": "object",
         "properties": {
           "filename": {

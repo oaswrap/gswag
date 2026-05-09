@@ -1,86 +1,86 @@
 openapi: 3.0.3
 info:
-  description: API demonstrating deprecated operations, descriptions, and operationIds.
   title: Versioned API
+  description: API demonstrating deprecated operations, descriptions, and operationIds.
   version: 2.0.0
 tags:
-- description: Legacy item endpoints (deprecated)
-  name: items-v1
-- description: Current item endpoints
-  name: items-v2
+  - name: items-v1
+    description: Legacy item endpoints (deprecated)
+  - name: items-v2
+    description: Current item endpoints
 paths:
   /v1/items:
     get:
-      deprecated: true
-      description: 'Returns all items in the legacy format. Deprecated: use GET /v2/items
-        instead.'
+      tags:
+        - items-v1
+      summary: List items (v1)
+      description: "Returns all items in the legacy format. Deprecated: use GET /v2/items instead."
       operationId: listItemsV1
       responses:
         "200":
+          description: list of legacy items
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/LegacyItem'
                 type: array
-          description: OK
-      summary: List items (v1)
-      tags:
-      - items-v1
+                items:
+                  $ref: "#/components/schemas/LegacyItem"
+      deprecated: true
   /v1/items/{id}:
     get:
-      deprecated: true
-      description: 'Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id}
-        instead.'
+      tags:
+        - items-v1
+      summary: Get item by ID (v1)
+      description: "Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id} instead."
       operationId: getItemV1
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
+          description: legacy item
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LegacyItem'
-          description: OK
-      summary: Get item by ID (v1)
-      tags:
-      - items-v1
+                $ref: "#/components/schemas/LegacyItem"
+      deprecated: true
   /v2/items:
     get:
+      tags:
+        - items-v2
+      summary: List items (v2)
       description: Returns all items in the current format.
       operationId: listItemsV2
       responses:
         "200":
+          description: list of items
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ItemV2'
                 type: array
-          description: OK
-      summary: List items (v2)
-      tags:
-      - items-v2
+                items:
+                  $ref: "#/components/schemas/ItemV2"
 components:
   schemas:
     ItemV2:
+      type: object
       properties:
         display_name:
           type: string
         id:
           type: integer
+          format: int32
         slug:
           type: string
-      type: object
     LegacyItem:
+      type: object
       properties:
         id:
           type: integer
+          format: int32
         name:
           type: string
-      type: object

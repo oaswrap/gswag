@@ -1,16 +1,13 @@
 package gswag
 
 import (
-	"fmt"
-	"os"
+	"net/http"
 	"strings"
 
-	openapi "github.com/swaggest/openapi-go"
+	"github.com/oaswrap/spec/option"
 )
 
 // RegisterDSLOperation registers an operation declared via the rswag-style DSL.
-// Called from a Ginkgo BeforeAll node so that spec registration happens once per
-// operation, before any RunTest It blocks execute.
 func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
@@ -19,32 +16,8 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 		return
 	}
 
-	opCtx, err := sc.reflector.NewOperationContext(op.method, op.path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "gswag DSL: NewOperationContext error for %s %s: %v\n", op.method, op.path, err)
-		return
-	}
-
-	applyDSLOperationMeta(opCtx, op)
-
-	// Path parameters from declared Parameter() calls.
-	if pathStruct := buildPathParamsStructFromDSL(op.path, op.params); pathStruct != nil {
-		opCtx.AddReqStructure(pathStruct)
-	}
-
-	if op.queryStruct != nil {
-		opCtx.AddReqStructure(op.queryStruct)
-	}
-
-	if op.reqBodyModel != nil {
-		if op.consumes != "" {
-			opCtx.AddReqStructure(op.reqBodyModel, openapi.WithContentType(op.consumes))
-		} else {
-			opCtx.AddReqStructure(op.reqBodyModel)
-		}
-	}
-
-	addDSLResponses(opCtx, op)
+	doc := registerTempOperation(sc.openapiOpts, op.method, op.path, buildDSLOperationOptions(op)...)
+	mergeSpec(sc.doc, doc)
 
 	for _, sec := range op.security {
 		for name := range sec {
@@ -52,67 +25,69 @@ func (sc *SpecCollector) RegisterDSLOperation(op *dslOp) {
 		}
 	}
 
-	if err := sc.reflector.AddOperation(opCtx); err != nil {
-		fmt.Fprintf(os.Stderr, "gswag DSL: AddOperation error for %s %s: %v\n", op.method, op.path, err)
-		return
-	}
-
 	sc.appendDSLParams(op)
 	sc.appendDSLResponseHeaders(op)
 }
 
-// applyDSLOperationMeta copies metadata fields from the dslOp onto the operation context.
-func applyDSLOperationMeta(opCtx openapi.OperationContext, op *dslOp) {
+func buildDSLOperationOptions(op *dslOp) []option.OperationOption {
+	var opts []option.OperationOption
 	if len(op.tags) > 0 {
-		opCtx.SetTags(op.tags...)
+		opts = append(opts, option.Tags(op.tags...))
 	}
 	if op.summary != "" {
-		opCtx.SetSummary(op.summary)
+		opts = append(opts, option.Summary(op.summary))
 	}
 	if op.description != "" {
-		opCtx.SetDescription(op.description)
+		opts = append(opts, option.Description(op.description))
 	}
 	if op.operationID != "" {
-		opCtx.SetID(op.operationID)
+		opts = append(opts, option.OperationID(op.operationID))
 	}
 	if op.deprecated {
-		opCtx.SetIsDeprecated(true)
+		opts = append(opts, option.Deprecated())
 	}
 	for _, sec := range op.security {
 		for name, scopes := range sec {
-			opCtx.AddSecurity(name, scopes...)
+			opts = append(opts, option.Security(name, scopes...))
 		}
 	}
-}
-
-// addDSLResponses registers response structures on the operation context.
-func addDSLResponses(opCtx openapi.OperationContext, op *dslOp) {
-	if len(op.responses) == 0 {
-		opCtx.AddRespStructure(nil, func(cu *openapi.ContentUnit) {
-			cu.HTTPStatus = 200
-		})
-		return
+	if pathStruct := buildPathParamsStructFromDSL(op.path, op.params); pathStruct != nil {
+		opts = append(opts, option.Request(pathStruct))
 	}
-
+	if op.queryStruct != nil {
+		opts = append(opts, option.Request(op.queryStruct))
+	}
+	if op.reqBodyModel != nil {
+		if op.consumes != "" {
+			opts = append(opts, option.Request(op.reqBodyModel, option.ContentType(op.consumes)))
+		} else {
+			opts = append(opts, option.Request(op.reqBodyModel))
+		}
+	}
+	if len(op.responses) == 0 {
+		opts = append(opts, option.Response(http.StatusOK, nil))
+		return opts
+	}
 	for status, resp := range op.responses {
-		s := status
 		var model any
+		var contentOpts []option.ContentOption
 		if resp != nil {
 			model = resp.bodyModel
+			if resp.description != "" {
+				contentOpts = append(contentOpts, option.ContentDescription(resp.description))
+			}
 		}
 		if len(op.produces) > 0 {
 			for _, ct := range op.produces {
-				contentType := ct
-				opCtx.AddRespStructure(model, openapi.WithContentType(contentType), func(cu *openapi.ContentUnit) {
-					cu.HTTPStatus = s
-				})
+				perContentOpts := append([]option.ContentOption{}, contentOpts...)
+				perContentOpts = append(perContentOpts, option.ContentType(ct))
+				opts = append(opts, option.Response(status, model, perContentOpts...))
 			}
 		} else {
-			opCtx.AddRespStructure(model, func(cu *openapi.ContentUnit) {
-				cu.HTTPStatus = s
-			})
+			opts = append(opts, option.Response(status, model, contentOpts...))
 		}
 	}
+	return opts
 }
 
 // isExcludedPath reports whether path matches any pattern in sc.excludePaths.

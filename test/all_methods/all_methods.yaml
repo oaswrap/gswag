@@ -4,112 +4,118 @@ info:
   version: 1.0.0
 paths:
   /allmethods:
-    delete:
-      operationId: delete_allmethods
-      responses:
-        "200":
-          description: OK
-      summary: delete allmethods
-      tags:
-      - allmethods
     get:
+      tags:
+        - allmethods
+      summary: get allmethods
+      description: get allmethods
       operationId: get_allmethods
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
+                type: object
                 additionalProperties:
                   type: string
-                type: object
-          description: OK
-      summary: get allmethods
-      tags:
-      - allmethods
-    patch:
-      operationId: patch_allmethods
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllMethodsModel'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AllMethodsModel'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Bad Request
-      summary: patch allmethods
-      tags:
-      - allmethods
-    post:
-      operationId: post_allmethods
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllMethodsModel'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AllMethodsModel'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Bad Request
-      summary: post allmethods
-      tags:
-      - allmethods
     put:
+      tags:
+        - allmethods
+      summary: put allmethods
+      description: put allmethods
       operationId: put_allmethods
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AllMethodsModel'
+              $ref: "#/components/schemas/All_methodsAllMethodsModel"
       responses:
         "200":
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AllMethodsModel'
-          description: OK
+                $ref: "#/components/schemas/All_methodsAllMethodsModel"
         "400":
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: put allmethods
+    post:
       tags:
-      - allmethods
+        - allmethods
+      summary: post allmethods
+      description: post allmethods
+      operationId: post_allmethods
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/All_methodsAllMethodsModel"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/All_methodsAllMethodsModel"
+        "400":
+          description: invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    delete:
+      tags:
+        - allmethods
+      summary: delete allmethods
+      description: delete allmethods
+      operationId: delete_allmethods
+      responses:
+        "200":
+          description: successful operation
+    patch:
+      tags:
+        - allmethods
+      summary: patch allmethods
+      description: patch allmethods
+      operationId: patch_allmethods
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/All_methodsAllMethodsModel"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/All_methodsAllMethodsModel"
+        "400":
+          description: invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 components:
   schemas:
-    AllMethodsModel:
+    All_methodsAllMethodsModel:
+      type: object
       properties:
         id:
           type: integer
+          format: int32
         name:
           type: string
-      type: object
