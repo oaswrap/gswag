@@ -13,6 +13,19 @@ const (
 	JSON
 )
 
+// OpenAPI version constants.
+const (
+	OpenAPI300 = "3.0.0"
+	OpenAPI301 = "3.0.1"
+	OpenAPI302 = "3.0.2"
+	OpenAPI303 = "3.0.3"
+	OpenAPI304 = "3.0.4"
+	OpenAPI310 = "3.1.0"
+	OpenAPI311 = "3.1.1"
+	OpenAPI312 = "3.1.2"
+	OpenAPI320 = "3.2.0"
+)
+
 // ServerConfig describes an OpenAPI server entry.
 type ServerConfig struct {
 	URL         string
@@ -101,6 +114,7 @@ func OAuth2Implicit(authURL string, scopes map[string]string) SecuritySchemeConf
 type Config struct {
 	Title          string
 	Version        string
+	OpenAPIVersion string // default: "3.0.3"
 	Description    string
 	TermsOfService string
 	Contact        *ContactConfig
@@ -159,6 +173,9 @@ func Init(cfg *Config) {
 	}
 	if cfg.Version == "" {
 		cfg.Version = "0.1.0"
+	}
+	if cfg.OpenAPIVersion == "" {
+		cfg.OpenAPIVersion = OpenAPI303
 	}
 	globalConfig = cfg
 	globalCollector = newSpecCollector(cfg)

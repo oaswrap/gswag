@@ -11,6 +11,9 @@ import (
 
 // newSpecCollector builds a SpecCollector from Config.
 func newSpecCollector(cfg *Config) *SpecCollector {
+	if cfg.OpenAPIVersion == "" {
+		cfg.OpenAPIVersion = OpenAPI303
+	}
 	opts := buildOpenAPIOptions(cfg)
 	r := spec.NewRouter(opts...)
 	sc := &SpecCollector{
@@ -26,7 +29,7 @@ func newSpecCollector(cfg *Config) *SpecCollector {
 
 func buildOpenAPIOptions(cfg *Config) []option.OpenAPIOption {
 	opts := []option.OpenAPIOption{
-		option.WithOpenAPIVersion(openapi.Version303),
+		option.WithOpenAPIVersion(cfg.OpenAPIVersion),
 		option.WithTitle(cfg.Title),
 		option.WithVersion(cfg.Version),
 	}

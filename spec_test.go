@@ -693,7 +693,7 @@ func TestTopOpTopRespExecPanics(t *testing.T) {
 func makeOpWithResponse(status int) *openapi.Operation {
 	return &openapi.Operation{
 		Responses: map[string]*openapi.Response{
-			strconv.Itoa(status): &openapi.Response{Content: map[string]openapi.MediaType{}},
+			strconv.Itoa(status): {Content: map[string]openapi.MediaType{}},
 		},
 	}
 }

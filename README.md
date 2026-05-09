@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/oaswrap/gswag/graph/badge.svg?token=X8zEVtNy5e)](https://codecov.io/gh/oaswrap/gswag)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Generate OpenAPI 3.0 specs directly from your [Ginkgo](https://github.com/onsi/ginkgo) integration tests.
+Generate OpenAPI 3.0, 3.1, or 3.2 specs directly from your [Ginkgo](https://github.com/onsi/ginkgo) integration tests.
 
 Inspired by [rswag](https://github.com/rswag/rswag): define API docs alongside executable tests using a nested DSL.
 
@@ -246,6 +246,7 @@ Get("Get order", func() {
 Init(&Config{
     Title:           "My API",           // required
     Version:         "1.0.0",            // required
+    OpenAPIVersion:  OpenAPI310,         // default: 3.0.3
     Description:     "Public API",
     TermsOfService:  "https://example.com/terms",
     Contact: &ContactConfig{
@@ -305,6 +306,12 @@ Security helpers:
 - `APIKeyQuery(name)`
 - `APIKeyCookie(name)`
 - `OAuth2Implicit(authURL, scopes)`
+
+OpenAPI version constants:
+
+- `OpenAPI300`, `OpenAPI301`, `OpenAPI302`, `OpenAPI303`, `OpenAPI304`
+- `OpenAPI310`, `OpenAPI311`, `OpenAPI312`
+- `OpenAPI320`
 
 ## Gomega Matchers
 
