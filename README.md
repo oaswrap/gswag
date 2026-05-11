@@ -246,7 +246,7 @@ Get("Get order", func() {
 Init(&Config{
     Title:           "My API",           // required
     Version:         "1.0.0",            // required
-    OpenAPIVersion:  OpenAPI310,         // default: 3.0.3
+    OpenAPIVersion:  OpenAPI310,         // default: 3.1.2
     Description:     "Public API",
     TermsOfService:  "https://example.com/terms",
     Contact: &ContactConfig{

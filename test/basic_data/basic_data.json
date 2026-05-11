@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "My API",
     "version": "1.0.0"
@@ -202,87 +202,119 @@
         "type": "object",
         "properties": {
           "bool": {
-            "type": "boolean",
-            "nullable": true
+            "type": [
+              "boolean",
+              "null"
+            ]
           },
           "byte": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
-            "nullable": true,
             "minimum": 0
           },
           "float32": {
-            "type": "number",
-            "format": "float",
-            "nullable": true
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "float"
           },
           "float64": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
           },
           "int": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int16": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int32": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int64": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "int8": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "rune": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "string": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "uint": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
-            "nullable": true,
             "minimum": 0
           },
           "uint16": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
-            "nullable": true,
             "minimum": 0
           },
           "uint32": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
-            "nullable": true,
             "minimum": 0
           },
           "uint64": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "nullable": true,
             "minimum": 0
           },
           "uint8": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
-            "nullable": true,
             "minimum": 0
           }
         }

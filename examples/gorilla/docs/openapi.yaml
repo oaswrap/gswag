@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Tasks API (Gorilla)
   version: 1.0.0
@@ -10,14 +10,14 @@ paths:
       summary: List all tasks
       description: List all tasks
       responses:
-        "200":
+        '200':
           description: list of tasks
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiTask"
+                  $ref: '#/components/schemas/ApiTask'
     post:
       tags:
         - tasks
@@ -27,15 +27,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiCreateTaskRequest"
+              $ref: '#/components/schemas/ApiCreateTaskRequest'
       responses:
-        "201":
+        '201':
           description: task created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiTask"
-        "400":
+                $ref: '#/components/schemas/ApiTask'
+        '400':
           description: bad request
           content:
             application/json:
@@ -58,13 +58,13 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: task found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiTask"
-        "404":
+                $ref: '#/components/schemas/ApiTask'
+        '404':
           description: task not found
           content:
             application/json:
@@ -86,7 +86,7 @@ paths:
             type: integer
             format: int64
       responses:
-        "204":
+        '204':
           description: task deleted
 components:
   schemas:

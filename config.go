@@ -114,7 +114,7 @@ func OAuth2Implicit(authURL string, scopes map[string]string) SecuritySchemeConf
 type Config struct {
 	Title          string
 	Version        string
-	OpenAPIVersion string // default: "3.0.3"
+	OpenAPIVersion string // default: "3.1.2"
 	Description    string
 	TermsOfService string
 	Contact        *ContactConfig
@@ -175,7 +175,7 @@ func Init(cfg *Config) {
 		cfg.Version = "0.1.0"
 	}
 	if cfg.OpenAPIVersion == "" {
-		cfg.OpenAPIVersion = OpenAPI303
+		cfg.OpenAPIVersion = OpenAPI312
 	}
 	globalConfig = cfg
 	globalCollector = newSpecCollector(cfg)

@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Reviews API (Fiber)
   version: 1.0.0
@@ -10,14 +10,14 @@ paths:
       summary: List all reviews
       description: List all reviews
       responses:
-        "200":
+        '200':
           description: list of reviews
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiReview"
+                  $ref: '#/components/schemas/ApiReview'
       security:
         - bearerAuth: []
     post:
@@ -29,15 +29,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiCreateReviewRequest"
+              $ref: '#/components/schemas/ApiCreateReviewRequest'
       responses:
-        "201":
+        '201':
           description: review created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiReview"
-        "400":
+                $ref: '#/components/schemas/ApiReview'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -62,13 +62,13 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: review found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiReview"
-        "404":
+                $ref: '#/components/schemas/ApiReview'
+        '404':
           description: review not found
           content:
             application/json:

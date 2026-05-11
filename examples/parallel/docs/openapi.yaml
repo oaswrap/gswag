@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Blog API (parallel)
   version: 1.0.0
@@ -10,7 +10,7 @@ paths:
       summary: List posts
       description: List posts
       responses:
-        "200":
+        '200':
           description: list of posts
           content:
             application/json:
@@ -45,7 +45,7 @@ paths:
                 user_id:
                   type: string
       responses:
-        "201":
+        '201':
           description: post created
           content:
             application/json:
@@ -73,7 +73,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: post found
           content:
             application/json:
@@ -88,7 +88,7 @@ paths:
                     type: string
                   user_id:
                     type: string
-        "404":
+        '404':
           description: post not found
           content:
             application/json:
@@ -104,7 +104,7 @@ paths:
       summary: List users
       description: List users
       responses:
-        "200":
+        '200':
           description: list of users
           content:
             application/json:
@@ -135,7 +135,7 @@ paths:
                 name:
                   type: string
       responses:
-        "201":
+        '201':
           description: user created
           content:
             application/json:
@@ -161,7 +161,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: user found
           content:
             application/json:
@@ -174,7 +174,7 @@ paths:
                     type: string
                   name:
                     type: string
-        "404":
+        '404':
           description: user not found
           content:
             application/json:

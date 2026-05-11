@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Items API (Gin)
   version: 1.0.0
@@ -20,14 +20,14 @@ paths:
             type: integer
             format: int32
       responses:
-        "200":
+        '200':
           description: list of items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiItem"
+                  $ref: '#/components/schemas/ApiItem'
     post:
       tags:
         - items
@@ -37,15 +37,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiCreateItemRequest"
+              $ref: '#/components/schemas/ApiCreateItemRequest'
       responses:
-        "201":
+        '201':
           description: item created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiItem"
-        "400":
+                $ref: '#/components/schemas/ApiItem'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -68,13 +68,13 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: item found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiItem"
-        "404":
+                $ref: '#/components/schemas/ApiItem'
+        '404':
           description: item not found
           content:
             application/json:
@@ -96,7 +96,7 @@ paths:
             type: integer
             format: int64
       responses:
-        "204":
+        '204':
           description: item deleted
 components:
   schemas:

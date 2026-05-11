@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Users API
   version: 1.0.0
@@ -10,14 +10,14 @@ paths:
       summary: List all users
       description: List all users
       responses:
-        "200":
+        '200':
           description: list of users
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiUser"
+                  $ref: '#/components/schemas/ApiUser'
     post:
       tags:
         - users
@@ -27,15 +27,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiUser"
+              $ref: '#/components/schemas/ApiUser'
       responses:
-        "201":
+        '201':
           description: user created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiUser"
-        "400":
+                $ref: '#/components/schemas/ApiUser'
+        '400':
           description: bad request
   /api/users/{id}:
     get:
@@ -50,13 +50,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: user found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiUser"
-        "404":
+                $ref: '#/components/schemas/ApiUser'
+        '404':
           description: user not found
     delete:
       tags:
@@ -71,12 +71,12 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: user deleted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiUser"
+                $ref: '#/components/schemas/ApiUser'
       security:
         - bearerAuth: []
 components:

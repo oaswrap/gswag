@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Products API (Echo)
   version: 1.0.0
@@ -20,14 +20,14 @@ paths:
             type: number
             format: double
       responses:
-        "200":
+        '200':
           description: list of products
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiProduct"
+                  $ref: '#/components/schemas/ApiProduct'
     post:
       tags:
         - products
@@ -37,15 +37,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiCreateProductRequest"
+              $ref: '#/components/schemas/ApiCreateProductRequest'
       responses:
-        "201":
+        '201':
           description: product created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiProduct"
-        "400":
+                $ref: '#/components/schemas/ApiProduct'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -68,12 +68,12 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: product found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiProduct"
+                $ref: '#/components/schemas/ApiProduct'
 components:
   schemas:
     ApiCreateProductRequest:

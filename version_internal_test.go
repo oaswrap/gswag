@@ -18,7 +18,7 @@ func TestOpenAPIVersionSupport(t *testing.T) {
 		{OpenAPI311, "3.1.1"},
 		{OpenAPI312, "3.1.2"},
 		{OpenAPI320, "3.2.0"},
-		{"", "3.0.3"}, // Default
+		{"", "3.1.2"}, // Default
 	}
 
 	for _, tc := range tests {

@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: My API
   version: 1.0.0
@@ -137,72 +137,88 @@ components:
       type: object
       properties:
         bool:
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
         byte:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
           minimum: 0.0
         float32:
-          type: number
+          type:
+            - number
+            - 'null'
           format: float
-          nullable: true
         float64:
-          type: number
+          type:
+            - number
+            - 'null'
           format: double
-          nullable: true
         int:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
         int16:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
         int32:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
         int64:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int64
-          nullable: true
         int8:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
         rune:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
         string:
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
         uint:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
           minimum: 0.0
         uint16:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
           minimum: 0.0
         uint32:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
           minimum: 0.0
         uint64:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int64
-          nullable: true
           minimum: 0.0
         uint8:
-          type: integer
+          type:
+            - integer
+            - 'null'
           format: int32
-          nullable: true
           minimum: 0.0
   securitySchemes:
     bearerAuth:

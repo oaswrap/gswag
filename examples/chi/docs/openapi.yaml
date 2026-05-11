@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Orders API (Chi)
   version: 1.0.0
@@ -20,14 +20,14 @@ paths:
             type: integer
             format: int32
       responses:
-        "200":
+        '200':
           description: list of orders
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiOrder"
+                  $ref: '#/components/schemas/ApiOrder'
       security:
         - apiKey: []
     post:
@@ -39,15 +39,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiCreateOrderRequest"
+              $ref: '#/components/schemas/ApiCreateOrderRequest'
       responses:
-        "201":
+        '201':
           description: order placed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiOrder"
-        "400":
+                $ref: '#/components/schemas/ApiOrder'
+        '400':
           description: bad request
           content:
             application/json:
@@ -71,13 +71,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: order found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiOrder"
-        "404":
+                $ref: '#/components/schemas/ApiOrder'
+        '404':
           description: order not found
           content:
             application/json:
@@ -100,7 +100,7 @@ paths:
           schema:
             type: string
       responses:
-        "204":
+        '204':
           description: order cancelled
       deprecated: true
       security:
