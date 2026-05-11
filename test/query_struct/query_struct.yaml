@@ -30,7 +30,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of products
           headers:
             X-Page:
@@ -47,7 +47,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Query_structProduct"
+                  $ref: '#/components/schemas/Query_structProduct'
   /products/{id}:
     get:
       tags:
@@ -63,13 +63,13 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: product found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Query_structProduct"
-        "400":
+                $ref: '#/components/schemas/Query_structProduct'
+        '400':
           description: invalid id
           content:
             application/json:
@@ -78,7 +78,7 @@ paths:
                 properties:
                   error:
                     type: string
-        "404":
+        '404':
           description: product not found
           content:
             application/json:

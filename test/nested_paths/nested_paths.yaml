@@ -11,14 +11,14 @@ paths:
       description: List users
       operationId: listUsers
       responses:
-        "200":
+        '200':
           description: list of users
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Nested_pathsUser"
+                  $ref: '#/components/schemas/Nested_pathsUser'
   /api/v1/users/{id}:
     get:
       tags:
@@ -33,12 +33,12 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: user found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Nested_pathsUser"
+                $ref: '#/components/schemas/Nested_pathsUser'
   /api/v1/users/{id}/orders:
     get:
       tags:
@@ -53,14 +53,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of orders
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Nested_pathsOrder"
+                  $ref: '#/components/schemas/Nested_pathsOrder'
   /api/v1/users/{id}/orders/{orderId}:
     get:
       tags:
@@ -80,12 +80,12 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: order found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Nested_pathsOrder"
+                $ref: '#/components/schemas/Nested_pathsOrder'
   /api/v1/users/{id}/orders/{orderId}/items:
     get:
       tags:
@@ -105,14 +105,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: order items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Nested_pathsOrderItem"
+                  $ref: '#/components/schemas/Nested_pathsOrderItem'
 components:
   schemas:
     Nested_pathsOrder:

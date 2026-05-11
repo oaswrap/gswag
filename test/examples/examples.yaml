@@ -11,14 +11,14 @@ paths:
       description: List items
       operationId: listItems
       responses:
-        "200":
+        '200':
           description: list of items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ExamplesItem"
+                  $ref: '#/components/schemas/ExamplesItem'
               example:
                 - id: 1.0
                   name: Widget
@@ -36,23 +36,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExamplesItem"
+              $ref: '#/components/schemas/ExamplesItem'
             example:
               id: 0.0
               name: Sprocket
               price: 5.0
       responses:
-        "201":
+        '201':
           description: item created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExamplesItem"
+                $ref: '#/components/schemas/ExamplesItem'
               example:
                 id: 3.0
                 name: Sprocket
                 price: 5.0
-        "400":
+        '400':
           description: invalid input
           content:
             application/json:

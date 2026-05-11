@@ -12,14 +12,14 @@ paths:
       description: Returns events with time.Time (date-time string) and json.RawMessage (free-form JSON) fields.
       operationId: listEvents
       responses:
-        "200":
+        '200':
           description: list of events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Custom_typesEvent"
+                  $ref: '#/components/schemas/Custom_typesEvent'
   /items:
     get:
       tags:
@@ -28,31 +28,31 @@ paths:
       description: Returns a paginated list of items. The response wraps a generic Page[Item] type.
       operationId: listItems
       responses:
-        "200":
+        '200':
           description: paginated item list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageItem"
+                $ref: '#/components/schemas/PageItem'
     post:
       tags:
         - items
       summary: create item
-      description: "Creates an item using custom named types: UserID (int64) and Status (string)."
+      description: 'Creates an item using custom named types: UserID (int64) and Status (string).'
       operationId: createItem
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Custom_typesItem"
+              $ref: '#/components/schemas/Custom_typesItem'
       responses:
-        "200":
+        '200':
           description: created item
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Custom_typesItem"
-        "400":
+                $ref: '#/components/schemas/Custom_typesItem'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -69,12 +69,12 @@ paths:
       description: Returns a struct with Nullable[T] fields mapped to nullable scalars via TypeMappings.
       operationId: getNullable
       responses:
-        "200":
+        '200':
           description: nullable fields
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Custom_typesNullableFields"
+                $ref: '#/components/schemas/Custom_typesNullableFields'
     post:
       tags:
         - nullable
@@ -85,15 +85,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Custom_typesNullableFields"
+              $ref: '#/components/schemas/Custom_typesNullableFields'
       responses:
-        "200":
+        '200':
           description: echoed nullable fields
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Custom_typesNullableFields"
-        "400":
+                $ref: '#/components/schemas/Custom_typesNullableFields'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -147,7 +147,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Custom_typesItem"
+            $ref: '#/components/schemas/Custom_typesItem'
         page:
           type: integer
           format: int32

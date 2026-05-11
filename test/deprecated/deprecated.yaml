@@ -14,24 +14,24 @@ paths:
       tags:
         - items-v1
       summary: List items (v1)
-      description: "Returns all items in the legacy format. Deprecated: use GET /v2/items instead."
+      description: 'Returns all items in the legacy format. Deprecated: use GET /v2/items instead.'
       operationId: listItemsV1
       responses:
-        "200":
+        '200':
           description: list of legacy items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/LegacyItem"
+                  $ref: '#/components/schemas/LegacyItem'
       deprecated: true
   /v1/items/{id}:
     get:
       tags:
         - items-v1
       summary: Get item by ID (v1)
-      description: "Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id} instead."
+      description: 'Returns a single item by numeric ID. Deprecated: use GET /v2/items/{id} instead.'
       operationId: getItemV1
       parameters:
         - name: id
@@ -41,12 +41,12 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: legacy item
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LegacyItem"
+                $ref: '#/components/schemas/LegacyItem'
       deprecated: true
   /v2/items:
     get:
@@ -56,14 +56,14 @@ paths:
       description: Returns all items in the current format.
       operationId: listItemsV2
       responses:
-        "200":
+        '200':
           description: list of items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ItemV2"
+                  $ref: '#/components/schemas/ItemV2'
 components:
   schemas:
     ItemV2:

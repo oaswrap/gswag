@@ -11,12 +11,12 @@ paths:
       description: Get public resource
       operationId: getPublic
       responses:
-        "200":
+        '200':
           description: public resource
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Exclude_hiddenPublicResource"
+                $ref: '#/components/schemas/Exclude_hiddenPublicResource'
 components:
   schemas:
     Exclude_hiddenPublicResource:

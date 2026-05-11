@@ -11,7 +11,7 @@ paths:
       description: List customers
       operationId: listCustomers
       responses:
-        "200":
+        '200':
           description: list of customers
           content:
             application/json:
@@ -75,7 +75,7 @@ paths:
                 name:
                   type: string
       responses:
-        "201":
+        '201':
           description: customer created
           content:
             application/json:
@@ -103,7 +103,7 @@ paths:
                     format: int32
                   name:
                     type: string
-        "400":
+        '400':
           description: invalid input
           content:
             application/json:

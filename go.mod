@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
-	github.com/oaswrap/spec v0.5.0-rc.1
+	github.com/oaswrap/spec v0.5.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/xeipuuv/gojsonschema v1.2.0

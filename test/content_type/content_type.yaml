@@ -11,7 +11,7 @@ paths:
       description: Get report
       operationId: getReport
       responses:
-        "200":
+        '200':
           description: report data (CSV)
           content:
             application/json:
@@ -29,15 +29,15 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/Content_typeUploadRequest"
+              $ref: '#/components/schemas/Content_typeUploadRequest'
       responses:
-        "200":
+        '200':
           description: upload successful
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Content_typeUploadResponse"
-        "400":
+                $ref: '#/components/schemas/Content_typeUploadResponse'
+        '400':
           description: invalid content type
           content:
             application/json:

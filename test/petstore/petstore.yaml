@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: "Swagger Petstore - OpenAPI 3.0"
-  description: "This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!\nYou can now help us improve the API whether it's by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)"
+  title: 'Swagger Petstore - OpenAPI 3.0'
+  description: 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we''ve switched to the design first approach!\nYou can now help us improve the API whether it''s by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)'
   termsOfService: https://swagger.io/terms/
   contact:
     email: apiteam@swagger.io
@@ -39,14 +39,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Pet"
+              $ref: '#/components/schemas/Pet'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pet"
+                $ref: '#/components/schemas/Pet'
       security:
         - petstore_auth:
             - write:pets
@@ -61,14 +61,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Pet"
+              $ref: '#/components/schemas/Pet'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pet"
+                $ref: '#/components/schemas/Pet'
       security:
         - petstore_auth:
             - write:pets
@@ -93,14 +93,14 @@ paths:
               - pending
               - sold
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Pet"
+                  $ref: '#/components/schemas/Pet'
       security:
         - petstore_auth:
             - write:pets
@@ -122,14 +122,14 @@ paths:
             items:
               type: string
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Pet"
+                  $ref: '#/components/schemas/Pet'
       security:
         - petstore_auth:
             - write:pets
@@ -149,12 +149,12 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pet"
+                $ref: '#/components/schemas/Pet'
       security:
         - api_key: []
         - petstore_auth:
@@ -182,12 +182,12 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pet"
+                $ref: '#/components/schemas/Pet'
       security:
         - petstore_auth:
             - write:pets
@@ -210,7 +210,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Pet deleted
       security:
         - petstore_auth:
@@ -241,12 +241,12 @@ paths:
               type: string
               format: binary
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/APIResponse"
+                $ref: '#/components/schemas/APIResponse'
       security:
         - petstore_auth:
             - write:pets
@@ -259,7 +259,7 @@ paths:
       description: Returns pet inventories by status
       operationId: getInventory
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
@@ -281,14 +281,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Order"
+              $ref: '#/components/schemas/Order'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Order"
+                $ref: '#/components/schemas/Order'
   /store/order/{orderId}:
     get:
       tags:
@@ -304,12 +304,12 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Order"
+                $ref: '#/components/schemas/Order'
     delete:
       tags:
         - store
@@ -324,7 +324,7 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           description: order deleted
   /user:
     post:
@@ -337,14 +337,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: '#/components/schemas/User'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
   /user/createWithList:
     post:
       tags:
@@ -358,16 +358,16 @@ paths:
             schema:
               type: array
               items:
-                $ref: "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/User"
+                  $ref: '#/components/schemas/User'
   /user/login:
     get:
       tags:
@@ -385,7 +385,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
@@ -401,7 +401,7 @@ paths:
       description: Logs out current logged in user session
       operationId: logoutUser
       responses:
-        "200":
+        '200':
           description: successful operation
   /user/{username}:
     get:
@@ -417,12 +417,12 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
     put:
       tags:
         - user
@@ -439,9 +439,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: '#/components/schemas/User'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
@@ -477,7 +477,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: User deleted
 components:
   schemas:
@@ -534,7 +534,7 @@ components:
         tags:
           type: array
           items:
-            $ref: "#/components/schemas/Tag"
+            $ref: '#/components/schemas/Tag'
     Tag:
       type: object
       properties:

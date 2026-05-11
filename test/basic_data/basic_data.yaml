@@ -11,12 +11,12 @@ paths:
       description: get basic data types
       operationId: get_basicdata
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Basic_dataAllBasicDataTypes"
+                $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
     post:
       tags:
         - basicdata
@@ -27,15 +27,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Basic_dataAllBasicDataTypes"
+              $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Basic_dataAllBasicDataTypes"
-        "400":
+                $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -52,12 +52,12 @@ paths:
       description: get basic data types with pointers
       operationId: get_basicdata_pointers
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
+                $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
     post:
       tags:
         - basicdata
@@ -68,14 +68,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
+              $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
+                $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
 components:
   schemas:
     Basic_dataAllBasicDataTypes:

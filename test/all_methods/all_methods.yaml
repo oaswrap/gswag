@@ -11,7 +11,7 @@ paths:
       description: get allmethods
       operationId: get_allmethods
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
@@ -29,15 +29,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/All_methodsAllMethodsModel"
+              $ref: '#/components/schemas/All_methodsAllMethodsModel'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/All_methodsAllMethodsModel"
-        "400":
+                $ref: '#/components/schemas/All_methodsAllMethodsModel'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -56,15 +56,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/All_methodsAllMethodsModel"
+              $ref: '#/components/schemas/All_methodsAllMethodsModel'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/All_methodsAllMethodsModel"
-        "400":
+                $ref: '#/components/schemas/All_methodsAllMethodsModel'
+        '400':
           description: invalid input
           content:
             application/json:
@@ -80,7 +80,7 @@ paths:
       description: delete allmethods
       operationId: delete_allmethods
       responses:
-        "200":
+        '200':
           description: successful operation
     patch:
       tags:
@@ -92,15 +92,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/All_methodsAllMethodsModel"
+              $ref: '#/components/schemas/All_methodsAllMethodsModel'
       responses:
-        "200":
+        '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/All_methodsAllMethodsModel"
-        "400":
+                $ref: '#/components/schemas/All_methodsAllMethodsModel'
+        '400':
           description: invalid input
           content:
             application/json:
