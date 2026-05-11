@@ -1,102 +1,107 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Tasks API (Gorilla)
   version: 1.0.0
 paths:
   /tasks:
     get:
+      tags:
+        - tasks
+      summary: List all tasks
+      description: List all tasks
       responses:
-        "200":
+        '200':
+          description: list of tasks
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/ApiTask'
-                type: array
-          description: OK
-      summary: List all tasks
-      tags:
-      - tasks
     post:
+      tags:
+        - tasks
+      summary: Create a task
+      description: Create a task
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiCreateTaskRequest'
       responses:
-        "201":
+        '201':
+          description: task created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiTask'
-          description: Created
-        "400":
+        '400':
+          description: bad request
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: Create a task
-      tags:
-      - tasks
   /tasks/{id}:
-    delete:
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        "204":
-          description: No Content
-      summary: Delete a task
-      tags:
-      - tasks
     get:
+      tags:
+        - tasks
+      summary: Get task by ID
+      description: Get task by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: task found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiTask'
-          description: OK
-        "404":
+        '404':
+          description: task not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
-      summary: Get task by ID
+    delete:
       tags:
-      - tasks
+        - tasks
+      summary: Delete a task
+      description: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: task deleted
 components:
   schemas:
     ApiCreateTaskRequest:
+      type: object
       properties:
         title:
           type: string
-      type: object
     ApiTask:
+      type: object
       properties:
         done:
           type: boolean
         id:
           type: integer
+          format: int32
         title:
           type: string
-      type: object

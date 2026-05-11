@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "My API",
     "version": "1.0.0"
@@ -11,14 +11,15 @@
           "basicdata"
         ],
         "summary": "get basic data types",
+        "description": "get basic data types",
         "operationId": "get_basicdata",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllBasicDataTypes"
+                  "$ref": "#/components/schemas/Basic_dataAllBasicDataTypes"
                 }
               }
             }
@@ -30,29 +31,30 @@
           "basicdata"
         ],
         "summary": "post basic data types",
+        "description": "post basic data types",
         "operationId": "post_basicdata",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AllBasicDataTypes"
+                "$ref": "#/components/schemas/Basic_dataAllBasicDataTypes"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllBasicDataTypes"
+                  "$ref": "#/components/schemas/Basic_dataAllBasicDataTypes"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -75,14 +77,15 @@
           "basicdata"
         ],
         "summary": "get basic data types with pointers",
+        "description": "get basic data types with pointers",
         "operationId": "get_basicdata_pointers",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+                  "$ref": "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
                 }
               }
             }
@@ -94,23 +97,24 @@
           "basicdata"
         ],
         "summary": "post basic data types with pointers",
+        "description": "post basic data types with pointers",
         "operationId": "post_basicdata_pointers",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+                "$ref": "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AllBasicDataTypesPointers"
+                  "$ref": "#/components/schemas/Basic_dataAllBasicDataTypesPointers"
                 }
               }
             }
@@ -121,15 +125,16 @@
   },
   "components": {
     "schemas": {
-      "AllBasicDataTypes": {
+      "Basic_dataAllBasicDataTypes": {
         "type": "object",
         "properties": {
           "bool": {
             "type": "boolean"
           },
           "byte": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
           "float32": {
             "type": "number",
@@ -140,10 +145,12 @@
             "format": "double"
           },
           "int": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "int16": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "int32": {
             "type": "integer",
@@ -154,7 +161,8 @@
             "format": "int64"
           },
           "int8": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "rune": {
             "type": "integer",
@@ -164,99 +172,150 @@
             "type": "string"
           },
           "uint": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
           "uint16": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
           "uint32": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
           "uint64": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           },
           "uint8": {
-            "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
-      "AllBasicDataTypesPointers": {
+      "Basic_dataAllBasicDataTypesPointers": {
         "type": "object",
         "properties": {
           "bool": {
-            "type": "boolean",
-            "nullable": true
+            "type": [
+              "boolean",
+              "null"
+            ]
           },
           "byte": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
           },
           "float32": {
-            "type": "number",
-            "nullable": true
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "float"
           },
           "float64": {
-            "type": "number",
-            "nullable": true
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
           },
           "int": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int16": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int32": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "int64": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "int8": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "rune": {
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
           },
           "string": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "uint": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
           },
           "uint16": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
           },
           "uint32": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
           },
           "uint64": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
           },
           "uint8": {
-            "minimum": 0,
-            "type": "integer",
-            "nullable": true
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
           }
         }
       }

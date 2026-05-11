@@ -1,158 +1,159 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
-  description: Demonstrates generic types, custom named types, Nullable[T], time.Time,
-    and json.RawMessage in OpenAPI spec generation.
   title: Custom Types API
+  description: Demonstrates generic types, custom named types, Nullable[T], time.Time, and json.RawMessage in OpenAPI spec generation.
   version: 1.0.0
 paths:
   /events:
     get:
-      description: Returns events with time.Time (date-time string) and json.RawMessage
-        (free-form JSON) fields.
+      tags:
+        - events
+      summary: list events
+      description: Returns events with time.Time (date-time string) and json.RawMessage (free-form JSON) fields.
       operationId: listEvents
       responses:
-        "200":
+        '200':
+          description: list of events
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/Event'
                 type: array
-          description: OK
-      summary: list events
-      tags:
-      - events
+                items:
+                  $ref: '#/components/schemas/Custom_typesEvent'
   /items:
     get:
-      description: Returns a paginated list of items. The response wraps a generic
-        Page[Item] type.
+      tags:
+        - items
+      summary: list items (paginated)
+      description: Returns a paginated list of items. The response wraps a generic Page[Item] type.
       operationId: listItems
       responses:
-        "200":
+        '200':
+          description: paginated item list
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PageItem'
-          description: OK
-      summary: list items (paginated)
-      tags:
-      - items
     post:
-      description: 'Creates an item using custom named types: UserID (int64) and Status
-        (string).'
+      tags:
+        - items
+      summary: create item
+      description: 'Creates an item using custom named types: UserID (int64) and Status (string).'
       operationId: createItem
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Item'
+              $ref: '#/components/schemas/Custom_typesItem'
       responses:
-        "200":
+        '200':
+          description: created item
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Item'
-          description: OK
-        "400":
+                $ref: '#/components/schemas/Custom_typesItem'
+        '400':
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: create item
-      tags:
-      - items
   /nullable:
     get:
-      description: Returns a struct with Nullable[T] fields mapped to nullable scalars
-        via TypeMappings.
+      tags:
+        - nullable
+      summary: get nullable fields
+      description: Returns a struct with Nullable[T] fields mapped to nullable scalars via TypeMappings.
       operationId: getNullable
       responses:
-        "200":
+        '200':
+          description: nullable fields
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NullableFields'
-          description: OK
-      summary: get nullable fields
-      tags:
-      - nullable
+                $ref: '#/components/schemas/Custom_typesNullableFields'
     post:
+      tags:
+        - nullable
+      summary: post nullable fields
+      description: post nullable fields
       operationId: postNullable
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NullableFields'
+              $ref: '#/components/schemas/Custom_typesNullableFields'
       responses:
-        "200":
+        '200':
+          description: echoed nullable fields
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NullableFields'
-          description: OK
-        "400":
+                $ref: '#/components/schemas/Custom_typesNullableFields'
+        '400':
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: post nullable fields
-      tags:
-      - nullable
 components:
   schemas:
-    Event:
+    Custom_typesEvent:
+      type: object
       properties:
         id:
           type: integer
-        metadata: {}
+          format: int32
+        metadata:
+          type: string
+          contentEncoding: base64
         name:
           type: string
         occurred_at:
-          format: date-time
           type: string
+          format: date-time
+    Custom_typesItem:
       type: object
-    Item:
       properties:
         id:
-          $ref: '#/components/schemas/UserID'
+          type: integer
+          format: int64
         name:
           type: string
         status:
           type: string
+    Custom_typesNullableFields:
       type: object
-    NullableFields:
       properties:
         active:
           type: boolean
         age:
           type: integer
+          format: int64
         name:
           type: string
         score:
           type: number
-      type: object
+          format: double
     PageItem:
+      type: object
       properties:
         items:
-          items:
-            $ref: '#/components/schemas/Item'
-          nullable: true
           type: array
+          items:
+            $ref: '#/components/schemas/Custom_typesItem'
         page:
           type: integer
+          format: int32
         page_size:
           type: integer
+          format: int32
         total:
           type: integer
-      type: object
-    UserID:
-      format: int64
-      type: integer
+          format: int32

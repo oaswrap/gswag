@@ -3,203 +3,137 @@ package gswag
 import (
 	"testing"
 
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
-func TestMergeSpec_PathsAndSchemas(t *testing.T) {
-	// base spec has /p GET and schema Existing
-	base := &openapi3.Spec{}
-	base.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{}}
-	base.Paths.MapOfPathItemValues["/p"] = openapi3.PathItem{
-		MapOfOperationValues: map[string]openapi3.Operation{"get": {}},
+func TestMergeSpecPathsAndSchemas(t *testing.T) {
+	base := &openapi.Document{
+		Paths: map[string]*openapi.PathItem{
+			"/p": {Get: &openapi.Operation{Responses: map[string]*openapi.Response{}}},
+		},
+		Components: &openapi.Components{Schemas: map[string]*openapi.Schema{"Existing": {}}},
 	}
-
-	base.Components = &openapi3.Components{}
-	base.Components.SchemasEns()
-	base.Components.Schemas.WithMapOfSchemaOrRefValuesItem("Existing", openapi3.SchemaOrRef{})
-
-	// src spec has /p GET (should not overwrite) and POST (should be added)
-	src := &openapi3.Spec{}
-	src.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{}}
-	src.Paths.MapOfPathItemValues["/p"] = openapi3.PathItem{
-		MapOfOperationValues: map[string]openapi3.Operation{"get": {}, "post": {}},
+	src := &openapi.Document{
+		Paths: map[string]*openapi.PathItem{
+			"/p": {
+				Get:  &openapi.Operation{Responses: map[string]*openapi.Response{}},
+				Post: &openapi.Operation{Responses: map[string]*openapi.Response{}},
+			},
+		},
+		Components: &openapi.Components{Schemas: map[string]*openapi.Schema{"New": {}, "Existing": {}}},
 	}
-
-	src.Components = &openapi3.Components{}
-	src.Components.SchemasEns()
-	src.Components.Schemas.WithMapOfSchemaOrRefValuesItem("New", openapi3.SchemaOrRef{})
-	src.Components.Schemas.WithMapOfSchemaOrRefValuesItem("Existing", openapi3.SchemaOrRef{})
 
 	mergeSpec(base, src)
 
-	// paths
-	pi, ok := base.Paths.MapOfPathItemValues["/p"]
-	if !ok {
-		t.Fatalf("path /p missing")
+	pi := base.Paths["/p"]
+	if pi == nil || pi.Get == nil {
+		t.Fatalf("expected get operation preserved")
 	}
-	if _, hasGet := pi.MapOfOperationValues["get"]; !hasGet {
-		t.Fatalf("get missing after merge")
+	if pi.Post == nil {
+		t.Fatalf("expected post operation merged")
 	}
-	if _, hasPost := pi.MapOfOperationValues["post"]; !hasPost {
-		t.Fatalf("post not merged")
+	if _, ok := base.Components.Schemas["Existing"]; !ok {
+		t.Fatalf("expected existing schema preserved")
 	}
-
-	// schemas: Existing should remain, New should be added
-	if base.Components == nil || base.Components.Schemas == nil {
-		t.Fatalf("components schemas missing")
-	}
-	if _, ok := base.Components.Schemas.MapOfSchemaOrRefValues["Existing"]; !ok {
-		t.Fatalf("Existing schema lost")
-	}
-	if _, ok := base.Components.Schemas.MapOfSchemaOrRefValues["New"]; !ok {
-		t.Fatalf("New schema not added")
+	if _, ok := base.Components.Schemas["New"]; !ok {
+		t.Fatalf("expected new schema merged")
 	}
 }
 
-func TestMergeSpec_SecuritySchemes(t *testing.T) {
-	base := &openapi3.Spec{}
-	base.Components = &openapi3.Components{}
-	base.Components.SecuritySchemesEns()
-	base.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem("Existing", openapi3.SecuritySchemeOrRef{})
-
-	src := &openapi3.Spec{}
-	src.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{}}
-	src.Components = &openapi3.Components{}
-	src.Components.SecuritySchemesEns()
-	src.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem("New", openapi3.SecuritySchemeOrRef{})
-	src.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem("Existing", openapi3.SecuritySchemeOrRef{})
+func TestMergeSpecSecuritySchemes(t *testing.T) {
+	base := &openapi.Document{
+		Components: &openapi.Components{
+			SecuritySchemes: map[string]*openapi.SecurityScheme{"Existing": {Type: "http"}},
+		},
+	}
+	src := &openapi.Document{
+		Paths: map[string]*openapi.PathItem{},
+		Components: &openapi.Components{
+			SecuritySchemes: map[string]*openapi.SecurityScheme{"New": {Type: "apiKey"}, "Existing": {Type: "apiKey"}},
+		},
+	}
 
 	mergeSpec(base, src)
 
-	if base.Components == nil || base.Components.SecuritySchemes == nil {
-		t.Fatalf("security schemes missing after merge")
+	if _, ok := base.Components.SecuritySchemes["Existing"]; !ok {
+		t.Fatalf("expected existing scheme preserved")
 	}
-	if _, ok := base.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues["Existing"]; !ok {
-		t.Fatalf("Existing scheme lost")
-	}
-	if _, ok := base.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues["New"]; !ok {
-		t.Fatalf("New scheme not added")
+	if _, ok := base.Components.SecuritySchemes["New"]; !ok {
+		t.Fatalf("expected new scheme merged")
 	}
 }
 
-func TestMergeSpec_SrcComponentsNil(t *testing.T) {
-	base := &openapi3.Spec{}
-	base.Components = &openapi3.Components{}
-	base.Components.SchemasEns()
-	base.Components.Schemas.WithMapOfSchemaOrRefValuesItem("A", openapi3.SchemaOrRef{})
-
-	src := &openapi3.Spec{} // src.Components == nil
-	src.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{}}
+func TestMergeSpecNoSrcComponents(t *testing.T) {
+	base := &openapi.Document{
+		Paths:      map[string]*openapi.PathItem{},
+		Components: &openapi.Components{Schemas: map[string]*openapi.Schema{"A": {}}},
+	}
+	src := &openapi.Document{Paths: map[string]*openapi.PathItem{}}
 
 	mergeSpec(base, src)
 
-	if base.Components == nil || base.Components.Schemas == nil {
-		t.Fatalf("components/schemas lost after merging nil src")
-	}
-	if _, ok := base.Components.Schemas.MapOfSchemaOrRefValues["A"]; !ok {
-		t.Fatalf("Existing schema A lost")
+	if _, ok := base.Components.Schemas["A"]; !ok {
+		t.Fatalf("expected base schema to remain")
 	}
 }
 
-func TestMergeSpec_DstComponentsNil(t *testing.T) {
-	base := &openapi3.Spec{} // components nil
-
-	src := &openapi3.Spec{}
-	src.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{}}
-	src.Components = &openapi3.Components{}
-	src.Components.SecuritySchemesEns()
-	src.Components.SecuritySchemes.WithMapOfSecuritySchemeOrRefValuesItem("S", openapi3.SecuritySchemeOrRef{})
+func TestMergeSpecNilDstComponents(t *testing.T) {
+	base := &openapi.Document{}
+	src := &openapi.Document{
+		Paths:      map[string]*openapi.PathItem{},
+		Components: &openapi.Components{SecuritySchemes: map[string]*openapi.SecurityScheme{"S": {Type: "http"}}},
+	}
 
 	mergeSpec(base, src)
 
-	if base.Components == nil || base.Components.SecuritySchemes == nil {
-		t.Fatalf("components or security schemes missing after merge into nil dst")
-	}
-	if _, ok := base.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues["S"]; !ok {
-		t.Fatalf("S scheme not added to dst")
+	if base.Components == nil || base.Components.SecuritySchemes["S"] == nil {
+		t.Fatalf("expected components to be initialized and merged")
 	}
 }
 
-// TestMergeSpec_SrcNoPaths verifies that component schemas are merged even when
-// src has no paths (previously the function returned early and skipped schemas).
-func TestMergeSpec_SrcNoPaths(t *testing.T) {
-	base := &openapi3.Spec{}
-	base.Components = &openapi3.Components{}
-	base.Components.SchemasEns()
-	base.Components.Schemas.WithMapOfSchemaOrRefValuesItem("Base", openapi3.SchemaOrRef{})
-
-	// src has no paths at all (MapOfPathItemValues is nil) but contributes a schema.
-	src := &openapi3.Spec{}
-	src.Components = &openapi3.Components{}
-	src.Components.SchemasEns()
-	src.Components.Schemas.WithMapOfSchemaOrRefValuesItem("FromSrc", openapi3.SchemaOrRef{})
+func TestMergeSpecMergesComponentsEvenWhenSrcHasNoPaths(t *testing.T) {
+	base := &openapi.Document{Components: &openapi.Components{Schemas: map[string]*openapi.Schema{"Base": {}}}}
+	src := &openapi.Document{Components: &openapi.Components{Schemas: map[string]*openapi.Schema{"FromSrc": {}}}}
 
 	mergeSpec(base, src)
 
-	if base.Components == nil || base.Components.Schemas == nil {
-		t.Fatalf("schemas missing after merge")
+	if _, ok := base.Components.Schemas["Base"]; !ok {
+		t.Fatalf("expected base schema to remain")
 	}
-	if _, ok := base.Components.Schemas.MapOfSchemaOrRefValues["Base"]; !ok {
-		t.Fatalf("Base schema lost")
-	}
-	if _, ok := base.Components.Schemas.MapOfSchemaOrRefValues["FromSrc"]; !ok {
-		t.Fatalf("FromSrc schema not merged despite src having no paths")
+	if _, ok := base.Components.Schemas["FromSrc"]; !ok {
+		t.Fatalf("expected source schema to merge even without paths")
 	}
 }
 
-// TestMergeSpec_ExtendedComponents verifies that Responses, Parameters,
-// RequestBodies, Headers, Examples, Links, and Callbacks are merged.
-func TestMergeSpec_ExtendedComponents(t *testing.T) {
-	base := &openapi3.Spec{}
-
-	src := &openapi3.Spec{}
-	src.Components = &openapi3.Components{}
-	src.Components.ResponsesEns().WithMapOfResponseOrRefValuesItem("NotFound", openapi3.ResponseOrRef{})
-	src.Components.ParametersEns().WithMapOfParameterOrRefValuesItem("LimitParam", openapi3.ParameterOrRef{})
-	src.Components.RequestBodiesEns().WithMapOfRequestBodyOrRefValuesItem("CreateBody", openapi3.RequestBodyOrRef{})
-	src.Components.HeadersEns().WithMapOfHeaderOrRefValuesItem("X-Rate-Limit", openapi3.HeaderOrRef{})
-	src.Components.ExamplesEns().WithMapOfExampleOrRefValuesItem("FooExample", openapi3.ExampleOrRef{})
-	src.Components.LinksEns().WithMapOfLinkOrRefValuesItem("UserLink", openapi3.LinkOrRef{})
-	src.Components.CallbacksEns().WithMapOfCallbackOrRefValuesItem("OnEvent", openapi3.CallbackOrRef{})
+func TestMergeSpecAllComponentKinds(t *testing.T) {
+	base := &openapi.Document{}
+	src := &openapi.Document{Components: &openapi.Components{
+		Responses:     map[string]*openapi.Response{"NotFound": {}},
+		Parameters:    map[string]*openapi.Parameter{"LimitParam": {}},
+		RequestBodies: map[string]*openapi.RequestBody{"CreateBody": {}},
+		Headers:       map[string]*openapi.Header{"X-Rate-Limit": {}},
+		Examples:      map[string]*openapi.Example{"FooExample": {}},
+		Links:         map[string]*openapi.Link{"UserLink": {}},
+		Callbacks:     map[string]*openapi.Callback{"OnEvent": {}},
+	}}
 
 	mergeSpec(base, src)
 
-	if base.Components == nil {
-		t.Fatal("components missing after merge")
-	}
 	checks := []struct {
 		name string
 		ok   bool
 	}{
-		{
-			"Responses.NotFound",
-			base.Components.Responses != nil && len(base.Components.Responses.MapOfResponseOrRefValues) > 0,
-		},
-		{
-			"Parameters.LimitParam",
-			base.Components.Parameters != nil && len(base.Components.Parameters.MapOfParameterOrRefValues) > 0,
-		},
-		{
-			"RequestBodies.CreateBody",
-			base.Components.RequestBodies != nil && len(base.Components.RequestBodies.MapOfRequestBodyOrRefValues) > 0,
-		},
-		{
-			"Headers.X-Rate-Limit",
-			base.Components.Headers != nil && len(base.Components.Headers.MapOfHeaderOrRefValues) > 0,
-		},
-		{
-			"Examples.FooExample",
-			base.Components.Examples != nil && len(base.Components.Examples.MapOfExampleOrRefValues) > 0,
-		},
-		{"Links.UserLink", base.Components.Links != nil && len(base.Components.Links.MapOfLinkOrRefValues) > 0},
-		{
-			"Callbacks.OnEvent",
-			base.Components.Callbacks != nil && len(base.Components.Callbacks.MapOfCallbackOrRefValues) > 0,
-		},
+		{"responses", len(base.Components.Responses) > 0},
+		{"parameters", len(base.Components.Parameters) > 0},
+		{"requestBodies", len(base.Components.RequestBodies) > 0},
+		{"headers", len(base.Components.Headers) > 0},
+		{"examples", len(base.Components.Examples) > 0},
+		{"links", len(base.Components.Links) > 0},
+		{"callbacks", len(base.Components.Callbacks) > 0},
 	}
-	for _, c := range checks {
-		if !c.ok {
-			t.Errorf("component %s not merged", c.name)
+	for _, check := range checks {
+		if !check.ok {
+			t.Fatalf("expected %s to be merged", check.name)
 		}
 	}
 }

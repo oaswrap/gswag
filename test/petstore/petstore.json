@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "Swagger Petstore - OpenAPI 3.0",
     "description": "This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!\nYou can now help us improve the API whether it's by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)",
@@ -13,15 +13,15 @@
     },
     "version": "1.0.27"
   },
-  "externalDocs": {
-    "description": "Find out more about Swagger",
-    "url": "https://swagger.io"
-  },
   "servers": [
     {
       "url": "/api/v3"
     }
   ],
+  "externalDocs": {
+    "description": "Find out more about Swagger",
+    "url": "https://swagger.io"
+  },
   "tags": [
     {
       "name": "pet",
@@ -46,12 +46,13 @@
   ],
   "paths": {
     "/pet": {
-      "post": {
+      "put": {
         "tags": [
           "pet"
         ],
-        "summary": "Add a new pet to the store",
-        "operationId": "addPet",
+        "summary": "Update an existing pet",
+        "description": "Update an existing pet",
+        "operationId": "updatePet",
         "requestBody": {
           "content": {
             "application/json": {
@@ -63,7 +64,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -82,12 +83,13 @@
           }
         ]
       },
-      "put": {
+      "post": {
         "tags": [
           "pet"
         ],
-        "summary": "Update an existing pet",
-        "operationId": "updatePet",
+        "summary": "Add a new pet to the store",
+        "description": "Add a new pet to the store",
+        "operationId": "addPet",
         "requestBody": {
           "content": {
             "application/json": {
@@ -99,7 +101,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -125,6 +127,7 @@
           "pet"
         ],
         "summary": "Finds Pets by status",
+        "description": "Finds Pets by status",
         "operationId": "findPetsByStatus",
         "parameters": [
           {
@@ -133,19 +136,19 @@
             "required": true,
             "explode": true,
             "schema": {
+              "type": "string",
+              "default": "available",
               "enum": [
                 "available",
                 "pending",
                 "sold"
-              ],
-              "type": "string",
-              "default": "available"
+              ]
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -174,6 +177,7 @@
           "pet"
         ],
         "summary": "Finds Pets by tags",
+        "description": "Finds Pets by tags",
         "operationId": "findPetsByTags",
         "parameters": [
           {
@@ -191,7 +195,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -215,49 +219,12 @@
       }
     },
     "/pet/{petId}": {
-      "delete": {
-        "tags": [
-          "pet"
-        ],
-        "summary": "Deletes a pet",
-        "operationId": "deletePet",
-        "parameters": [
-          {
-            "name": "petId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "api_key",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "petstore_auth": [
-              "write:pets",
-              "read:pets"
-            ]
-          }
-        ]
-      },
       "get": {
         "tags": [
           "pet"
         ],
         "summary": "Find pet by ID",
+        "description": "Find pet by ID",
         "operationId": "getPetById",
         "parameters": [
           {
@@ -272,7 +239,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -299,6 +266,7 @@
           "pet"
         ],
         "summary": "Updates a pet in the store with form data",
+        "description": "Updates a pet in the store with form data",
         "operationId": "updatePetWithForm",
         "parameters": [
           {
@@ -327,7 +295,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -335,6 +303,45 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "petstore_auth": [
+              "write:pets",
+              "read:pets"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "pet"
+        ],
+        "summary": "Deletes a pet",
+        "description": "Deletes a pet",
+        "operationId": "deletePet",
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "api_key",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet deleted"
           }
         },
         "security": [
@@ -353,6 +360,7 @@
           "pet"
         ],
         "summary": "Uploads an image",
+        "description": "Uploads an image",
         "operationId": "uploadFile",
         "parameters": [
           {
@@ -384,7 +392,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -410,16 +418,18 @@
           "store"
         ],
         "summary": "Returns pet inventories by status",
+        "description": "Returns pet inventories by status",
         "operationId": "getInventory",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                   }
                 }
               }
@@ -439,6 +449,7 @@
           "store"
         ],
         "summary": "Place an order for a pet",
+        "description": "Place an order for a pet",
         "operationId": "placeOrder",
         "requestBody": {
           "content": {
@@ -451,7 +462,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -464,34 +475,12 @@
       }
     },
     "/store/order/{orderId}": {
-      "delete": {
-        "tags": [
-          "store"
-        ],
-        "summary": "Delete purchase order by identifier",
-        "operationId": "deleteOrder",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
       "get": {
         "tags": [
           "store"
         ],
         "summary": "Find purchase order by ID",
+        "description": "Find purchase order by ID",
         "operationId": "getOrderById",
         "parameters": [
           {
@@ -506,7 +495,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -514,6 +503,30 @@
                 }
               }
             }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Delete purchase order by identifier",
+        "description": "Delete purchase order by identifier",
+        "operationId": "deleteOrder",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "order deleted"
           }
         }
       }
@@ -524,6 +537,7 @@
           "user"
         ],
         "summary": "Create user",
+        "description": "Create user",
         "operationId": "createUser",
         "requestBody": {
           "content": {
@@ -536,7 +550,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -554,6 +568,7 @@
           "user"
         ],
         "summary": "Creates list of users with given input array",
+        "description": "Creates list of users with given input array",
         "operationId": "createUsersWithListInput",
         "requestBody": {
           "content": {
@@ -562,15 +577,14 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/User"
-                },
-                "nullable": true
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -591,6 +605,7 @@
           "user"
         ],
         "summary": "Logs user into the system",
+        "description": "Logs user into the system",
         "operationId": "loginUser",
         "parameters": [
           {
@@ -610,7 +625,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -631,42 +646,22 @@
           "user"
         ],
         "summary": "Logs out current logged in user session",
+        "description": "Logs out current logged in user session",
         "operationId": "logoutUser",
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "successful operation"
           }
         }
       }
     },
     "/user/{username}": {
-      "delete": {
-        "tags": [
-          "user"
-        ],
-        "summary": "Delete user resource",
-        "operationId": "deleteUser",
-        "parameters": [
-          {
-            "name": "username",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
       "get": {
         "tags": [
           "user"
         ],
         "summary": "Get user by user name",
+        "description": "Get user by user name",
         "operationId": "getUserByName",
         "parameters": [
           {
@@ -680,7 +675,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -696,6 +691,7 @@
           "user"
         ],
         "summary": "Update user resource",
+        "description": "Update user resource",
         "operationId": "updateUser",
         "parameters": [
           {
@@ -718,7 +714,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -754,6 +750,29 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Delete user resource",
+        "description": "Delete user resource",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted"
+          }
+        }
       }
     }
   },
@@ -763,24 +782,13 @@
         "type": "object",
         "properties": {
           "code": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "message": {
             "type": "string"
           },
           "type": {
-            "type": "string"
-          }
-        }
-      },
-      "Category": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "name": {
             "type": "string"
           }
         }
@@ -800,7 +808,8 @@
             "format": "int64"
           },
           "quantity": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "shipDate": {
             "type": "string"
@@ -814,7 +823,16 @@
         "type": "object",
         "properties": {
           "category": {
-            "$ref": "#/components/schemas/Category"
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
           },
           "id": {
             "type": "integer",
@@ -827,8 +845,7 @@
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "nullable": true
+            }
           },
           "status": {
             "type": "string"
@@ -837,8 +854,7 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Tag"
-            },
-            "nullable": true
+            }
           }
         }
       },
@@ -877,7 +893,8 @@
             "type": "string"
           },
           "userStatus": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "username": {
             "type": "string"

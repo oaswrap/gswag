@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	outputpkg "github.com/oaswrap/gswag/internal/output"
+	"github.com/oaswrap/spec/openapi"
 )
 
 // WriteSpec serialises the collected spec to the path and format configured via Init.
@@ -22,32 +23,34 @@ func WriteSpecTo(path string, format OutputFormat) error {
 	if globalCollector == nil {
 		return nil
 	}
-
 	flushPendingDSLOps()
-
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return err
 	}
+	globalCollector.mu.Lock()
+	outputpkg.SanitizeSpecForSerialization(globalCollector.doc)
+	specDoc := globalCollector.doc
+	globalCollector.mu.Unlock()
 
 	var data []byte
 	var err error
-
-	globalCollector.mu.Lock()
-	outputpkg.SanitizeSpecForSerialization(globalCollector.reflector.Spec)
-	spec := globalCollector.reflector.Spec
-	globalCollector.mu.Unlock()
-
 	switch format {
 	case JSON:
-		data, err = json.MarshalIndent(spec, "", "  ")
+		raw, marshalErr := openapi.MarshalJSON(specDoc)
+		if marshalErr != nil {
+			return marshalErr
+		}
+		data, err = json.MarshalIndent(json.RawMessage(raw), "", "  ")
+		if err == nil {
+			data = append(data, '\n')
+		}
 	case YAML:
-		data, err = spec.MarshalYAML()
+		data, err = openapi.MarshalYAML(specDoc)
 	default:
 		return fmt.Errorf("unknown output format: %v", format)
 	}
 	if err != nil {
 		return err
 	}
-
 	return os.WriteFile(path, data, 0o600)
 }

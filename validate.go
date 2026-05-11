@@ -9,13 +9,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/goccy/go-yaml"
+	"github.com/oaswrap/spec/openapi"
 	"github.com/xeipuuv/gojsonschema"
+)
+
+const (
+	SeverityError   = "error"
+	SeverityWarning = "warning"
 )
 
 // ValidationIssue describes a single spec problem.
 type ValidationIssue struct {
-	Severity string // "error" or "warning"
+	Severity string // SeverityError or SeverityWarning
 	Path     string // e.g. "paths./users.get"
 	Message  string
 }
@@ -25,15 +31,16 @@ func (v ValidationIssue) String() string {
 }
 
 // ValidateSpec runs structural validation on the collected spec and returns any issues found.
-// Errors must be fixed for a valid spec; warnings are informational.
 func ValidateSpec() []ValidationIssue {
 	if globalCollector == nil {
-		return []ValidationIssue{{Severity: "error", Path: "", Message: "gswag not initialised — call Init() first"}}
+		return []ValidationIssue{
+			{Severity: SeverityError, Path: "", Message: "gswag not initialised — call Init() first"},
+		}
 	}
 	globalCollector.mu.Lock()
-	spec := globalCollector.reflector.Spec
+	specDoc := globalCollector.doc
 	globalCollector.mu.Unlock()
-	return validateSpec(spec)
+	return validateSpec(specDoc)
 }
 
 // ValidateSpecFile reads a YAML or JSON spec file and runs structural validation.
@@ -42,70 +49,59 @@ func ValidateSpecFile(path string) ([]ValidationIssue, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
-	spec := &openapi3.Spec{}
-	if err := spec.UnmarshalYAML(data); err != nil {
-		// Try JSON fallback.
-		if err2 := json.Unmarshal(data, spec); err2 != nil {
+	specDoc := &openapi.Document{}
+	if err := yaml.Unmarshal(data, specDoc); err != nil {
+		if err2 := json.Unmarshal(data, specDoc); err2 != nil {
 			return nil, fmt.Errorf("parsing spec: yaml: %w; json: %w", err, err2)
 		}
 	}
-	return validateSpec(spec), nil
+	return validateSpec(specDoc), nil
 }
 
-func validateSpec(spec *openapi3.Spec) []ValidationIssue {
+func validateSpec(specDoc *openapi.Document) []ValidationIssue {
 	var issues []ValidationIssue
-
 	add := func(severity, path, msg string) {
 		issues = append(issues, ValidationIssue{Severity: severity, Path: path, Message: msg})
 	}
-
-	// Info checks.
-	if spec.Info.Title == "" {
-		add("error", "info.title", "title is required")
+	if specDoc == nil {
+		add(SeverityError, "", "spec is nil")
+		return issues
 	}
-	if spec.Info.Version == "" {
-		add("error", "info.version", "version is required")
+	if specDoc.Info.Title == "" {
+		add(SeverityError, "info.title", "title is required")
 	}
-
-	// Paths checks.
-	if len(spec.Paths.MapOfPathItemValues) == 0 {
-		add("warning", "paths", "no paths defined")
+	if specDoc.Info.Version == "" {
+		add(SeverityError, "info.version", "version is required")
 	}
-
-	// Collect declared security scheme names.
+	if len(specDoc.Paths) == 0 {
+		add(SeverityWarning, "paths", "no paths defined")
+	}
 	declaredSchemes := map[string]bool{}
-	if spec.Components != nil && spec.Components.SecuritySchemes != nil {
-		for name := range spec.Components.SecuritySchemes.MapOfSecuritySchemeOrRefValues {
+	if specDoc.Components != nil {
+		for name := range specDoc.Components.SecuritySchemes {
 			declaredSchemes[name] = true
 		}
 	}
-
-	for path, item := range spec.Paths.MapOfPathItemValues {
-		for method, op := range item.MapOfOperationValues {
-			loc := fmt.Sprintf("paths.%s.%s", path, method)
-
-			if op.Summary == nil || *op.Summary == "" {
-				add("warning", loc, "operation has no summary")
-			}
-			if len(op.Tags) == 0 {
-				add("warning", loc, "operation has no tags")
-			}
-
-			// Check all security requirements reference declared schemes.
-			for _, secReq := range op.Security {
-				for name := range secReq {
-					if !declaredSchemes[name] {
-						add(
-							"error",
-							loc,
-							fmt.Sprintf("security scheme %q is not declared in components/securitySchemes", name),
-						)
-					}
+	forEachPathOperation(specDoc, func(path, method string, op *openapi.Operation) {
+		loc := fmt.Sprintf("paths.%s.%s", path, method)
+		if op.Summary == "" {
+			add(SeverityWarning, loc, "operation has no summary")
+		}
+		if len(op.Tags) == 0 {
+			add(SeverityWarning, loc, "operation has no tags")
+		}
+		for _, secReq := range op.Security {
+			for name := range secReq {
+				if !declaredSchemes[name] {
+					add(
+						SeverityError,
+						loc,
+						fmt.Sprintf("security scheme %q is not declared in components/securitySchemes", name),
+					)
 				}
 			}
 		}
-	}
-
+	})
 	return issues
 }
 
@@ -113,7 +109,6 @@ func validateSpec(spec *openapi3.Spec) []ValidationIssue {
 var ErrSpecInvalid = errors.New("spec has validation errors")
 
 // WriteAndValidateSpec writes the spec and then validates it.
-// Returns ErrSpecInvalid (wrapping the issue list) if any errors are found.
 func WriteAndValidateSpec() error {
 	if err := WriteSpec(); err != nil {
 		return err
@@ -121,7 +116,7 @@ func WriteAndValidateSpec() error {
 	issues := ValidateSpec()
 	var errs []string
 	for _, issue := range issues {
-		if issue.Severity == "error" {
+		if issue.Severity == SeverityError {
 			errs = append(errs, issue.String())
 		}
 	}
@@ -131,17 +126,11 @@ func WriteAndValidateSpec() error {
 	return nil
 }
 
-// validateResponseAgainstOperation validates an actual recordedResponse against
-// the declared typed response model on the requestBuilder (if present). It
-// attempts typed-model unmarshalling first, and falls back to full JSON Schema
-// validation generated from the collected spec using gojsonschema.
+// validateResponseAgainstOperation validates an actual recordedResponse against the declared response model/schema.
 func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) ([]string, error) {
 	if b == nil {
 		return nil, errors.New("nil requestBuilder")
 	}
-
-	// If the builder declared a typed response model for this status code,
-	// validate by attempting to unmarshal the response JSON into that type.
 	if model, ok := b.respBodies[res.StatusCode]; ok && model != nil {
 		mt := reflect.TypeOf(model)
 		var target reflect.Value
@@ -151,54 +140,36 @@ func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) 
 			target = reflect.New(mt)
 		}
 		if err := json.Unmarshal(res.BodyBytes, target.Interface()); err != nil {
-			// Report unmarshal failures as validation issues rather than returning
-			// an error to the caller. Tests expect unmarshalling problems to be
-			// returned in the issues slice.
 			return []string{fmt.Sprintf("unmarshal typed model: %v", err)}, nil
 		}
 		return nil, nil
 	}
-
-	// No declared typed model — attempt full JSON Schema validation
-	if globalCollector == nil || globalCollector.reflector == nil {
+	if globalCollector == nil {
 		return nil, errors.New("spec not initialised")
 	}
-
 	globalCollector.mu.Lock()
-	spec := globalCollector.reflector.Spec
+	specDoc := globalCollector.doc
 	globalCollector.mu.Unlock()
 
-	// Locate operation in the collected spec using builder's method + path template.
-	pathItem, ok := spec.Paths.MapOfPathItemValues[b.path]
-	if !ok {
-		// Path not found in spec — nothing to validate against.
+	pathItem := specDoc.Paths[b.path]
+	if pathItem == nil {
 		return nil, nil
 	}
-
-	op, ok := pathItem.MapOfOperationValues[strings.ToLower(b.method)]
+	op, ok := pathItemOperation(pathItem, b.method)
 	if !ok {
 		return nil, nil
 	}
-
 	statusKey := strconv.Itoa(res.StatusCode)
-
-	var resp *openapi3.Response
-	if op.Responses.MapOfResponseOrRefValues != nil {
-		if ror, found := op.Responses.MapOfResponseOrRefValues[statusKey]; found {
-			resp = ror.Response
-		}
-	}
-	if resp == nil && op.Responses.Default != nil {
-		resp = op.Responses.Default.Response
+	resp := op.Responses[statusKey]
+	if resp == nil {
+		resp = op.Responses["default"]
 	}
 	if resp == nil {
 		return nil, nil
 	}
-
-	// Prefer application/json content, otherwise take the first available content.
-	var media *openapi3.MediaType
+	var media *openapi.MediaType
 	if resp.Content != nil {
-		if m, found := resp.Content["application/json"]; found {
+		if m, found := resp.Content[applicationJSON]; found {
 			media = &m
 		} else {
 			for _, m := range resp.Content {
@@ -210,35 +181,39 @@ func validateResponseAgainstOperation(b *requestBuilder, res *recordedResponse) 
 	if media == nil || media.Schema == nil {
 		return nil, nil
 	}
-
-	// Convert OpenAPI SchemaOrRef to JSON Schema structure (inlines components as needed).
-	js := media.Schema.ToJSONSchema(spec)
-
-	schemaBytes, err := json.Marshal(js)
+	schemaBytes, err := json.Marshal(schemaDocument(media.Schema, specDoc))
 	if err != nil {
 		return nil, fmt.Errorf("marshal json schema: %w", err)
 	}
-
-	// Compile schema using gojsonschema and validate the instance bytes.
 	schemaLoader := gojsonschema.NewBytesLoader(schemaBytes)
-	schemaCompiled, err := gojsonschema.NewSchema(schemaLoader)
+	docLoader := gojsonschema.NewBytesLoader(res.BodyBytes)
+	result, err := gojsonschema.Validate(schemaLoader, docLoader)
 	if err != nil {
-		return nil, fmt.Errorf("compile schema: %w", err)
+		return nil, err
 	}
-
-	documentLoader := gojsonschema.NewBytesLoader(res.BodyBytes)
-	result, err := schemaCompiled.Validate(documentLoader)
-	if err != nil {
-		return nil, fmt.Errorf("validation failure: %w", err)
+	if result.Valid() {
+		return nil, nil
 	}
+	issues := make([]string, 0, len(result.Errors()))
+	for _, e := range result.Errors() {
+		issues = append(issues, e.String())
+	}
+	return issues, nil
+}
 
-	if !result.Valid() {
-		var msgs []string
-		for _, e := range result.Errors() {
-			msgs = append(msgs, e.String())
+func schemaDocument(schema *openapi.Schema, specDoc *openapi.Document) map[string]any {
+	raw, _ := openapi.MarshalJSON(schema)
+	var out map[string]any
+	_ = json.Unmarshal(raw, &out)
+	if out == nil {
+		out = map[string]any{}
+	}
+	if specDoc != nil && specDoc.Components != nil && len(specDoc.Components.Schemas) > 0 {
+		rawComponents, _ := openapi.MarshalJSON(specDoc.Components)
+		var components any
+		if json.Unmarshal(rawComponents, &components) == nil {
+			out["components"] = components
 		}
-		return msgs, nil
 	}
-
-	return nil, nil
+	return out
 }

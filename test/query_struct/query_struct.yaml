@@ -1,101 +1,104 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: QueryStruct API
   version: 1.0.0
 paths:
   /products:
     get:
+      tags:
+        - products
+      summary: List products
+      description: List products
       operationId: listProducts
       parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-      - in: query
-        name: sort
-        schema:
-          type: string
-      - in: query
-        name: tag
-        schema:
-          type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: sort
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/QueryStructProduct'
-                type: array
-          description: OK
+        '200':
+          description: list of products
           headers:
             X-Page:
               schema:
                 type: integer
-              style: simple
             X-Page-Size:
               schema:
                 type: integer
-              style: simple
             X-Total-Count:
               schema:
                 type: integer
-              style: simple
-      summary: List products
-      tags:
-      - products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Query_structProduct'
   /products/{id}:
     get:
+      tags:
+        - products
+      summary: Get product by ID
+      description: Get product by ID
       operationId: getProduct
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: product found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueryStructProduct'
-          description: OK
-        "400":
+                $ref: '#/components/schemas/Query_structProduct'
+        '400':
+          description: invalid id
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-        "404":
+        '404':
+          description: product not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
-      summary: Get product by ID
-      tags:
-      - products
 components:
   schemas:
-    QueryStructProduct:
+    Query_structProduct:
+      type: object
       properties:
         id:
           type: integer
+          format: int32
         name:
           type: string
         price:
           type: integer
+          format: int32
         tag:
           type: string
-      type: object

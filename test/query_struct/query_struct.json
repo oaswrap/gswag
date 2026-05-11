@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "QueryStruct API",
     "version": "1.0.0"
@@ -11,20 +11,23 @@
           "products"
         ],
         "summary": "List products",
+        "description": "List products",
         "operationId": "listProducts",
         "parameters": [
           {
             "name": "page",
             "in": "query",
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int32"
             }
           },
           {
             "name": "page_size",
             "in": "query",
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int32"
             }
           },
           {
@@ -44,22 +47,19 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "list of products",
             "headers": {
               "X-Page": {
-                "style": "simple",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-Page-Size": {
-                "style": "simple",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-Total-Count": {
-                "style": "simple",
                 "schema": {
                   "type": "integer"
                 }
@@ -70,7 +70,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/QueryStructProduct"
+                    "$ref": "#/components/schemas/Query_structProduct"
                   }
                 }
               }
@@ -85,6 +85,7 @@
           "products"
         ],
         "summary": "Get product by ID",
+        "description": "Get product by ID",
         "operationId": "getProduct",
         "parameters": [
           {
@@ -99,17 +100,17 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "product found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueryStructProduct"
+                  "$ref": "#/components/schemas/Query_structProduct"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid id",
             "content": {
               "application/json": {
                 "schema": {
@@ -124,7 +125,7 @@
             }
           },
           "404": {
-            "description": "Not Found",
+            "description": "product not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -144,17 +145,19 @@
   },
   "components": {
     "schemas": {
-      "QueryStructProduct": {
+      "Query_structProduct": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "name": {
             "type": "string"
           },
           "price": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "tag": {
             "type": "string"

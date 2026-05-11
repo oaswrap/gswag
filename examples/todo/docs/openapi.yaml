@@ -1,346 +1,336 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Todo API
   version: 1.0.0
 paths:
   /todos:
     get:
+      tags:
+        - todos
+      summary: List all todos
+      description: List all todos
       responses:
-        "200":
+        '200':
+          description: list of todos
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodoList'
               example:
                 data: []
                 message: ok
-              schema:
-                $ref: '#/components/schemas/ModelResponseTodoList'
-          description: OK
-        "401":
+        '401':
+          description: missing or invalid api key
           content:
             application/json:
-              example:
-                error: unauthorized
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Unauthorized
+              example:
+                error: unauthorized
       security:
-      - apiKey: []
-      summary: List all todos
-      tags:
-      - todos
+        - apiKey: []
     post:
+      tags:
+        - todos
+      summary: Create a todo
+      description: Create a todo
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ModelCreateTodoRequest'
             example:
               description: Milk, eggs, bread
               title: Buy groceries
-            schema:
-              $ref: '#/components/schemas/ModelCreateTodoRequest'
       responses:
-        "201":
+        '201':
+          description: todo created
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
               example:
                 data:
-                  created_at: "2026-04-10T02:05:15.278387Z"
+                  created_at: '2026-05-11T02:23:29.85969Z'
                   description: Milk, eggs, bread
                   done: false
-                  id: 1
+                  id: 1.0
                   title: Buy groceries
-                  updated_at: "2026-04-10T02:05:15.278387Z"
+                  updated_at: '2026-05-11T02:23:29.85969Z'
                 message: created
-              schema:
-                $ref: '#/components/schemas/ModelResponseTodo'
-          description: Created
-        "400":
+        '400':
+          description: missing or invalid body
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
               example:
                 error: invalid character 'o' in literal null (expecting 'u')
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Bad Request
-        "401":
+        '401':
+          description: missing or invalid api key
           content:
             application/json:
-              example:
-                error: unauthorized
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Unauthorized
+              example:
+                error: unauthorized
       security:
-      - apiKey: []
-      summary: Create a todo
-      tags:
-      - todos
+        - apiKey: []
   /todos/{id}:
-    delete:
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        "204":
-          description: No Content
-        "401":
-          content:
-            application/json:
-              example:
-                error: unauthorized
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Unauthorized
-        "404":
-          content:
-            application/json:
-              example:
-                error: todo not found
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Not Found
-      security:
-      - apiKey: []
-      summary: Delete a todo
-      tags:
-      - todos
     get:
+      tags:
+        - todos
+      summary: Get a todo by ID
+      description: Get a todo by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: todo found
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
               example:
                 data:
-                  created_at: "2026-04-10T02:05:15.28183Z"
+                  created_at: '2026-05-11T02:23:29.853037Z'
                   description: Milk and eggs
                   done: false
-                  id: 1
+                  id: 1.0
                   title: Buy groceries
-                  updated_at: "2026-04-10T02:05:15.28183Z"
+                  updated_at: '2026-05-11T02:23:29.853037Z'
                 message: ok
-              schema:
-                $ref: '#/components/schemas/ModelResponseTodo'
-          description: OK
-        "401":
+        '401':
+          description: missing or invalid api key
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
               example:
                 error: unauthorized
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Unauthorized
-        "404":
+        '404':
+          description: todo not found
           content:
             application/json:
-              example:
-                error: todo not found
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
+              example:
+                error: todo not found
       security:
-      - apiKey: []
-      summary: Get a todo by ID
-      tags:
-      - todos
+        - apiKey: []
     put:
+      tags:
+        - todos
+      summary: Update a todo
+      description: Update a todo
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ModelUpdateTodoRequest'
             example:
               description: Cover all endpoints and edge cases
               done: false
               title: Write tests (revised)
-            schema:
-              $ref: '#/components/schemas/ModelUpdateTodoRequest'
       responses:
-        "200":
+        '200':
+          description: todo updated
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
               example:
                 data:
-                  created_at: "2026-04-10T02:05:15.283853Z"
+                  created_at: '2026-05-11T02:23:29.855365Z'
                   description: Cover all endpoints and edge cases
                   done: false
-                  id: 1
+                  id: 1.0
                   title: Write tests (revised)
-                  updated_at: "2026-04-10T02:05:15.284155Z"
+                  updated_at: '2026-05-11T02:23:29.855887Z'
                 message: ok
-              schema:
-                $ref: '#/components/schemas/ModelResponseTodo'
-          description: OK
-        "400":
+        '400':
+          description: missing or invalid body
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
               example:
                 error: invalid character 'o' in literal null (expecting 'u')
+        '401':
+          description: missing or invalid api key
+          content:
+            application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-        "401":
-          content:
-            application/json:
               example:
                 error: unauthorized
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Unauthorized
-        "404":
+        '404':
+          description: todo not found
           content:
             application/json:
-              example:
-                error: todo not found
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
+              example:
+                error: todo not found
       security:
-      - apiKey: []
-      summary: Update a todo
+        - apiKey: []
+    delete:
       tags:
-      - todos
+        - todos
+      summary: Delete a todo
+      description: Delete a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: todo deleted
+        '401':
+          description: missing or invalid api key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: unauthorized
+        '404':
+          description: todo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: todo not found
+      security:
+        - apiKey: []
   /todos/{id}/done:
     patch:
+      tags:
+        - todos
+      summary: Mark a todo as done
+      description: Mark a todo as done
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: todo marked as done
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTodo'
               example:
                 data:
-                  created_at: "2026-04-10T02:05:15.286037Z"
+                  created_at: '2026-05-11T02:23:29.860856Z'
                   description: Push to production
                   done: true
-                  id: 1
+                  id: 1.0
                   title: Deploy service
-                  updated_at: "2026-04-10T02:05:15.28634Z"
+                  updated_at: '2026-05-11T02:23:29.861119Z'
                 message: ok
-              schema:
-                $ref: '#/components/schemas/ModelResponseTodo'
-          description: OK
-        "401":
+        '401':
+          description: missing or invalid api key
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
               example:
                 error: unauthorized
-              schema:
-                properties:
-                  error:
-                    type: string
-                type: object
-          description: Unauthorized
-        "404":
+        '404':
+          description: todo not found
           content:
             application/json:
-              example:
-                error: todo not found
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
+              example:
+                error: todo not found
       security:
-      - apiKey: []
-      summary: Mark a todo as done
-      tags:
-      - todos
+        - apiKey: []
 components:
   schemas:
     ModelCreateTodoRequest:
+      type: object
       properties:
         description:
           type: string
         title:
           type: string
-      type: object
-    ModelResponseTodo:
-      properties:
-        data:
-          $ref: '#/components/schemas/ModelTodo'
-        message:
-          type: string
-      type: object
-    ModelResponseTodoList:
-      properties:
-        data:
-          items:
-            $ref: '#/components/schemas/ModelTodo'
-          nullable: true
-          type: array
-        message:
-          type: string
-      type: object
     ModelTodo:
+      type: object
       properties:
         created_at:
-          format: date-time
           type: string
+          format: date-time
         description:
           type: string
         done:
           type: boolean
         id:
-          format: int64
           type: integer
+          format: int64
         title:
           type: string
         updated_at:
-          format: date-time
           type: string
-      type: object
+          format: date-time
     ModelUpdateTodoRequest:
+      type: object
       properties:
         description:
           type: string
@@ -348,9 +338,40 @@ components:
           type: boolean
         title:
           type: string
+    ResponseTodo:
       type: object
+      properties:
+        data:
+          type: object
+          properties:
+            created_at:
+              type: string
+              format: date-time
+            description:
+              type: string
+            done:
+              type: boolean
+            id:
+              type: integer
+              format: int64
+            title:
+              type: string
+            updated_at:
+              type: string
+              format: date-time
+        message:
+          type: string
+    ResponseTodoList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelTodo'
+        message:
+          type: string
   securitySchemes:
     apiKey:
-      in: header
-      name: X-API-Key
       type: apiKey
+      name: X-API-Key
+      in: header

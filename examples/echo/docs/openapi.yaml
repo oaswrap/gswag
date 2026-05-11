@@ -1,97 +1,101 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Products API (Echo)
   version: 1.0.0
 paths:
   /products:
     get:
+      tags:
+        - products
+      summary: List all products
+      description: List all products
       parameters:
-      - in: query
-        name: category
-        schema:
-          type: string
-      - in: query
-        name: max_price
-        schema:
-          format: double
-          type: number
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: max_price
+          in: query
+          schema:
+            type: number
+            format: double
       responses:
-        "200":
+        '200':
+          description: list of products
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/ApiProduct'
-                type: array
-          description: OK
-      summary: List all products
-      tags:
-      - products
     post:
+      tags:
+        - products
+      summary: Create a product
+      description: Create a product
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiCreateProductRequest'
       responses:
-        "201":
+        '201':
+          description: product created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiProduct'
-          description: Created
-        "400":
+        '400':
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: Create a product
-      tags:
-      - products
   /products/{id}:
     get:
+      tags:
+        - products
+      summary: Get product by ID
+      description: Get product by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: product found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiProduct'
-          description: OK
-      summary: Get product by ID
-      tags:
-      - products
 components:
   schemas:
     ApiCreateProductRequest:
+      type: object
       properties:
         category:
           type: string
         price:
-          format: double
           type: number
+          format: double
         title:
           type: string
-      type: object
     ApiProduct:
+      type: object
       properties:
         category:
           type: string
         id:
           type: integer
+          format: int32
         price:
-          format: double
           type: number
+          format: double
         title:
           type: string
-      type: object

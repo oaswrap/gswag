@@ -5,20 +5,16 @@ import (
 	"testing"
 
 	outputpkg "github.com/oaswrap/gswag/internal/output"
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
 func TestSanitizeSpecForSerialization_FillsMissingParameterIn(t *testing.T) {
-	req := true
-	spec := &openapi3.Spec{}
-	spec.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{
+	spec := &openapi.Document{Paths: map[string]*openapi.PathItem{
 		"/pets/{id}": {
-			MapOfOperationValues: map[string]openapi3.Operation{
-				"get": {
-					Parameters: []openapi3.ParameterOrRef{
-						{Parameter: &openapi3.Parameter{Name: "id", In: openapi3.ParameterIn(""), Required: &req}},
-						{Parameter: &openapi3.Parameter{Name: "status", In: openapi3.ParameterIn("")}},
-					},
+			Get: &openapi.Operation{
+				Parameters: []*openapi.Parameter{
+					{Name: "id", Required: true},
+					{Name: "status"},
 				},
 			},
 		},
@@ -26,39 +22,33 @@ func TestSanitizeSpecForSerialization_FillsMissingParameterIn(t *testing.T) {
 
 	outputpkg.SanitizeSpecForSerialization(spec)
 
-	op := spec.Paths.MapOfPathItemValues["/pets/{id}"].MapOfOperationValues["get"]
+	op := spec.Paths["/pets/{id}"].Get
 	if len(op.Parameters) != 2 {
 		t.Fatalf("expected 2 params, got %d", len(op.Parameters))
 	}
-
-	id := op.Parameters[0].Parameter
-	if string(id.In) != "path" {
+	id := op.Parameters[0]
+	if id.In != "path" {
 		t.Fatalf("expected id param location path, got %q", id.In)
 	}
-	if id.Required == nil || !*id.Required {
+	if !id.Required {
 		t.Fatalf("expected id path param to be required")
 	}
-
-	status := op.Parameters[1].Parameter
-	if string(status.In) != "query" {
+	status := op.Parameters[1]
+	if status.In != "query" {
 		t.Fatalf("expected status param location query, got %q", status.In)
 	}
-
 	if _, err := json.Marshal(spec); err != nil {
 		t.Fatalf("expected sanitized spec to marshal, got error: %v", err)
 	}
 }
 
 func TestSanitizeSpecForSerialization_DedupesParametersByNameAndLocation(t *testing.T) {
-	spec := &openapi3.Spec{}
-	spec.Paths = openapi3.Paths{MapOfPathItemValues: map[string]openapi3.PathItem{
+	spec := &openapi.Document{Paths: map[string]*openapi.PathItem{
 		"/pets": {
-			MapOfOperationValues: map[string]openapi3.Operation{
-				"get": {
-					Parameters: []openapi3.ParameterOrRef{
-						{Parameter: &openapi3.Parameter{Name: "status", In: openapi3.ParameterIn("query")}},
-						{Parameter: &openapi3.Parameter{Name: "status", In: openapi3.ParameterIn("query")}},
-					},
+			Get: &openapi.Operation{
+				Parameters: []*openapi.Parameter{
+					{Name: "status", In: "query"},
+					{Name: "status", In: "query"},
 				},
 			},
 		},
@@ -66,7 +56,7 @@ func TestSanitizeSpecForSerialization_DedupesParametersByNameAndLocation(t *test
 
 	outputpkg.SanitizeSpecForSerialization(spec)
 
-	op := spec.Paths.MapOfPathItemValues["/pets"].MapOfOperationValues["get"]
+	op := spec.Paths["/pets"].Get
 	if len(op.Parameters) != 1 {
 		t.Fatalf("expected deduped params length 1, got %d", len(op.Parameters))
 	}

@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "Nested Paths API",
     "version": "1.0.0"
@@ -11,16 +11,17 @@
           "users"
         ],
         "summary": "List users",
+        "description": "List users",
         "operationId": "listUsers",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "list of users",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/NestedPathsUser"
+                    "$ref": "#/components/schemas/Nested_pathsUser"
                   }
                 }
               }
@@ -35,6 +36,7 @@
           "users"
         ],
         "summary": "Get user by ID",
+        "description": "Get user by ID",
         "operationId": "getUser",
         "parameters": [
           {
@@ -48,11 +50,11 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "user found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NestedPathsUser"
+                  "$ref": "#/components/schemas/Nested_pathsUser"
                 }
               }
             }
@@ -66,6 +68,7 @@
           "orders"
         ],
         "summary": "List orders for user",
+        "description": "List orders for user",
         "operationId": "listUserOrders",
         "parameters": [
           {
@@ -79,13 +82,13 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "list of orders",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/NestedPathsOrder"
+                    "$ref": "#/components/schemas/Nested_pathsOrder"
                   }
                 }
               }
@@ -100,6 +103,7 @@
           "orders"
         ],
         "summary": "Get order",
+        "description": "Get order",
         "operationId": "getOrder",
         "parameters": [
           {
@@ -121,11 +125,11 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "order found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NestedPathsOrder"
+                  "$ref": "#/components/schemas/Nested_pathsOrder"
                 }
               }
             }
@@ -139,6 +143,7 @@
           "orders"
         ],
         "summary": "List order items",
+        "description": "List order items",
         "operationId": "listOrderItems",
         "parameters": [
           {
@@ -160,13 +165,13 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "order items",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/NestedPathsOrderItem"
+                    "$ref": "#/components/schemas/Nested_pathsOrderItem"
                   }
                 }
               }
@@ -178,21 +183,22 @@
   },
   "components": {
     "schemas": {
-      "NestedPathsOrder": {
+      "Nested_pathsOrder": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "user_id": {
             "type": "string"
           }
         }
       },
-      "NestedPathsOrderItem": {
+      "Nested_pathsOrderItem": {
         "type": "object",
         "properties": {
           "id": {
@@ -205,11 +211,12 @@
             "type": "string"
           },
           "qty": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
-      "NestedPathsUser": {
+      "Nested_pathsUser": {
         "type": "object",
         "properties": {
           "id": {

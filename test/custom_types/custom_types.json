@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "Custom Types API",
     "description": "Demonstrates generic types, custom named types, Nullable[T], time.Time, and json.RawMessage in OpenAPI spec generation.",
@@ -16,13 +16,13 @@
         "operationId": "listEvents",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "list of events",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Event"
+                    "$ref": "#/components/schemas/Custom_typesEvent"
                   }
                 }
               }
@@ -41,7 +41,7 @@
         "operationId": "listItems",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "paginated item list",
             "content": {
               "application/json": {
                 "schema": {
@@ -63,24 +63,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Item"
+                "$ref": "#/components/schemas/Custom_typesItem"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "created item",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
+                  "$ref": "#/components/schemas/Custom_typesItem"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -107,11 +107,11 @@
         "operationId": "getNullable",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "nullable fields",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NullableFields"
+                  "$ref": "#/components/schemas/Custom_typesNullableFields"
                 }
               }
             }
@@ -123,29 +123,30 @@
           "nullable"
         ],
         "summary": "post nullable fields",
+        "description": "post nullable fields",
         "operationId": "postNullable",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NullableFields"
+                "$ref": "#/components/schemas/Custom_typesNullableFields"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "echoed nullable fields",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NullableFields"
+                  "$ref": "#/components/schemas/Custom_typesNullableFields"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {
@@ -165,13 +166,17 @@
   },
   "components": {
     "schemas": {
-      "Event": {
+      "Custom_typesEvent": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
-          "metadata": {},
+          "metadata": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
           "name": {
             "type": "string"
           },
@@ -181,11 +186,12 @@
           }
         }
       },
-      "Item": {
+      "Custom_typesItem": {
         "type": "object",
         "properties": {
           "id": {
-            "$ref": "#/components/schemas/UserID"
+            "type": "integer",
+            "format": "int64"
           },
           "name": {
             "type": "string"
@@ -195,20 +201,22 @@
           }
         }
       },
-      "NullableFields": {
+      "Custom_typesNullableFields": {
         "type": "object",
         "properties": {
           "active": {
             "type": "boolean"
           },
           "age": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int64"
           },
           "name": {
             "type": "string"
           },
           "score": {
-            "type": "number"
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -218,24 +226,22 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Item"
-            },
-            "nullable": true
+              "$ref": "#/components/schemas/Custom_typesItem"
+            }
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "page_size": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           }
         }
-      },
-      "UserID": {
-        "type": "integer",
-        "format": "int64"
       }
     }
   }

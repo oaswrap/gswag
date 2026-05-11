@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.2",
   "info": {
     "title": "InlineRefs API",
     "version": "1.0.0"
@@ -11,10 +11,11 @@
           "customers"
         ],
         "summary": "List customers",
+        "description": "List customers",
         "operationId": "listCustomers",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "list of customers",
             "content": {
               "application/json": {
                 "schema": {
@@ -48,7 +49,8 @@
                         }
                       },
                       "id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "format": "int32"
                       },
                       "name": {
                         "type": "string"
@@ -66,6 +68,7 @@
           "customers"
         ],
         "summary": "Create customer",
+        "description": "Create customer",
         "operationId": "createCustomer",
         "requestBody": {
           "content": {
@@ -99,7 +102,8 @@
                     }
                   },
                   "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                   },
                   "name": {
                     "type": "string"
@@ -111,7 +115,7 @@
         },
         "responses": {
           "201": {
-            "description": "Created",
+            "description": "customer created",
             "content": {
               "application/json": {
                 "schema": {
@@ -143,7 +147,8 @@
                       }
                     },
                     "id": {
-                      "type": "integer"
+                      "type": "integer",
+                      "format": "int32"
                     },
                     "name": {
                       "type": "string"
@@ -154,7 +159,7 @@
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "invalid input",
             "content": {
               "application/json": {
                 "schema": {

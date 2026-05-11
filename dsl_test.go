@@ -91,7 +91,7 @@ func TestFlushPendingDSLOpsRegisters(t *testing.T) {
 	flushPendingDSLOps()
 
 	// check spec has path
-	if _, ok := sc.reflector.Spec.Paths.MapOfPathItemValues["/x"]; !ok {
+	if _, ok := sc.doc.Paths["/x"]; !ok {
 		t.Fatalf("expected pending op to be registered into spec")
 	}
 

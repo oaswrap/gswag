@@ -1,16 +1,16 @@
-// Package schemautil provides best-effort JSON → OpenAPI schema inference.
+// Package schemautil provides best-effort JSON -> OpenAPI schema inference.
 package schemautil
 
 import (
 	"encoding/json"
 	"math"
 
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
-// InferSchema parses raw JSON bytes and returns a best-effort OpenAPI 3.0 schema.
+// InferSchema parses raw JSON bytes and returns a best-effort OpenAPI schema.
 // It returns nil when data is empty or cannot be parsed.
-func InferSchema(data []byte) *openapi3.SchemaOrRef {
+func InferSchema(data []byte) *openapi.Schema {
 	if len(data) == 0 {
 		return nil
 	}
@@ -18,77 +18,52 @@ func InferSchema(data []byte) *openapi3.SchemaOrRef {
 	if err := json.Unmarshal(data, &v); err != nil {
 		return nil
 	}
-	s := inferValue(v)
-	if s == nil {
-		return nil
-	}
-	sor := &openapi3.SchemaOrRef{}
-	sor.WithSchema(*s)
-	return sor
+	return inferValue(v)
 }
 
-func inferValue(v any) *openapi3.Schema {
+func inferValue(v any) *openapi.Schema {
 	switch val := v.(type) {
 	case map[string]any:
 		return inferObject(val)
 	case []any:
 		return inferArray(val)
 	case string:
-		t := openapi3.SchemaTypeString
-		return (&openapi3.Schema{}).WithType(t)
+		return &openapi.Schema{Type: "string"}
 	case float64:
 		if val == math.Trunc(val) {
-			t := openapi3.SchemaTypeInteger
-			return (&openapi3.Schema{}).WithType(t)
+			return &openapi.Schema{Type: "integer"}
 		}
-		t := openapi3.SchemaTypeNumber
-		return (&openapi3.Schema{}).WithType(t)
+		return &openapi.Schema{Type: "number"}
 	case bool:
-		t := openapi3.SchemaTypeBoolean
-		return (&openapi3.Schema{}).WithType(t)
+		return &openapi.Schema{Type: "boolean"}
 	default:
-		// null or unknown — return no schema
 		return nil
 	}
 }
 
-func inferObject(m map[string]any) *openapi3.Schema {
-	t := openapi3.SchemaTypeObject
-	s := (&openapi3.Schema{}).WithType(t)
-
+func inferObject(m map[string]any) *openapi.Schema {
+	s := &openapi.Schema{Type: "object"}
 	if len(m) == 0 {
 		return s
 	}
-
-	props := make(map[string]openapi3.SchemaOrRef, len(m))
+	s.Properties = make(map[string]*openapi.Schema, len(m))
 	for k, v := range m {
 		child := inferValue(v)
 		if child == nil {
-			child = &openapi3.Schema{}
+			child = &openapi.Schema{}
 		}
-		sor := openapi3.SchemaOrRef{}
-		sor.WithSchema(*child)
-		props[k] = sor
+		s.Properties[k] = child
 	}
-	s.WithProperties(props)
 	return s
 }
 
-func inferArray(arr []any) *openapi3.Schema {
-	t := openapi3.SchemaTypeArray
-	s := (&openapi3.Schema{}).WithType(t)
-
+func inferArray(arr []any) *openapi.Schema {
+	s := &openapi.Schema{Type: "array"}
 	if len(arr) == 0 {
 		return s
 	}
-
-	// Infer items schema from the first element.
-	child := inferValue(arr[0])
-	if child != nil {
-		sor := openapi3.SchemaOrRef{}
-		sor.WithSchema(*child)
-		s.WithItems(sor)
+	if child := inferValue(arr[0]); child != nil {
+		s.Items = child
 	}
-
 	return s
 }

@@ -1,83 +1,88 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Users API
   version: 1.0.0
 paths:
   /api/users:
     get:
+      tags:
+        - users
+      summary: List all users
+      description: List all users
       responses:
-        "200":
+        '200':
+          description: list of users
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/ApiUser'
-                type: array
-          description: OK
-      summary: List all users
-      tags:
-      - users
     post:
+      tags:
+        - users
+      summary: Create a user
+      description: Create a user
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiUser'
       responses:
-        "201":
+        '201':
+          description: user created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiUser'
-          description: Created
-        "400":
-          description: Bad Request
-      summary: Create a user
-      tags:
-      - users
+        '400':
+          description: bad request
   /api/users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: user found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUser'
+        '404':
+          description: user not found
     delete:
+      tags:
+        - users
+      summary: Delete user by ID
+      description: Delete user by ID
       operationId: deleteUserById
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
+          description: user deleted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiUser'
-          description: OK
       security:
-      - bearerAuth: []
-      summary: Delete user by ID
-      tags:
-      - users
-    get:
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiUser'
-          description: OK
-        "404":
-          description: Not Found
-      summary: Get user by ID
-      tags:
-      - users
+        - bearerAuth: []
 components:
   schemas:
     ApiUser:
+      type: object
       properties:
         email:
           type: string
@@ -85,13 +90,12 @@ components:
           type: string
         name:
           type: string
-      type: object
   securitySchemes:
     apiKey:
-      in: header
-      name: X-API-Key
       type: apiKey
+      name: X-API-Key
+      in: header
     bearerAuth:
-      bearerFormat: JWT
-      scheme: bearer
       type: http
+      scheme: bearer
+      bearerFormat: JWT

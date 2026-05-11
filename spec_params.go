@@ -6,76 +6,50 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
-// locationToParamIn converts a ParameterLocation to ParameterIn.
-// Using WithIn (instead of WithLocation) avoids duplicate "in" keys in marshaled JSON.
-func locationToParamIn(loc openapi3.ParameterLocation) openapi3.ParameterIn {
-	switch {
-	case loc.PathParameter != nil:
-		return openapi3.ParameterInPath
-	case loc.HeaderParameter != nil:
-		return openapi3.ParameterInHeader
-	case loc.CookieParameter != nil:
-		return openapi3.ParameterInCookie
+// locationToParamIn converts a ParamLocation to an OpenAPI parameter location.
+func locationToParamIn(loc ParamLocation) string {
+	switch loc {
+	case InPath:
+		return string(openapi.ParameterInPath)
+	case InQuery:
+		return string(openapi.ParameterInQuery)
+	case InHeader:
+		return string(openapi.ParameterInHeader)
+	case InCookie:
+		return string(openapi.ParameterInCookie)
 	default:
-		return openapi3.ParameterInQuery
+		return string(openapi.ParameterInQuery)
 	}
 }
 
-// stringParam builds a simple string-typed ParameterOrRef for the given name and location.
-func stringParam(name string, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
-	schema := openapi3.Schema{}
-	schema.WithType(openapi3.SchemaTypeString)
-	sor := openapi3.SchemaOrRef{}
-	sor.WithSchema(schema)
-
-	param := openapi3.Parameter{}
-	param.WithName(name)
-	param.WithIn(locationToParamIn(loc))
-	param.WithSchema(sor)
-
-	por := openapi3.ParameterOrRef{}
-	por.WithParameter(param)
-	return por
+// stringParam builds a simple string-typed parameter.
+func stringParam(name string, loc ParamLocation) *openapi.Parameter {
+	return &openapi.Parameter{Name: name, In: locationToParamIn(loc), Schema: &openapi.Schema{Type: string(String)}}
 }
 
-// dslSchemaParam builds an OpenAPI ParameterOrRef from a DSL dslParam declaration.
-func dslSchemaParam(p dslParam, loc openapi3.ParameterLocation) openapi3.ParameterOrRef {
-	schemaTypeVal := openapi3.SchemaType(string(p.typ))
-	s := openapi3.Schema{}
-	s.WithType(schemaTypeVal)
+// dslSchemaParam builds an OpenAPI parameter from a DSL dslParam declaration.
+func dslSchemaParam(p dslParam, loc ParamLocation) *openapi.Parameter {
+	s := &openapi.Schema{Type: string(p.typ)}
 	if p.typ == Array {
-		itemSchema := openapi3.Schema{}
-		itemSchema.WithType(openapi3.SchemaTypeString)
-		itemSor := openapi3.SchemaOrRef{}
-		itemSor.WithSchema(itemSchema)
-		s.WithItems(itemSor)
+		s.Items = &openapi.Schema{Type: string(String)}
 	}
 	if len(p.enumVals) > 0 {
-		s.WithEnum(p.enumVals...)
+		s.Enum = append([]any(nil), p.enumVals...)
 	}
 	if p.hasDef {
-		s.WithDefault(p.defVal)
+		s.Default = p.defVal
 	}
-	sor := openapi3.SchemaOrRef{}
-	sor.WithSchema(s)
-
-	param := openapi3.Parameter{}
-	param.WithName(p.name)
-	param.WithIn(locationToParamIn(loc))
-	param.WithSchema(sor)
+	param := &openapi.Parameter{Name: p.name, In: locationToParamIn(loc), Schema: s}
 	if p.required != nil {
-		param.WithRequired(*p.required)
+		param.Required = *p.required
 	}
 	if p.explode != nil {
-		param.WithExplode(*p.explode)
+		param.Explode = p.explode
 	}
-
-	por := openapi3.ParameterOrRef{}
-	por.WithParameter(param)
-	return por
+	return param
 }
 
 // dslSchemaTypeToReflect maps a SchemaType constant to a Go reflect.Type.
@@ -98,15 +72,12 @@ func dslSchemaTypeToReflect(typ SchemaType) reflect.Type {
 	}
 }
 
-// buildPathParamsStruct creates a dynamic struct with `path:"name"` tagged fields
-// for each {name} placeholder in pathTemplate. Field type is int64 when the
-// concrete value parses as an integer, otherwise string.
+// buildPathParamsStruct creates a dynamic struct with `path:"name"` tagged fields.
 func buildPathParamsStruct(pathTemplate string, pathParamValues map[string]string) any {
 	matches := pathParamRe.FindAllStringSubmatch(pathTemplate, -1)
 	if len(matches) == 0 {
 		return nil
 	}
-
 	fields := make([]reflect.StructField, 0, len(matches))
 	for _, m := range matches {
 		name := m[1]
@@ -116,130 +87,110 @@ func buildPathParamsStruct(pathTemplate string, pathParamValues map[string]strin
 				fieldType = reflect.TypeFor[int64]()
 			}
 		}
-
 		runes := []rune(name)
 		runes[0] = unicode.ToUpper(runes[0])
-		fieldName := "P" + string(runes)
-
-		fields = append(fields, reflect.StructField{
-			Name: fieldName,
-			Type: fieldType,
-			Tag:  reflect.StructTag(`path:"` + name + `"`),
-		})
+		fields = append(
+			fields,
+			reflect.StructField{
+				Name: "P" + string(runes),
+				Type: fieldType,
+				Tag:  reflect.StructTag(`path:"` + name + `"`),
+			},
+		)
 	}
-
-	t := reflect.StructOf(fields)
-	return reflect.New(t).Interface()
+	return reflect.New(reflect.StructOf(fields)).Interface()
 }
 
-// buildPathParamsStructFromDSL creates a dynamic struct for path parameters declared
-// via Parameter(name, InPath, schemaType). Undeclared placeholders default to string.
+// buildPathParamsStructFromDSL creates a dynamic struct for path parameters declared via Parameter().
 func buildPathParamsStructFromDSL(pathTemplate string, params []dslParam) any {
 	matches := pathParamRe.FindAllStringSubmatch(pathTemplate, -1)
 	if len(matches) == 0 {
 		return nil
 	}
-
 	declaredTypes := make(map[string]SchemaType, len(params))
 	for _, p := range params {
 		if p.location == InPath {
 			declaredTypes[p.name] = p.typ
 		}
 	}
-
 	fields := make([]reflect.StructField, 0, len(matches))
 	for _, m := range matches {
 		name := m[1]
 		fieldType := dslSchemaTypeToReflect(declaredTypes[name])
-
 		runes := []rune(name)
 		runes[0] = unicode.ToUpper(runes[0])
-		fieldName := "P" + string(runes)
-
-		fields = append(fields, reflect.StructField{
-			Name: fieldName,
-			Type: fieldType,
-			Tag:  reflect.StructTag(`path:"` + name + `"`),
-		})
+		fields = append(
+			fields,
+			reflect.StructField{
+				Name: "P" + string(runes),
+				Type: fieldType,
+				Tag:  reflect.StructTag(`path:"` + name + `"`),
+			},
+		)
 	}
-
-	t := reflect.StructOf(fields)
-	return reflect.New(t).Interface()
+	return reflect.New(reflect.StructOf(fields)).Interface()
 }
 
-// appendParams adds individual query and header parameters from requestBuilder to
-// the already-registered operation.
+// appendParams adds individual query and header parameters from requestBuilder.
 func (sc *SpecCollector) appendParams(b *requestBuilder) {
 	if len(b.queryParams) == 0 && len(b.headers) == 0 {
 		return
 	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[b.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-
-	methodKey := strings.ToLower(b.method)
-	op, ok := pathItem.MapOfOperationValues[methodKey]
+	op, ok := sc.operation(b.method, b.path)
 	if !ok {
 		return
 	}
-
 	for name := range b.queryParams {
-		op.Parameters = append(op.Parameters, stringParam(name, openapi3.ParameterLocation{
-			QueryParameter: &openapi3.QueryParameter{},
-		}))
+		op.Parameters = append(op.Parameters, stringParam(name, InQuery))
 	}
 	for name := range b.headers {
-		op.Parameters = append(op.Parameters, stringParam(name, openapi3.ParameterLocation{
-			HeaderParameter: &openapi3.HeaderParameter{},
-		}))
+		op.Parameters = append(op.Parameters, stringParam(name, InHeader))
 	}
-
-	pathItem.MapOfOperationValues[methodKey] = op
-	sc.reflector.Spec.Paths.MapOfPathItemValues[b.path] = pathItem
+	op.Parameters = sanitizeOperationParameters(b.path, op.Parameters)
 }
 
-// appendDSLParams adds query- and header-typed parameters from DSL Parameter() calls
-// to an already-registered operation.
+// appendDSLParams adds query- and header-typed parameters from DSL Parameter() calls.
 func (sc *SpecCollector) appendDSLParams(op *dslOp) {
-	var queryParams []dslParam
-	var headerParams []dslParam
-	for _, p := range op.params {
-		switch p.location {
-		case InQuery:
-			queryParams = append(queryParams, p)
-		case InHeader:
-			headerParams = append(headerParams, p)
-		case InPath, InCookie:
-			// handled elsewhere
-		}
-	}
-	if len(queryParams) == 0 && len(headerParams) == 0 {
-		return
-	}
-
-	pathItem, ok := sc.reflector.Spec.Paths.MapOfPathItemValues[op.path]
-	if !ok || pathItem.MapOfOperationValues == nil {
-		return
-	}
-	methodKey := strings.ToLower(op.method)
-	operation, ok := pathItem.MapOfOperationValues[methodKey]
+	operation, ok := sc.operation(op.method, op.path)
 	if !ok {
 		return
 	}
-
-	for _, p := range queryParams {
-		operation.Parameters = append(operation.Parameters, dslSchemaParam(p, openapi3.ParameterLocation{
-			QueryParameter: &openapi3.QueryParameter{},
-		}))
+	for _, p := range op.params {
+		switch p.location {
+		case InPath:
+			operation.Parameters = append(operation.Parameters, dslSchemaParam(p, InPath))
+		case InQuery:
+			operation.Parameters = append(operation.Parameters, dslSchemaParam(p, InQuery))
+		case InHeader:
+			operation.Parameters = append(operation.Parameters, dslSchemaParam(p, InHeader))
+		case InCookie:
+			operation.Parameters = append(operation.Parameters, dslSchemaParam(p, InCookie))
+		}
 	}
-	for _, p := range headerParams {
-		operation.Parameters = append(operation.Parameters, dslSchemaParam(p, openapi3.ParameterLocation{
-			HeaderParameter: &openapi3.HeaderParameter{},
-		}))
-	}
+	operation.Parameters = sanitizeOperationParameters(op.path, operation.Parameters)
+}
 
-	pathItem.MapOfOperationValues[methodKey] = operation
-	sc.reflector.Spec.Paths.MapOfPathItemValues[op.path] = pathItem
+func sanitizeOperationParameters(path string, params []*openapi.Parameter) []*openapi.Parameter {
+	out := make([]*openapi.Parameter, 0, len(params))
+	seen := make(map[string]struct{}, len(params))
+	for _, p := range params {
+		if p == nil || strings.TrimSpace(p.Name) == "" {
+			continue
+		}
+		if strings.TrimSpace(p.In) == "" {
+			if strings.Contains(path, "{"+p.Name+"}") {
+				p.In = string(openapi.ParameterInPath)
+				p.Required = true
+			} else {
+				p.In = string(openapi.ParameterInQuery)
+			}
+		}
+		key := strings.ToLower(p.In + "|" + p.Name)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, p)
+	}
+	return out
 }

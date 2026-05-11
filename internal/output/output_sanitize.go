@@ -3,67 +3,65 @@ package output
 import (
 	"strings"
 
-	"github.com/swaggest/openapi-go/openapi3"
+	"github.com/oaswrap/spec/openapi"
 )
 
-// SanitizeSpecForSerialization normalizes operation parameters so spec marshalling
-// is resilient to edge-cases that can leave Parameter.In empty.
-func SanitizeSpecForSerialization(spec *openapi3.Spec) {
-	if spec == nil || spec.Paths.MapOfPathItemValues == nil {
+// SanitizeSpecForSerialization normalizes operation parameters before marshalling.
+func SanitizeSpecForSerialization(spec *openapi.Document) {
+	if spec == nil || spec.Paths == nil {
 		return
 	}
-
-	for path, pathItem := range spec.Paths.MapOfPathItemValues {
-		if pathItem.MapOfOperationValues == nil {
+	for path, pathItem := range spec.Paths {
+		if pathItem == nil {
 			continue
 		}
-		for method, op := range pathItem.MapOfOperationValues {
-			if len(op.Parameters) == 0 {
-				continue
+		sanitize := func(op *openapi.Operation) {
+			if op != nil && len(op.Parameters) > 0 {
+				op.Parameters = SanitizeOperationParameters(path, op.Parameters)
 			}
-			op.Parameters = SanitizeOperationParameters(path, op.Parameters)
-			pathItem.MapOfOperationValues[method] = op
 		}
-		spec.Paths.MapOfPathItemValues[path] = pathItem
+		sanitize(pathItem.Get)
+		sanitize(pathItem.Put)
+		sanitize(pathItem.Post)
+		sanitize(pathItem.Delete)
+		sanitize(pathItem.Options)
+		sanitize(pathItem.Head)
+		sanitize(pathItem.Patch)
+		sanitize(pathItem.Trace)
+		sanitize(pathItem.Query)
+		for _, op := range pathItem.AdditionalOperations {
+			sanitize(op)
+		}
 	}
 }
 
-// SanitizeOperationParameters fixes missing `In` fields and deduplicates params.
-func SanitizeOperationParameters(path string, params []openapi3.ParameterOrRef) []openapi3.ParameterOrRef {
-	out := make([]openapi3.ParameterOrRef, 0, len(params))
+// SanitizeOperationParameters fixes missing `in` fields and deduplicates params.
+func SanitizeOperationParameters(path string, params []*openapi.Parameter) []*openapi.Parameter {
+	out := make([]*openapi.Parameter, 0, len(params))
 	seen := make(map[string]struct{}, len(params))
-
-	for _, por := range params {
-		if por.Parameter == nil {
-			out = append(out, por)
+	for _, p := range params {
+		if p == nil {
 			continue
 		}
-
-		p := por.Parameter
 		name := strings.TrimSpace(p.Name)
 		if name == "" {
 			continue
 		}
-
-		in := strings.TrimSpace(string(p.In))
+		in := strings.TrimSpace(p.In)
 		if in == "" {
 			if strings.Contains(path, "{"+name+"}") {
-				p.In = openapi3.ParameterIn("path")
-				req := true
-				p.Required = &req
+				p.In = string(openapi.ParameterInPath)
+				p.Required = true
 			} else {
-				p.In = openapi3.ParameterIn("query")
+				p.In = string(openapi.ParameterInQuery)
 			}
 		}
-
-		key := strings.ToLower(string(p.In) + "|" + name)
+		key := strings.ToLower(p.In + "|" + name)
 		if _, ok := seen[key]; ok {
 			continue
 		}
 		seen[key] = struct{}{}
-		por.Parameter = p
-		out = append(out, por)
+		out = append(out, p)
 	}
-
 	return out
 }

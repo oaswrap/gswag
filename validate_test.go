@@ -69,7 +69,7 @@ func TestValidateSpec_MissingTitle(t *testing.T) {
 	// ValidateSpecFile on a spec with no title.
 	dir := t.TempDir()
 	path := filepath.Join(dir, "spec.yaml")
-	content := `openapi: "3.0.3"
+	content := `openapi: "3.1.2"
 info:
   title: ""
   version: "1.0.0"
@@ -94,7 +94,7 @@ paths: {}`
 func TestValidateSpec_NoPaths(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "spec.yaml")
-	content := `openapi: "3.0.3"
+	content := `openapi: "3.1.2"
 info:
   title: "My API"
   version: "1.0.0"
@@ -120,7 +120,7 @@ func TestValidateSpec_UndeclaredSecurityScheme(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "spec.yaml")
 	// Operation references "bearerAuth" but components don't declare it.
-	content := `openapi: "3.0.3"
+	content := `openapi: "3.1.2"
 info:
   title: "My API"
   version: "1.0.0"

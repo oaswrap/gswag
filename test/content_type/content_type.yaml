@@ -1,61 +1,68 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Content-Type API
   version: 1.0.0
 paths:
   /report:
     get:
+      tags:
+        - report
+      summary: Get report
+      description: Get report
       operationId: getReport
       responses:
-        "200":
+        '200':
+          description: report data (CSV)
           content:
             application/json:
-              schema:
-                type: string
+              schema: {}
             text/csv:
-              schema:
-                type: string
-          description: OK
-      summary: Get report
-      tags:
-      - report
+              schema: {}
   /upload:
     post:
+      tags:
+        - upload
+      summary: Upload a file
+      description: Upload a file
       operationId: uploadFile
       requestBody:
         content:
           multipart/form-data:
             schema:
-              format: binary
-              type: string
+              $ref: '#/components/schemas/Content_typeUploadRequest'
       responses:
-        "200":
+        '200':
+          description: upload successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContentTypeUploadResponse'
-          description: OK
-        "400":
+                $ref: '#/components/schemas/Content_typeUploadResponse'
+        '400':
+          description: invalid content type
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: Upload a file
-      tags:
-      - upload
 components:
   schemas:
-    ContentTypeUploadResponse:
+    Content_typeUploadRequest:
+      type: object
+      properties:
+        filename:
+          type: string
+        size:
+          type: integer
+          format: int64
+    Content_typeUploadResponse:
+      type: object
       properties:
         filename:
           type: string
         id:
           type: string
         size:
-          format: int64
           type: integer
-      type: object
+          format: int64

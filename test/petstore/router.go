@@ -54,6 +54,8 @@ type APIResponse struct {
 	Message string `json:"message"`
 }
 
+const statusAvailable = "available"
+
 var pets = []Pet{
 	{
 		ID:        1,
@@ -61,7 +63,7 @@ var pets = []Pet{
 		Category:  Category{ID: 1, Name: "Dogs"},
 		PhotoURLs: []string{"https://example.com/dog.jpg"},
 		Tags:      []Tag{{ID: 1, Name: "friendly"}},
-		Status:    "available",
+		Status:    statusAvailable,
 	},
 }
 
@@ -109,7 +111,7 @@ func NewRouter() *http.ServeMux {
 	r.HandleFunc("GET /pet/findByStatus", func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Query().Get("status")
 		if status == "" {
-			status = "available"
+			status = statusAvailable
 		}
 		res := make([]Pet, 0)
 		for _, p := range pets {
@@ -161,7 +163,7 @@ func NewRouter() *http.ServeMux {
 	})
 
 	r.HandleFunc("GET /store/inventory", func(w http.ResponseWriter, r *http.Request) {
-		inv := map[string]int{"available": 1, "pending": 0, "sold": 0}
+		inv := map[string]int{statusAvailable: 1, "pending": 0, "sold": 0}
 		util.WriteJSON(w, http.StatusOK, inv)
 	})
 

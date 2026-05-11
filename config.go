@@ -13,6 +13,19 @@ const (
 	JSON
 )
 
+// OpenAPI version constants.
+const (
+	OpenAPI300 = "3.0.0"
+	OpenAPI301 = "3.0.1"
+	OpenAPI302 = "3.0.2"
+	OpenAPI303 = "3.0.3"
+	OpenAPI304 = "3.0.4"
+	OpenAPI310 = "3.1.0"
+	OpenAPI311 = "3.1.1"
+	OpenAPI312 = "3.1.2"
+	OpenAPI320 = "3.2.0"
+)
+
 // ServerConfig describes an OpenAPI server entry.
 type ServerConfig struct {
 	URL         string
@@ -65,35 +78,43 @@ type SecuritySchemeConfig struct {
 	Scopes           map[string]string // scope -> description
 }
 
+// Security scheme type constants.
+const (
+	SecurityTypeHTTP   = "http"
+	SecurityTypeAPIKey = "apiKey"
+	SecurityTypeOAuth2 = "oauth2"
+)
+
 // BearerJWT returns a SecuritySchemeConfig for an HTTP Bearer JWT scheme.
 func BearerJWT() SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "http", Scheme: "bearer", BearerFormat: "JWT"}
+	return SecuritySchemeConfig{Type: SecurityTypeHTTP, Scheme: "bearer", BearerFormat: "JWT"}
 }
 
 // APIKeyHeader returns a SecuritySchemeConfig for an API key passed in a header.
 func APIKeyHeader(headerName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "header", Name: headerName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "header", Name: headerName}
 }
 
 // APIKeyQuery returns a SecuritySchemeConfig for an API key passed in a query param.
 func APIKeyQuery(paramName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "query", Name: paramName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "query", Name: paramName}
 }
 
 // APIKeyCookie returns a SecuritySchemeConfig for an API key passed in a cookie.
 func APIKeyCookie(cookieName string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "apiKey", In: "cookie", Name: cookieName}
+	return SecuritySchemeConfig{Type: SecurityTypeAPIKey, In: "cookie", Name: cookieName}
 }
 
 // OAuth2Implicit returns a SecuritySchemeConfig for an OAuth2 implicit flow.
 func OAuth2Implicit(authURL string, scopes map[string]string) SecuritySchemeConfig {
-	return SecuritySchemeConfig{Type: "oauth2", AuthorizationURL: authURL, Scopes: scopes}
+	return SecuritySchemeConfig{Type: SecurityTypeOAuth2, AuthorizationURL: authURL, Scopes: scopes}
 }
 
 // Config holds global settings for gswag.
 type Config struct {
 	Title          string
 	Version        string
+	OpenAPIVersion string // default: "3.1.2"
 	Description    string
 	TermsOfService string
 	Contact        *ContactConfig
@@ -152,6 +173,9 @@ func Init(cfg *Config) {
 	}
 	if cfg.Version == "" {
 		cfg.Version = "0.1.0"
+	}
+	if cfg.OpenAPIVersion == "" {
+		cfg.OpenAPIVersion = OpenAPI312
 	}
 	globalConfig = cfg
 	globalCollector = newSpecCollector(cfg)

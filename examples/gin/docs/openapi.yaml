@@ -1,115 +1,121 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Items API (Gin)
   version: 1.0.0
 paths:
   /items:
     get:
+      tags:
+        - items
+      summary: List all items
+      description: List all items
       parameters:
-      - in: query
-        name: search
-        schema:
-          type: string
-      - in: query
-        name: page
-        schema:
-          type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
       responses:
-        "200":
+        '200':
+          description: list of items
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/ApiItem'
-                type: array
-          description: OK
-      summary: List all items
-      tags:
-      - items
     post:
+      tags:
+        - items
+      summary: Create an item
+      description: Create an item
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiCreateItemRequest'
       responses:
-        "201":
+        '201':
+          description: item created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiItem'
-          description: Created
-        "400":
+        '400':
+          description: invalid input
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Bad Request
-      summary: Create an item
-      tags:
-      - items
   /items/{id}:
-    delete:
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        "204":
-          description: No Content
-      summary: Delete an item
-      tags:
-      - items
     get:
+      tags:
+        - items
+      summary: Get item by ID
+      description: Get item by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-        "200":
+        '200':
+          description: item found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiItem'
-          description: OK
-        "404":
+        '404':
+          description: item not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
-      summary: Get item by ID
+    delete:
       tags:
-      - items
+        - items
+      summary: Delete an item
+      description: Delete an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: item deleted
 components:
   schemas:
     ApiCreateItemRequest:
+      type: object
       properties:
         name:
           type: string
         price:
-          format: double
           type: number
-      type: object
+          format: double
     ApiItem:
+      type: object
       properties:
         id:
           type: integer
+          format: int32
         name:
           type: string
         price:
-          format: double
           type: number
-      type: object
+          format: double

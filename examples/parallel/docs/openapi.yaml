@@ -1,16 +1,23 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Blog API (parallel)
   version: 1.0.0
 paths:
   /api/posts:
     get:
+      tags:
+        - posts
+      summary: List posts
+      description: List posts
       responses:
-        "200":
+        '200':
+          description: list of posts
           content:
             application/json:
               schema:
+                type: array
                 items:
+                  type: object
                   properties:
                     body:
                       type: string
@@ -20,17 +27,16 @@ paths:
                       type: string
                     user_id:
                       type: string
-                  type: object
-                type: array
-          description: OK
-      summary: List posts
-      tags:
-      - posts
     post:
+      tags:
+        - posts
+      summary: Create a post
+      description: Create a post
       requestBody:
         content:
           application/json:
             schema:
+              type: object
               properties:
                 body:
                   type: string
@@ -38,12 +44,13 @@ paths:
                   type: string
                 user_id:
                   type: string
-              type: object
       responses:
-        "201":
+        '201':
+          description: post created
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   body:
                     type: string
@@ -53,24 +60,25 @@ paths:
                     type: string
                   user_id:
                     type: string
-                type: object
-          description: Created
-      summary: Create a post
-      tags:
-      - posts
   /api/posts/{id}:
     get:
+      tags:
+        - posts
+      summary: Get post by ID
+      description: Get post by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
+          description: post found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   body:
                     type: string
@@ -80,28 +88,30 @@ paths:
                     type: string
                   user_id:
                     type: string
-                type: object
-          description: OK
-        "404":
+        '404':
+          description: post not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
-      summary: Get post by ID
-      tags:
-      - posts
   /api/users:
     get:
+      tags:
+        - users
+      summary: List users
+      description: List users
       responses:
-        "200":
+        '200':
+          description: list of users
           content:
             application/json:
               schema:
+                type: array
                 items:
+                  type: object
                   properties:
                     email:
                       type: string
@@ -109,28 +119,28 @@ paths:
                       type: string
                     name:
                       type: string
-                  type: object
-                type: array
-          description: OK
-      summary: List users
-      tags:
-      - users
     post:
+      tags:
+        - users
+      summary: Create a user
+      description: Create a user
       requestBody:
         content:
           application/json:
             schema:
+              type: object
               properties:
                 email:
                   type: string
                 name:
                   type: string
-              type: object
       responses:
-        "201":
+        '201':
+          description: user created
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   email:
                     type: string
@@ -138,24 +148,25 @@ paths:
                     type: string
                   name:
                     type: string
-                type: object
-          description: Created
-      summary: Create a user
-      tags:
-      - users
   /api/users/{id}:
     get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Get user by ID
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
+          description: user found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   email:
                     type: string
@@ -163,17 +174,12 @@ paths:
                     type: string
                   name:
                     type: string
-                type: object
-          description: OK
-        "404":
+        '404':
+          description: user not found
           content:
             application/json:
               schema:
+                type: object
                 properties:
                   error:
                     type: string
-                type: object
-          description: Not Found
-      summary: Get user by ID
-      tags:
-      - users
