@@ -87,9 +87,9 @@ func buildOpenAPIOptions(cfg *Config) []option.OpenAPIOption {
 			return shortenGenericName(t, defaultDefName)
 		}),
 	}
-	if len(cfg.StripDefinitionNamePrefixes) > 0 {
+	if len(cfg.StripDefNamePrefixes) > 0 {
 		reflectorOpts = append(
-			[]option.ReflectorOption{option.StripDefNamePrefix(cfg.StripDefinitionNamePrefixes...)},
+			[]option.ReflectorOption{option.StripDefNamePrefix(cfg.StripDefNamePrefixes...)},
 			reflectorOpts...)
 	}
 	if cfg.InlineRefs {
@@ -128,7 +128,8 @@ func shortenGenericName(t reflect.Type, defaultDefName string) string {
 		if i := strings.LastIndex(arg, "."); i >= 0 {
 			arg = arg[i+1:]
 		}
-		sb.WriteString(arg + suffixSb.String())
+		sb.WriteString(arg)
+		sb.WriteString(suffixSb.String())
 	}
 	result += sb.String()
 	return result

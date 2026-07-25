@@ -32,8 +32,8 @@ var _ = BeforeSuite(func() {
 		SecuritySchemes: map[string]SecuritySchemeConfig{
 			"bearerAuth": BearerJWT(),
 		},
-		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"BasicData"},
+		OutputPath:           filepath.Join(rootOutDir, "openapi.yaml"),
+		StripDefNamePrefixes: []string{"BasicData"},
 	})
 	testServer = httptest.NewServer(basicdata.NewRouter())
 	SetTestServer(testServer)

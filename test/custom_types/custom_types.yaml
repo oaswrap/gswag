@@ -19,7 +19,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Custom_typesEvent'
+                  $ref: '#/components/schemas/Event'
   /items:
     get:
       tags:
@@ -44,14 +44,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Custom_typesItem'
+              $ref: '#/components/schemas/Item'
       responses:
         '200':
           description: created item
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Custom_typesItem'
+                $ref: '#/components/schemas/Item'
         '400':
           description: invalid input
           content:
@@ -74,7 +74,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Custom_typesNullableFields'
+                $ref: '#/components/schemas/NullableFields'
     post:
       tags:
         - nullable
@@ -85,14 +85,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Custom_typesNullableFields'
+              $ref: '#/components/schemas/NullableFields'
       responses:
         '200':
           description: echoed nullable fields
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Custom_typesNullableFields'
+                $ref: '#/components/schemas/NullableFields'
         '400':
           description: invalid input
           content:
@@ -104,7 +104,7 @@ paths:
                     type: string
 components:
   schemas:
-    Custom_typesEvent:
+    Event:
       type: object
       properties:
         id:
@@ -118,7 +118,7 @@ components:
         occurred_at:
           type: string
           format: date-time
-    Custom_typesItem:
+    Item:
       type: object
       properties:
         id:
@@ -128,7 +128,7 @@ components:
           type: string
         status:
           type: string
-    Custom_typesNullableFields:
+    NullableFields:
       type: object
       properties:
         active:
@@ -147,7 +147,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Custom_typesItem'
+            $ref: '#/components/schemas/Item'
         page:
           type: integer
           format: int32

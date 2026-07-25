@@ -22,7 +22,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Custom_typesEvent"
+                    "$ref": "#/components/schemas/Event"
                   }
                 }
               }
@@ -63,7 +63,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Custom_typesItem"
+                "$ref": "#/components/schemas/Item"
               }
             }
           }
@@ -74,7 +74,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Custom_typesItem"
+                  "$ref": "#/components/schemas/Item"
                 }
               }
             }
@@ -111,7 +111,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Custom_typesNullableFields"
+                  "$ref": "#/components/schemas/NullableFields"
                 }
               }
             }
@@ -129,7 +129,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Custom_typesNullableFields"
+                "$ref": "#/components/schemas/NullableFields"
               }
             }
           }
@@ -140,7 +140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Custom_typesNullableFields"
+                  "$ref": "#/components/schemas/NullableFields"
                 }
               }
             }
@@ -166,7 +166,7 @@
   },
   "components": {
     "schemas": {
-      "Custom_typesEvent": {
+      "Event": {
         "type": "object",
         "properties": {
           "id": {
@@ -186,7 +186,7 @@
           }
         }
       },
-      "Custom_typesItem": {
+      "Item": {
         "type": "object",
         "properties": {
           "id": {
@@ -201,7 +201,7 @@
           }
         }
       },
-      "Custom_typesNullableFields": {
+      "NullableFields": {
         "type": "object",
         "properties": {
           "active": {
@@ -226,7 +226,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Custom_typesItem"
+              "$ref": "#/components/schemas/Item"
             }
           },
           "page": {

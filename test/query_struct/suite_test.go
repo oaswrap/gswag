@@ -26,10 +26,10 @@ var _ = BeforeSuite(func() {
 	rootOutDir = GinkgoT().TempDir()
 
 	Init(&Config{
-		Title:                       "QueryStruct API",
-		Version:                     "1.0.0",
-		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"Querystruct"},
+		Title:                "QueryStruct API",
+		Version:              "1.0.0",
+		OutputPath:           filepath.Join(rootOutDir, "openapi.yaml"),
+		StripDefNamePrefixes: []string{"Querystruct"},
 	})
 	testServer = httptest.NewServer(querystruct.NewRouter())
 	SetTestServer(testServer)

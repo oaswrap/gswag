@@ -26,10 +26,10 @@ var _ = BeforeSuite(func() {
 	rootOutDir = GinkgoT().TempDir()
 
 	Init(&Config{
-		Title:                       "All Methods API",
-		Version:                     "1.0.0",
-		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"AllMethods"},
+		Title:                "All Methods API",
+		Version:              "1.0.0",
+		OutputPath:           filepath.Join(rootOutDir, "openapi.yaml"),
+		StripDefNamePrefixes: []string{"AllMethods"},
 	})
 	testServer = httptest.NewServer(allmethods.NewRouter())
 	SetTestServer(testServer)

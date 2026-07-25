@@ -73,8 +73,8 @@ var _ = BeforeSuite(func() {
 			}),
 			"api_key": APIKeyHeader("api_key"),
 		},
-		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"Petstore"},
+		OutputPath:           filepath.Join(rootOutDir, "openapi.yaml"),
+		StripDefNamePrefixes: []string{"Petstore"},
 	})
 
 	testServer = httptest.NewServer(petstore.NewRouter())

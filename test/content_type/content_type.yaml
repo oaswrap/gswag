@@ -29,14 +29,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Content_typeUploadRequest'
+              $ref: '#/components/schemas/ContentTypeUploadRequest'
       responses:
         '200':
           description: upload successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Content_typeUploadResponse'
+                $ref: '#/components/schemas/ContentTypeUploadResponse'
         '400':
           description: invalid content type
           content:
@@ -48,7 +48,7 @@ paths:
                     type: string
 components:
   schemas:
-    Content_typeUploadRequest:
+    ContentTypeUploadRequest:
       type: object
       properties:
         filename:
@@ -56,7 +56,7 @@ components:
         size:
           type: integer
           format: int64
-    Content_typeUploadResponse:
+    ContentTypeUploadResponse:
       type: object
       properties:
         filename:

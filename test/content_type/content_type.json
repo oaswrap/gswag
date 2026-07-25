@@ -40,7 +40,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Content_typeUploadRequest"
+                "$ref": "#/components/schemas/ContentTypeUploadRequest"
               }
             }
           }
@@ -51,7 +51,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Content_typeUploadResponse"
+                  "$ref": "#/components/schemas/ContentTypeUploadResponse"
                 }
               }
             }
@@ -77,7 +77,7 @@
   },
   "components": {
     "schemas": {
-      "Content_typeUploadRequest": {
+      "ContentTypeUploadRequest": {
         "type": "object",
         "properties": {
           "filename": {
@@ -89,7 +89,7 @@
           }
         }
       },
-      "Content_typeUploadResponse": {
+      "ContentTypeUploadResponse": {
         "type": "object",
         "properties": {
           "filename": {

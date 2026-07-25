@@ -146,10 +146,10 @@ type Config struct {
 	// Sanitizer is an optional hook to transform or redact example bytes before
 	// they are stored in the spec. If nil, examples are recorded verbatim (subject to cap).
 	Sanitizer func([]byte) []byte
-	// StripDefinitionNamePrefixes lists definition name prefixes that should be
+	// StripDefNamePrefixes lists definition name prefixes that should be
 	// removed from reflected JSON Schema definition names. Applied when building
 	// reflectors so component schema names are cleaner.
-	StripDefinitionNamePrefixes []string
+	StripDefNamePrefixes []string
 	// InlineRefs controls whether JSON Schema reflector inlines referenced
 	// types instead of creating component references. When true, schemas
 	// are attempted to be inlined where possible.

@@ -18,7 +18,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Nested_pathsUser'
+                  $ref: '#/components/schemas/NestedPathsUser'
   /api/v1/users/{id}:
     get:
       tags:
@@ -38,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Nested_pathsUser'
+                $ref: '#/components/schemas/NestedPathsUser'
   /api/v1/users/{id}/orders:
     get:
       tags:
@@ -60,7 +60,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Nested_pathsOrder'
+                  $ref: '#/components/schemas/NestedPathsOrder'
   /api/v1/users/{id}/orders/{orderId}:
     get:
       tags:
@@ -85,7 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Nested_pathsOrder'
+                $ref: '#/components/schemas/NestedPathsOrder'
   /api/v1/users/{id}/orders/{orderId}/items:
     get:
       tags:
@@ -112,10 +112,10 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Nested_pathsOrderItem'
+                  $ref: '#/components/schemas/NestedPathsOrderItem'
 components:
   schemas:
-    Nested_pathsOrder:
+    NestedPathsOrder:
       type: object
       properties:
         id:
@@ -125,7 +125,7 @@ components:
           format: int32
         user_id:
           type: string
-    Nested_pathsOrderItem:
+    NestedPathsOrderItem:
       type: object
       properties:
         id:
@@ -137,7 +137,7 @@ components:
         qty:
           type: integer
           format: int32
-    Nested_pathsUser:
+    NestedPathsUser:
       type: object
       properties:
         id:
