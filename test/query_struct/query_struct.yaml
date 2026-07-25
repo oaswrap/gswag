@@ -47,7 +47,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Query_structProduct'
+                  $ref: '#/components/schemas/QueryStructProduct'
   /products/{id}:
     get:
       tags:
@@ -68,7 +68,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Query_structProduct'
+                $ref: '#/components/schemas/QueryStructProduct'
         '400':
           description: invalid id
           content:
@@ -89,7 +89,7 @@ paths:
                     type: string
 components:
   schemas:
-    Query_structProduct:
+    QueryStructProduct:
       type: object
       properties:
         id:

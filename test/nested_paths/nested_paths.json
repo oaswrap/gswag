@@ -21,7 +21,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Nested_pathsUser"
+                    "$ref": "#/components/schemas/NestedPathsUser"
                   }
                 }
               }
@@ -54,7 +54,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Nested_pathsUser"
+                  "$ref": "#/components/schemas/NestedPathsUser"
                 }
               }
             }
@@ -88,7 +88,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Nested_pathsOrder"
+                    "$ref": "#/components/schemas/NestedPathsOrder"
                   }
                 }
               }
@@ -129,7 +129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Nested_pathsOrder"
+                  "$ref": "#/components/schemas/NestedPathsOrder"
                 }
               }
             }
@@ -171,7 +171,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Nested_pathsOrderItem"
+                    "$ref": "#/components/schemas/NestedPathsOrderItem"
                   }
                 }
               }
@@ -183,7 +183,7 @@
   },
   "components": {
     "schemas": {
-      "Nested_pathsOrder": {
+      "NestedPathsOrder": {
         "type": "object",
         "properties": {
           "id": {
@@ -198,7 +198,7 @@
           }
         }
       },
-      "Nested_pathsOrderItem": {
+      "NestedPathsOrderItem": {
         "type": "object",
         "properties": {
           "id": {
@@ -216,7 +216,7 @@
           }
         }
       },
-      "Nested_pathsUser": {
+      "NestedPathsUser": {
         "type": "object",
         "properties": {
           "id": {

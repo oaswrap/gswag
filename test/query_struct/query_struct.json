@@ -70,7 +70,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Query_structProduct"
+                    "$ref": "#/components/schemas/QueryStructProduct"
                   }
                 }
               }
@@ -104,7 +104,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Query_structProduct"
+                  "$ref": "#/components/schemas/QueryStructProduct"
                 }
               }
             }
@@ -145,7 +145,7 @@
   },
   "components": {
     "schemas": {
-      "Query_structProduct": {
+      "QueryStructProduct": {
         "type": "object",
         "properties": {
           "id": {

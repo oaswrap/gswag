@@ -16,7 +16,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
+                $ref: '#/components/schemas/AllBasicDataTypes'
     post:
       tags:
         - basicdata
@@ -27,14 +27,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
+              $ref: '#/components/schemas/AllBasicDataTypes'
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Basic_dataAllBasicDataTypes'
+                $ref: '#/components/schemas/AllBasicDataTypes'
         '400':
           description: invalid input
           content:
@@ -57,7 +57,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
+                $ref: '#/components/schemas/AllBasicDataTypesPointers'
     post:
       tags:
         - basicdata
@@ -68,17 +68,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
+              $ref: '#/components/schemas/AllBasicDataTypesPointers'
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Basic_dataAllBasicDataTypesPointers'
+                $ref: '#/components/schemas/AllBasicDataTypesPointers'
 components:
   schemas:
-    Basic_dataAllBasicDataTypes:
+    AllBasicDataTypes:
       type: object
       properties:
         bool:
@@ -115,7 +115,7 @@ components:
           type: string
         uint:
           type: integer
-          format: int32
+          format: int64
           minimum: 0.0
         uint16:
           type: integer
@@ -123,7 +123,7 @@ components:
           minimum: 0.0
         uint32:
           type: integer
-          format: int32
+          format: int64
           minimum: 0.0
         uint64:
           type: integer
@@ -133,7 +133,7 @@ components:
           type: integer
           format: int32
           minimum: 0.0
-    Basic_dataAllBasicDataTypesPointers:
+    AllBasicDataTypesPointers:
       type: object
       properties:
         bool:
@@ -194,7 +194,7 @@ components:
           type:
             - integer
             - 'null'
-          format: int32
+          format: int64
           minimum: 0.0
         uint16:
           type:
@@ -206,7 +206,7 @@ components:
           type:
             - integer
             - 'null'
-          format: int32
+          format: int64
           minimum: 0.0
         uint64:
           type:

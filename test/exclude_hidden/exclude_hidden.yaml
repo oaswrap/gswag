@@ -16,10 +16,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Exclude_hiddenPublicResource'
+                $ref: '#/components/schemas/ExcludeHiddenPublicResource'
 components:
   schemas:
-    Exclude_hiddenPublicResource:
+    ExcludeHiddenPublicResource:
       type: object
       properties:
         id:
