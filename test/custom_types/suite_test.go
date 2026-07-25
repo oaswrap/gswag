@@ -30,8 +30,8 @@ var _ = BeforeSuite(func() {
 		Version: "1.0.0",
 		Description: "Demonstrates generic types, custom named types, Nullable[T], " +
 			"time.Time, and json.RawMessage in OpenAPI spec generation.",
-		OutputPath:                  filepath.Join(rootOutDir, "openapi.yaml"),
-		StripDefinitionNamePrefixes: []string{"CustomTypes"},
+		OutputPath:           filepath.Join(rootOutDir, "openapi.yaml"),
+		StripDefNamePrefixes: []string{"CustomTypes"},
 		// Map each Nullable[T] instantiation to its pointer equivalent so the
 		// generated spec shows {type: string, nullable: true} rather than a
 		// struct schema with Value+Valid fields.
